@@ -27,7 +27,7 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <Link to="/dashboard" className="navbar-brand">FC ONLINE</Link>
+      <Link to="/dashboard" className="navbar-brand">FC CHALLANGE</Link>
 
       <div className="navbar-links">
         <NavLink to="/dashboard" label="Dashboard" />

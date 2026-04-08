@@ -84,25 +84,19 @@ public class PlayerCardService {
             throw new RuntimeException("No material cards provided or found");
         }
 
-        // Calculate success probability
-        // Logic: Each material contributes based on its OVR relative to target OVR
         double totalChance = 0;
         int targetOvr = targetCard.getTemplate().getOvr();
 
         for (PlayerCard material : materials) {
             int materialOvr = material.getTemplate().getOvr();
             double diff = materialOvr - targetOvr;
-            
-            // phôi OVR = target OVR -> 20% contribution
-            // Mỗi 1 OVR lệch nhau -> thay đổi 1.5x (gần giống FC Online)
+
             double contribution = 0.2 * Math.pow(1.5, diff);
             totalChance += contribution;
         }
 
-        // Clip totalChance at 1.0 (100%)
         totalChance = Math.min(1.0, totalChance);
         
-        // Apply level multiplier (higher levels are harder even with max phôi)
         double levelMultiplier = BASE_SUCCESS_RATES.getOrDefault(targetCard.getUpgradeLevel(), 0.1);
         double finalSuccessRate = totalChance * levelMultiplier;
 
@@ -111,11 +105,13 @@ public class PlayerCardService {
         if (isSuccess) {
             targetCard.setUpgradeLevel(targetCard.getUpgradeLevel() + 1);
         } else {
-            // In many games, failing keeps the level or drops it. We'll keep it for now.
-            // But we consume the materials anyway.
+            int currentLevel = targetCard.getUpgradeLevel();
+            if (currentLevel > 1) {
+                int dropAmount = random.nextInt(currentLevel - 1) + 1;
+                targetCard.setUpgradeLevel(Math.max(1, currentLevel - dropAmount));
+            }
         }
 
-        // Consume (delete) material cards
         playerCardRepository.deleteAll(materials);
 
         return playerCardRepository.save(targetCard);

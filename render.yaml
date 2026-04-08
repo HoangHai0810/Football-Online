@@ -26,11 +26,11 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
 
-  - type: static
+  - type: web
     name: football-frontend
     runtime: static
     buildCommand: npm run build
-    publishPath: ./dist
+    staticPublishPath: ./dist
     rootDir: ./frontend
     envVars:
       - key: VITE_API_URL
