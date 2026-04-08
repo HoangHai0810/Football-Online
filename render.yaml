@@ -9,10 +9,18 @@ services:
     envVars:
       - key: PORT
         value: 8080
-      - key: DATABASE_URL
+      - key: DB_HOST
         fromDatabase:
           name: football-db
-          property: connectionString
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: football-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: football-db
+          property: database
       - key: DB_USERNAME
         fromDatabase:
           name: football-db
