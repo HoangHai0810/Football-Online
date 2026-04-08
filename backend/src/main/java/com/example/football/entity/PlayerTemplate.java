@@ -47,7 +47,7 @@ public class PlayerTemplate {
     @Column(nullable = false)
     private Season season;
 
-    // Face Stats (Reference Only)
+    // Face Stats
     private Integer pace;
     private Integer shooting;
     private Integer passing;

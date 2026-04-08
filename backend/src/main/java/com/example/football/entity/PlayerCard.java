@@ -31,9 +31,6 @@ public class PlayerCard {
     @Column(nullable = false)
     private Integer upgradeLevel = 1;
 
-    // Derived stats or special individual stats could go here
-    // For now, it mainly just points to a template and has a level.
-
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

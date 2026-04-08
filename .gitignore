@@ -1,0 +1,33 @@
+# ===========================
+# ROOT
+# ===========================
+.DS_Store
+*.log
+
+# ===========================
+# BACKEND (Java/Spring Boot)
+# ===========================
+backend/target/
+backend/*.class
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.iml
+backend/.idea/
+backend/*.zip
+
+# ===========================
+# FRONTEND (Node/Vite/React)
+# ===========================
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production.local
+
+# ===========================
+# Environment / Secrets
+# ===========================
+*.env
+.env
+.env.*
+!.env.example
+!frontend/.env.example

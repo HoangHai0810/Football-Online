@@ -1,0 +1,48 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  build-and-test:
+    name: Build & Test (Java 17)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Make mvnw executable
+        run: chmod +x backend/mvnw
+
+      - name: Build with Maven (skip tests for speed on PR)
+        working-directory: backend
+        run: ./mvnw package -DskipTests --no-transfer-progress
+
+      - name: Run tests
+        working-directory: backend
+        run: ./mvnw test --no-transfer-progress
+        env:
+          SPRING_PROFILES_ACTIVE: dev
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: football-backend-jar
+          path: backend/target/*.jar
+          retention-days: 7

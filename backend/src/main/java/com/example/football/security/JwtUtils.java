@@ -13,7 +13,6 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    // In a real app, use a persistent key! This regenerated key will invalidate tokens on restart.
     private final SecretKey key = Jwts.SIG.HS256.key().build();
 
     @Value("${app.jwtExpirationMs:86400000}")
