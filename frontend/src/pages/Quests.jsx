@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Clock, Coins, Trophy, Zap, Star, Package } from 'lucide-react';
+import { CheckCircle2, Clock, Coins, Trophy, Zap, Star, Package, RefreshCw } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const MissionIcon = ({ type }) => {
   switch (type) {
@@ -18,7 +19,8 @@ const Quests = () => {
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(null);
-  const { user } = useAuth();
+  const [swapping, setSwapping] = useState(null);
+  const { user, setUser } = useAuth();
 
   const fetchMissions = async () => {
     try {
@@ -39,13 +41,32 @@ const Quests = () => {
     setClaiming(id);
     try {
       await api.post(`/missions/${id}/claim`);
-      // Refresh missions after claim
+      const missionObj = missions.find(x => x.id === id);
+      setUser(prev => ({ ...prev, coins: prev.coins + (missionObj?.mission?.rewardCoins || 0) }));
+      toast.success("Reward claimed!");
       fetchMissions();
-      // Note: User coins will be updated on next profile fetch or via context
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to claim reward");
+      toast.error(err.response?.data?.message || "Failed to claim reward");
     } finally {
       setClaiming(null);
+    }
+  };
+
+  const swapMission = async (id) => {
+    if (user.coins < 200) {
+      toast.error("Not enough coins to swap mission!");
+      return;
+    }
+    setSwapping(id);
+    try {
+      await api.post(`/missions/${id}/swap`);
+      setUser(prev => ({ ...prev, coins: prev.coins - 200 }));
+      toast.success("Mission swapped successfully!");
+      fetchMissions();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to swap mission");
+    } finally {
+      setSwapping(null);
     }
   };
 
@@ -106,9 +127,25 @@ const Quests = () => {
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: 18, marginBottom: 8, color: m.claimed ? 'var(--text-muted)' : 'white' }}>
-                    {m.mission.description}
-                  </h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <h3 style={{ fontSize: 18, marginBottom: 8, color: m.claimed ? 'var(--text-muted)' : 'white' }}>
+                      {m.mission.description}
+                    </h3>
+                    {!m.completed && !m.claimed && (
+                      <button 
+                        onClick={() => swapMission(m.id)}
+                        disabled={swapping === m.id}
+                        title="Swap Mission (200 Coins)"
+                        style={{ 
+                          background: 'none', border: 'none', 
+                          color: 'var(--text-muted)', cursor: 'pointer', 
+                          padding: 4, display: 'flex', alignItems: 'center' 
+                        }}
+                      >
+                         <RefreshCw size={18} className={swapping === m.id ? 'animate-spin cursor-not-allowed' : 'hover-spin'} />
+                      </button>
+                    )}
+                  </div>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gold)', fontSize: 14, fontWeight: 600 }}>

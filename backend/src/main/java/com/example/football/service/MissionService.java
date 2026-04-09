@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -104,5 +106,41 @@ public class MissionService {
         userRepository.save(user);
 
         return um.getMission().getRewardCoins();
+    }
+
+    @Transactional
+    public UserMission swapMission(String username, Long userMissionId) {
+        Users user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+                
+        if (user.getCoins() < 200) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough coins to swap mission");
+        }
+        
+        UserMission um = userMissionRepository.findById(userMissionId)
+                .orElseThrow(() -> new RuntimeException("Mission not found"));
+                
+        if (!um.getUser().getId().equals(user.getId())) throw new RuntimeException("Unauthorized");
+        if (um.isClaimed() || um.isCompleted()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot swap completed mission");
+        
+        user.setCoins(user.getCoins() - 200);
+        userRepository.save(user);
+        
+        List<Long> currentMissions = userMissionRepository.findByUser(user)
+             .stream().map(u -> u.getMission().getId()).collect(Collectors.toList());
+             
+        List<Mission> allMissions = missionRepository.findByIsActiveTrue()
+                .stream().filter(m -> !currentMissions.contains(m.getId())).collect(Collectors.toList());
+                
+        if (allMissions.isEmpty()) { // fallback
+            allMissions = missionRepository.findByIsActiveTrue()
+                .stream().filter(m -> !m.getId().equals(um.getMission().getId())).collect(Collectors.toList());
+        }
+        
+        Collections.shuffle(allMissions);
+        um.setMission(allMissions.get(0));
+        um.setCurrentAmount(0);
+        
+        return userMissionRepository.save(um);
     }
 }

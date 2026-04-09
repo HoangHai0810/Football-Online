@@ -33,4 +33,15 @@ public class MissionController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    @PostMapping("/{id}/swap")
+    public ResponseEntity<?> swapMission(@PathVariable Long id) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        try {
+            UserMission newUm = missionService.swapMission(username, id);
+            return ResponseEntity.ok(newUm);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }
