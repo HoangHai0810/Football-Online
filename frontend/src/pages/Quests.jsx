@@ -115,6 +115,32 @@ const Quests = () => {
                 }} />
               )}
 
+              {/* Top-Right Corner Reroll Pill */}
+              {!isReady && !m.claimed && (
+                <button 
+                  onClick={() => rerollMission(m.id)}
+                  disabled={rerolling === m.id}
+                  className="btn btn-glass"
+                  title="Reroll Mission"
+                  style={{
+                    position: 'absolute',
+                    top: 16, right: 16,
+                    padding: '4px 8px',
+                    fontSize: 11,
+                    display: 'flex', gap: 4, alignItems: 'center',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'var(--text-muted)',
+                    borderRadius: 12,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                >
+                  <span style={{ fontSize: 10 }}>🔄</span>
+                  {rerolling === m.id ? '...' : <span>- <Coins size={9} style={{display: 'inline', verticalAlign: 'middle'}}/> 200</span>}
+                </button>
+              )}
+
               <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
                 <div style={{ 
                   width: 56, height: 56, 
@@ -156,22 +182,6 @@ const Quests = () => {
                         <span>Progress</span>
                         <span>{m.currentAmount} / {m.mission.targetAmount}</span>
                       </div>
-                      
-                      {/* Reroll Button Row */}
-                      {!isReady && (
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <button 
-                            onClick={() => rerollMission(m.id)}
-                            disabled={rerolling === m.id}
-                            className="btn btn-glass btn-sm"
-                            style={{ padding: '6px 12px', fontSize: 11, display: 'flex', gap: 6, alignItems: 'center' }}
-                          >
-                            <span style={{ fontSize: 13 }}>🔄</span>
-                            {rerolling === m.id ? 'Loading...' : 'REROLL'}
-                            <span style={{ color: 'var(--gold)', fontWeight: 'bold' }}>-200 XU</span>
-                          </button>
-                        </div>
-                      )}
                     </>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--green)', fontSize: 14 }}>
