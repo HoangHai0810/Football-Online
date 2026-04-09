@@ -12,6 +12,12 @@ const SoloMatch = () => {
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
   const { user } = useAuth();
+  const [teamName, setTeamName] = useState(user?.username || 'YOUR TEAM');
+  
+  useEffect(() => {
+    if (user?.username) setTeamName(user.username);
+  }, [user]);
+
   const commentaryEndRef = useRef(null);
 
   // Mock bot teams
@@ -27,7 +33,7 @@ const SoloMatch = () => {
 
     try {
       const res = await api.post('/gameplay/solo-match', {
-        homeName: user?.username || "MY TEAM",
+        homeName: teamName || "YOUR TEAM",
         homeOvr: userTeamOvr,
         awayName: botTeam.name,
         awayOvr: botTeam.ovr
@@ -53,7 +59,7 @@ const SoloMatch = () => {
       if (event) {
         setVisibleCommentary(prev => [...prev, event]);
         if (event.isGoal) {
-          if (event.team === (user?.username || "MY TEAM")) {
+          if (event.team === (teamName || "YOUR TEAM")) {
             setHomeScore(h => h + 1);
           } else {
             setAwayScore(a => a + 1);
@@ -87,8 +93,32 @@ const SoloMatch = () => {
               <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Users size={40} color="var(--blue)" />
               </div>
-              <h3 style={{ fontSize: 24, fontFamily: "'Bebas Neue', sans-serif" }}>{user?.username || "MY TEAM"}</h3>
-              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>OVR: {userTeamOvr}</div>
+              {matchState === 'lobby' ? (
+                <input 
+                  type="text"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  placeholder="TEAM NAME"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontSize: 24,
+                    textAlign: 'center',
+                    width: '100%',
+                    maxWidth: 200,
+                    outline: 'none',
+                    borderRadius: 8,
+                    padding: '4px 8px'
+                  }}
+                  onFocus={e => e.target.style.borderColor = 'var(--gold)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.2)'}
+                />
+              ) : (
+                <h3 style={{ fontSize: 24, fontFamily: "'Bebas Neue', sans-serif" }}>{teamName || "MY TEAM"}</h3>
+              )}
+              <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>OVR: {userTeamOvr}</div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
