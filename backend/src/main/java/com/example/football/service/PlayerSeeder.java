@@ -296,6 +296,15 @@ public class PlayerSeeder {
 
     private PlayerTemplate createPlayer(String name, Position pos, String nat, String club, int ovr) {
         Season season = determineSeason(ovr);
+        
+        // Face stats
+        int pace = clamp(ovr - 5 + random.nextInt(15));
+        int sho = clamp(ovr - 10 + random.nextInt(20));
+        int pas = clamp(ovr - 5 + random.nextInt(15));
+        int dri = clamp(ovr - 5 + random.nextInt(15));
+        int def = clamp(ovr - 15 + random.nextInt(25));
+        int phy = clamp(ovr - 10 + random.nextInt(20));
+
         PlayerTemplate player = PlayerTemplate.builder()
                 .name(name)
                 .position(pos)
@@ -307,19 +316,61 @@ public class PlayerSeeder {
                 .club(club)
                 .season(season)
                 .ovr(ovr)
-                .pace(clamp(ovr - 5 + random.nextInt(15)))
-                .shooting(clamp(ovr - 10 + random.nextInt(20)))
-                .passing(clamp(ovr - 5 + random.nextInt(15)))
-                .dribbling(clamp(ovr - 5 + random.nextInt(15)))
-                .defending(clamp(ovr - 15 + random.nextInt(25)))
-                .physical(clamp(ovr - 10 + random.nextInt(20)))
+                .pace(pace)
+                .shooting(sho)
+                .passing(pas)
+                .dribbling(dri)
+                .defending(def)
+                .physical(phy)
+                
+                // PAC Components
+                .acceleration(clamp(pace + random.nextInt(10) - 5))
+                .sprintSpeed(clamp(pace + random.nextInt(10) - 5))
+                
+                // SHO Components
+                .finishing(clamp(sho + random.nextInt(10) - 5))
+                .shotPower(clamp(sho + random.nextInt(10) - 5))
+                .longShot(clamp(sho + random.nextInt(10) - 5))
+                .positioning(clamp(sho + random.nextInt(10) - 5))
+                .volleys(clamp(sho + random.nextInt(10) - 5))
+                
+                // PAS Components
+                .shortPassing(clamp(pas + random.nextInt(10) - 5))
+                .longPassing(clamp(pas + random.nextInt(10) - 5))
+                .vision(clamp(pas + random.nextInt(10) - 5))
+                .crossing(clamp(pas + random.nextInt(10) - 5))
+                .curve(clamp(pas + random.nextInt(10) - 5))
+                
+                // DRI Components
+                .dribblingStat(clamp(dri + random.nextInt(10) - 5))
+                .ballControl(clamp(dri + random.nextInt(10) - 5))
+                .agility(clamp(dri + random.nextInt(10) - 5))
+                .balance(clamp(dri + random.nextInt(10) - 5))
+                .reactions(clamp(dri + random.nextInt(10) - 5))
+                
+                // DEF Components
+                .interceptions(clamp(def + random.nextInt(10) - 5))
+                .marking(clamp(def + random.nextInt(10) - 5))
+                .standingTackle(clamp(def + random.nextInt(10) - 5))
+                .slidingTackle(clamp(def + random.nextInt(10) - 5))
+                .heading(clamp(def + random.nextInt(20) - 10))
+                
+                // PHY Components
+                .strength(clamp(phy + random.nextInt(10) - 5))
+                .aggression(clamp(phy + random.nextInt(10) - 5))
+                .stamina(clamp(phy + random.nextInt(10) - 5))
+                .jumping(clamp(phy + random.nextInt(10) - 5))
+                
+                .attackingWorkRate(WorkRate.values()[random.nextInt(WorkRate.values().length)])
+                .defensiveWorkRate(WorkRate.values()[random.nextInt(WorkRate.values().length)])
                 .build();
 
         if (pos == Position.GK) {
-            player.setDiving(clamp(ovr - 2));
-            player.setReflexes(clamp(ovr + 3));
-            player.setHandling(clamp(ovr - 1));
-            player.setGkPositioning(clamp(ovr));
+            player.setDiving(clamp(ovr + random.nextInt(10) - 5));
+            player.setReflexes(clamp(ovr + random.nextInt(10) - 5));
+            player.setHandling(clamp(ovr + random.nextInt(10) - 5));
+            player.setGkPositioning(clamp(ovr + random.nextInt(10) - 5));
+            player.setKicking(clamp(ovr + random.nextInt(10) - 5));
         }
         return player;
     }

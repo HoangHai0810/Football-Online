@@ -112,7 +112,7 @@ public class PlayerTemplate {
     @Enumerated(EnumType.STRING)
     private WorkRate defensiveWorkRate;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "player_traits", joinColumns = @JoinColumn(name = "player_id"))
     @Column(name = "trait")
     private List<String> traits;

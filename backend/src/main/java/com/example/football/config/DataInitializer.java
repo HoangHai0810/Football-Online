@@ -27,11 +27,11 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) throws Exception {
         long corruptedCount = repository.findAll().stream()
-                .filter(t -> t.getPace() == null || t.getShooting() == null || t.getOvr() == null)
+                .filter(t -> t.getPace() == null || t.getOvr() == null || t.getAcceleration() == null)
                 .count();
         
         if (corruptedCount > 0) {
-            System.out.println("Found " + corruptedCount + " corrupted templates. Purging...");
+            System.out.println("Found " + corruptedCount + " corrupted or incomplete templates. Purging database to re-seed...");
             repository.deleteAll();
         }
 
