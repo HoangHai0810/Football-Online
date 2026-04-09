@@ -284,7 +284,7 @@ const Upgrade = () => {
             </div>
             <div className="glass" style={{ padding: 24, borderRadius: 20, minHeight: 400, overflowY: 'auto' }}>
               {!targetCard ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16 }}>
                   {cards.map(c => (
                     <motion.div
                       key={c.id}
@@ -329,7 +329,7 @@ const Upgrade = () => {
                     Select a target card first.
                   </div>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
                     {availableMaterials.map(c => {
                       const isMaterial = materialCards.some(m => m.id === c.id);
                       return (

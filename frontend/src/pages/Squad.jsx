@@ -89,7 +89,14 @@ const calculateEffectiveOvr = (player, slotPos) => {
   return Math.max(1, baseOvr - 8); // wrong outfield group
 };
 
-const PitchNode = ({ card, slotInfo, onDrop, onDragStart }) => {
+const getUpgradeColor = (level) => {
+  if (level === 1) return 'linear-gradient(135deg, #94a3b8, #475569)'; // Gray
+  if (level <= 4) return 'linear-gradient(135deg, #b45309, #78350f)';  // Bronze
+  if (level <= 7) return 'linear-gradient(135deg, #cbd5e1, #64748b)';  // Silver
+  return 'linear-gradient(135deg, #facc15, #a16207)';                 // Gold
+};
+
+const PitchNode = ({ slotInfo, card, onDrop, onSelect, active, sourceSlot }) => {
   const player = card ? card.template : null;
   const initials = player ? player.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase() : '+';
   const bg = player ? (SEASON_COLOR[player.season] || SEASON_COLOR.BASE) : 'rgba(255,255,255,0.08)';
@@ -138,8 +145,8 @@ const PitchNode = ({ card, slotInfo, onDrop, onDragStart }) => {
             </div>
             {card.upgradeLevel > 0 && (
               <div style={{
-                position: 'absolute', top: -3, right: -12, background: 'var(--gold)',
-                color: '#000', fontSize: 9, fontWeight: 900, padding: '1px 4px', borderRadius: '0 4px 4px 0'
+                position: 'absolute', top: -3, right: -12, background: getUpgradeColor(card.upgradeLevel),
+                color: card.upgradeLevel >= 5 ? '#fff' : '#000', fontSize: 9, fontWeight: 900, padding: '1px 4px', borderRadius: '0 4px 4px 0'
               }}>
                 +{card.upgradeLevel}
               </div>

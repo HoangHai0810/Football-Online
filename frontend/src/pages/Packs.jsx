@@ -373,6 +373,23 @@ const Packs = () => {
                 <div style={{ fontSize: 44, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 4 }}>{revealedCard.template.club}</div>
               </motion.div>
             )}
+
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              style={{
+                position: 'fixed', bottom: 60, left: '50%', transform: 'translateX(-50%)',
+                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 12, backdropFilter: 'blur(10px)', color: 'var(--text-muted)',
+                fontSize: 12, fontWeight: 700, letterSpacing: 2
+              }}
+            >
+              <div style={{ 
+                background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: 4, 
+                border: '1px solid rgba(255,255,255,0.2)', color: 'white' 
+              }}>SPACE</div>
+              BỎ QUA
+            </motion.div>
           </motion.div>
         )}
 
