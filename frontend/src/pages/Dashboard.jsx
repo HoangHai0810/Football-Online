@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, Package, ShoppingCart, Trophy, TrendingUp, Star, Zap, Award } from 'lucide-react';
+import api from '../services/api';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -87,8 +88,24 @@ import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
   const { isAuthenticated, user, loading } = useAuth();
-  
-  if (loading) {
+  const [statsData, setStatsData] = React.useState(null);
+  const [statsLoading, setStatsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      api.get('/users/stats')
+        .then(res => {
+          setStatsData(res.data);
+          setStatsLoading(false);
+        })
+        .catch(err => {
+          console.error("Failed to fetch stats", err);
+          setStatsLoading(false);
+        });
+    }
+  }, [isAuthenticated]);
+
+  if (loading || (isAuthenticated && statsLoading)) {
     return (
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-spin" style={{ width: 40, height: 40, border: '4px solid var(--gold)', borderTopColor: 'transparent', borderRadius: '50%' }} />
@@ -107,10 +124,10 @@ const Dashboard = () => {
   }
 
   const stats = [
-    { label: 'Current Balance', value: user?.coins?.toLocaleString() || '0', change: '+ 50K today', colorClass: 'gold-card', icon: TrendingUp },
-    { label: 'Squad OVR', value: '112', change: '+ 3 this week', colorClass: 'blue-card', icon: Star },
-    { label: 'Cards Owned', value: '47', change: '+ 2 new', colorClass: 'green-card', icon: Zap },
-    { label: 'Season Rank', value: '#23', colorClass: 'purple-card', icon: Award },
+    { label: 'Current Balance', value: statsData?.coins?.toLocaleString() || '0', change: 'Live Update', colorClass: 'gold-card', icon: TrendingUp },
+    { label: 'Squad OVR', value: statsData?.teamOvr || '0', change: 'Top 11 Players', colorClass: 'blue-card', icon: Star },
+    { label: 'Cards Owned', value: statsData?.totalCards || '0', change: 'Collection', colorClass: 'green-card', icon: Zap },
+    { label: 'Season Rank', value: statsData?.rank || '#--', colorClass: 'purple-card', icon: Award },
   ];
 
   const quickLinks = [
@@ -187,18 +204,18 @@ const Dashboard = () => {
       >
         <div>
           <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>
-            Season Pass — Active
+            Account Balance
           </div>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, letterSpacing: 2, lineHeight: 1, color: 'var(--gold)' }}>
-            1,250,500 <span style={{ fontSize: 20, opacity: 0.7 }}>COINS</span>
+            {statsData?.coins?.toLocaleString() || '0'} <span style={{ fontSize: 20, opacity: 0.7 }}>COINS</span>
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
-            Next bonus in <strong style={{ color: 'var(--gold)' }}>3 days</strong>
+            Complete <strong style={{ color: 'var(--gold)' }}>Quests</strong> to earn more coins!
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-glass">HISTORY</button>
-          <button className="btn btn-gold">RECHARGE NOW</button>
+          <Link to="/quests" className="btn btn-glass">VIEW QUESTS</Link>
+          <Link to="/packs" className="btn btn-gold">OPEN PACKS</Link>
         </div>
       </motion.div>
     </div>

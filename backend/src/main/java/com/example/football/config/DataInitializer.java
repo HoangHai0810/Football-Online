@@ -7,12 +7,15 @@ import com.example.football.service.PlayerSeeder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
+@Order(Ordered.LOWEST_PRECEDENCE)
 public class DataInitializer implements CommandLineRunner {
 
     private final PlayerTemplateRepository repository;

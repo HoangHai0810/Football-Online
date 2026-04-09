@@ -34,4 +34,26 @@ public class PlayerCard {
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    @Transient
+    public int getEffectiveOvr() {
+        int baseOvr = template != null && template.getOvr() != null ? template.getOvr() : 0;
+        return baseOvr + getStatBonus();
+    }
+
+    @Transient
+    public int getStatBonus() {
+        return switch (upgradeLevel) {
+            case 2 -> 1;
+            case 3 -> 2;
+            case 4 -> 4;
+            case 5 -> 6;
+            case 6 -> 8;
+            case 7 -> 11;
+            case 8 -> 15;
+            case 9 -> 18;
+            case 10 -> 21;
+            default -> 0; // level 1 and above 10 if customized
+        };
+    }
 }

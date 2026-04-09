@@ -11,6 +11,20 @@ const SEASON_CLASS = {
   BASE: 'badge-blue',
 };
 
+const calculatePrice = (ovr) => {
+  if (!ovr) return 1000;
+  let price = 1000;
+  
+  if (ovr <= 74) price = 1000 + Math.max(0, ovr - 60) * 285; // 1k - 5k
+  else if (ovr <= 84) price = 3000 + (ovr - 75) * 700;       // 3k - 10k
+  else if (ovr <= 94) price = 8000 + (ovr - 85) * 700;       // 8k - 15k
+  else if (ovr <= 104) price = 15000 + (ovr - 95) * 8500;    // 15k - 100k
+  else price = 200000 + (ovr - 105) * 50000;                 // 200k+
+  
+  // Round to nearest 100 for cleaner looking prices
+  return Math.round(price / 100) * 100;
+};
+
 const Market = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -170,7 +184,7 @@ const Market = () => {
                   style={{ fontWeight: 800, fontSize: 12 }}
                 >
                   <ShoppingCart size={13} />
-                  BUY — 50K COINS
+                  BUY — {calculatePrice(player.ovr).toLocaleString()} COINS
                 </button>
               </motion.div>
             ))}
@@ -227,6 +241,7 @@ const Market = () => {
                 <button
                   className="btn btn-gold btn-sm"
                   style={{ fontSize: 11, padding: '6px 14px' }}
+                  title={`${calculatePrice(player.ovr).toLocaleString()} Coins`}
                 >
                   BUY
                 </button>
@@ -313,7 +328,7 @@ const Market = () => {
                   <button className="btn btn-glass" style={{ flex: 1 }} onClick={() => setSelectedPlayer(null)}>CANCEL</button>
                   <button className="btn btn-gold" style={{ flex: 1 }}>
                     <ShoppingCart size={15} />
-                    BUY — 50K COINS
+                    BUY — {calculatePrice(selectedPlayer.ovr).toLocaleString()} COINS
                   </button>
                 </div>
               </div>
