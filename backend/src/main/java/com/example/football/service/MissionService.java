@@ -7,9 +7,9 @@ import com.example.football.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -109,38 +109,42 @@ public class MissionService {
     }
 
     @Transactional
-    public UserMission swapMission(String username, Long userMissionId) {
+    public UserMission rerollMission(String username, Long userMissionId) {
         Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-                
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
         if (user.getCoins() < 200) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough coins to swap mission");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough coins (200 required to refresh)");
         }
-        
+
         UserMission um = userMissionRepository.findById(userMissionId)
-                .orElseThrow(() -> new RuntimeException("Mission not found"));
-                
-        if (!um.getUser().getId().equals(user.getId())) throw new RuntimeException("Unauthorized");
-        if (um.isClaimed() || um.isCompleted()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot swap completed mission");
-        
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission not found"));
+
+        if (!um.getUser().getId().equals(user.getId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized");
+
         user.setCoins(user.getCoins() - 200);
         userRepository.save(user);
-        
-        List<Long> currentMissions = userMissionRepository.findByUser(user)
-             .stream().map(u -> u.getMission().getId()).collect(Collectors.toList());
-             
-        List<Mission> allMissions = missionRepository.findByIsActiveTrue()
-                .stream().filter(m -> !currentMissions.contains(m.getId())).collect(Collectors.toList());
-                
-        if (allMissions.isEmpty()) { // fallback
-            allMissions = missionRepository.findByIsActiveTrue()
-                .stream().filter(m -> !m.getId().equals(um.getMission().getId())).collect(Collectors.toList());
-        }
-        
+
+        // Pick a random new mission
+        List<Mission> allMissions = missionRepository.findByIsActiveTrue();
         Collections.shuffle(allMissions);
-        um.setMission(allMissions.get(0));
-        um.setCurrentAmount(0);
-        
-        return userMissionRepository.save(um);
+        // Ensure it's not exactly the same base mission
+        Mission newMission = allMissions.stream()
+                .filter(m -> !m.getId().equals(um.getMission().getId()))
+                .findFirst()
+                .orElse(allMissions.get(0));
+
+        userMissionRepository.delete(um);
+
+        UserMission newUm = UserMission.builder()
+                .user(user)
+                .mission(newMission)
+                .currentAmount(0)
+                .completed(false)
+                .claimed(false)
+                .nextResetAt(um.getNextResetAt()) // Keep the same reset schedule
+                .build();
+
+        return userMissionRepository.save(newUm);
     }
 }

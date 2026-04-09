@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Clock, Coins, Trophy, Zap, Star, Package, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Clock, Coins, Trophy, Zap, Star, Package } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -19,7 +19,7 @@ const Quests = () => {
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(null);
-  const [swapping, setSwapping] = useState(null);
+  const [rerolling, setRerolling] = useState(null);
   const { user, setUser } = useAuth();
 
   const fetchMissions = async () => {
@@ -37,13 +37,12 @@ const Quests = () => {
     fetchMissions();
   }, []);
 
-  const claimReward = async (id) => {
+  const claimReward = async (id, m) => {
     setClaiming(id);
     try {
-      await api.post(`/missions/${id}/claim`);
-      const missionObj = missions.find(x => x.id === id);
-      setUser(prev => ({ ...prev, coins: prev.coins + (missionObj?.mission?.rewardCoins || 0) }));
-      toast.success("Reward claimed!");
+      const res = await api.post(`/missions/${id}/claim`);
+      setUser(prev => ({ ...prev, coins: prev.coins + m.mission.rewardCoins }));
+      toast.success(`Claimed ${m.mission.rewardCoins.toLocaleString()} Coins!`);
       fetchMissions();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to claim reward");
@@ -52,21 +51,21 @@ const Quests = () => {
     }
   };
 
-  const swapMission = async (id) => {
+  const rerollMission = async (id) => {
     if (user.coins < 200) {
-      toast.error("Not enough coins to swap mission!");
+      toast.error("Not enough coins to reroll!");
       return;
     }
-    setSwapping(id);
+    setRerolling(id);
     try {
-      await api.post(`/missions/${id}/swap`);
+      await api.post(`/missions/${id}/reroll`);
       setUser(prev => ({ ...prev, coins: prev.coins - 200 }));
-      toast.success("Mission swapped successfully!");
+      toast.success("Mission refreshed for 200 Coins!");
       fetchMissions();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to swap mission");
+      toast.error(err.response?.data?.message || "Failed to reroll mission");
     } finally {
-      setSwapping(null);
+      setRerolling(null);
     }
   };
 
@@ -127,25 +126,9 @@ const Quests = () => {
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h3 style={{ fontSize: 18, marginBottom: 8, color: m.claimed ? 'var(--text-muted)' : 'white' }}>
-                      {m.mission.description}
-                    </h3>
-                    {!m.completed && !m.claimed && (
-                      <button 
-                        onClick={() => swapMission(m.id)}
-                        disabled={swapping === m.id}
-                        title="Swap Mission (200 Coins)"
-                        style={{ 
-                          background: 'none', border: 'none', 
-                          color: 'var(--text-muted)', cursor: 'pointer', 
-                          padding: 4, display: 'flex', alignItems: 'center' 
-                        }}
-                      >
-                         <RefreshCw size={18} className={swapping === m.id ? 'animate-spin cursor-not-allowed' : 'hover-spin'} />
-                      </button>
-                    )}
-                  </div>
+                  <h3 style={{ fontSize: 18, marginBottom: 8, color: m.claimed ? 'var(--text-muted)' : 'white' }}>
+                    {m.mission.description}
+                  </h3>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gold)', fontSize: 14, fontWeight: 600 }}>
@@ -173,6 +156,22 @@ const Quests = () => {
                         <span>Progress</span>
                         <span>{m.currentAmount} / {m.mission.targetAmount}</span>
                       </div>
+                      
+                      {/* Reroll Button Row */}
+                      {!isReady && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <button 
+                            onClick={() => rerollMission(m.id)}
+                            disabled={rerolling === m.id}
+                            className="btn btn-glass btn-sm"
+                            style={{ padding: '6px 12px', fontSize: 11, display: 'flex', gap: 6, alignItems: 'center' }}
+                          >
+                            <span style={{ fontSize: 13 }}>🔄</span>
+                            {rerolling === m.id ? 'Loading...' : 'REROLL'}
+                            <span style={{ color: 'var(--gold)', fontWeight: 'bold' }}>-200 XU</span>
+                          </button>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--green)', fontSize: 14 }}>
@@ -186,7 +185,7 @@ const Quests = () => {
                 <button 
                   className="btn btn-gold btn-sm" 
                   style={{ width: '100%', marginTop: 20 }}
-                  onClick={() => claimReward(m.id)}
+                  onClick={() => claimReward(m.id, m)}
                   disabled={claiming === m.id}
                 >
                   {claiming === m.id ? 'CLAIMING...' : 'CLAIM REWARD'}

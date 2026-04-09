@@ -4,10 +4,10 @@ import com.example.football.dto.AuthRequest;
 import com.example.football.dto.AuthResponse;
 import com.example.football.dto.MessageResponse;
 import com.example.football.entity.Users;
-import com.example.football.repository.UserRepository;
-import com.example.football.security.JwtUtils;
-import com.example.football.service.MissionService;
 import com.example.football.entity.MissionType;
+import com.example.football.repository.UserRepository;
+import com.example.football.service.MissionService;
+import com.example.football.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -47,6 +47,11 @@ public class AuthController {
 
         userRepository.save(user);
         String token = jwtUtils.generateToken(user);
+        
+        try {
+            missionService.updateProgress(user.getUsername(), MissionType.LOGIN_DAILY, 1);
+        } catch (Exception e) {}
+
         return ResponseEntity.ok(AuthResponse.builder().token(token).email(user.getEmail()).build());
     }
 
@@ -59,14 +64,12 @@ public class AuthController {
         Users user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + request.getUsername()));
         
-        try {
-            missionService.getActiveMissionsForUser(user.getUsername());
-            missionService.updateProgress(user.getUsername(), MissionType.LOGIN_DAILY, 1);
-        } catch (Exception e) {
-            System.err.println("Failed to update login mission: " + e.getMessage());
-        }
-        
         String token = jwtUtils.generateToken(user);
+        
+        try {
+            missionService.updateProgress(user.getUsername(), MissionType.LOGIN_DAILY, 1);
+        } catch (Exception e) {}
+
         return ResponseEntity.ok(AuthResponse.builder().token(token).email(user.getEmail()).build());
     }
 }
