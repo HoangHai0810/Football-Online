@@ -8,6 +8,7 @@ import Packs from './pages/Packs';
 import Quests from './pages/Quests';
 import Tournaments from './pages/Tournaments';
 import SoloMatch from './pages/SoloMatch';
+import Upgrade from './pages/Upgrade';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
@@ -44,6 +45,7 @@ const Navbar = () => {
             <NavLink to="/quests" label="Quests" />
             <NavLink to="/tournaments" label="Tournaments" />
             <NavLink to="/solo" label="Sim Match" />
+            <NavLink to="/upgrade" label="Upgrade" />
           </>
         )}
       </div>
@@ -102,6 +104,7 @@ const App = () => {
             <Route path="/quests" element={<PrivateRoute><Quests /></PrivateRoute>} />
             <Route path="/tournaments" element={<PrivateRoute><Tournaments /></PrivateRoute>} />
             <Route path="/solo" element={<PrivateRoute><SoloMatch /></PrivateRoute>} />
+            <Route path="/upgrade" element={<PrivateRoute><Upgrade /></PrivateRoute>} />
           </Routes>
         </div>
       </Router>

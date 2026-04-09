@@ -15,7 +15,7 @@ const SEASON_GLOW = {
   BASE: 'rgba(102, 126, 234, 0.5)',
 };
 
-const PlayerCard = ({ player, size = 'normal', onClick }) => {
+const PlayerCard = ({ player, size = 'normal', onClick, upgradeLevel = 1 }) => {
   const [hovered, setHovered] = useState(false);
   if (!player) return null;
 
@@ -59,13 +59,31 @@ const PlayerCard = ({ player, size = 'normal', onClick }) => {
       <div className="card-shine" />
 
       {/* OVR + Position */}
-      <div className="card-top">
-        <span className="card-ovr" style={{ fontSize: size === 'large' ? 52 : 42 }}>
+      <div className="card-top" style={{ position: 'relative' }}>
+        <span className="card-ovr" style={{ fontSize: size === 'large' ? 52 : size === 'small' ? 32 : 42 }}>
           {player.ovr}
         </span>
-        <span className="card-pos" style={{ fontSize: size === 'large' ? 15 : 13 }}>
+        <span className="card-pos" style={{ fontSize: size === 'large' ? 15 : size === 'small' ? 11 : 13 }}>
           {player.position || '—'}
         </span>
+        {upgradeLevel > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: size === 'large' ? 6 : 2,
+            right: size === 'large' ? -30 : -22,
+            background: 'var(--gold)',
+            color: '#000',
+            fontWeight: 800,
+            fontSize: size === 'large' ? 14 : size === 'small' ? 10 : 12,
+            padding: '2px 6px',
+            borderRadius: '0 8px 8px 0',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            transform: 'skewX(-10deg)',
+            fontFamily: "'Bebas Neue', sans-serif"
+          }}>
+            +{upgradeLevel}
+          </div>
+        )}
       </div>
 
       {/* Season Badge */}

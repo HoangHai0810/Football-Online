@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PackageOpen, Sparkles, Zap, Star, Shield } from 'lucide-react';
 import PlayerCard from '../components/PlayerCard';
@@ -150,6 +150,35 @@ const Packs = () => {
   const [state, setState] = useState('idle');  // idle | opening | result | error
   const [revealedCard, setRevealedCard] = useState(null);
   const [activePack, setActivePack] = useState(null);
+  const skipRef = useRef(false);
+
+  // Skippable sleep: resolves after `ms` OR immediately if skipped
+  const skippableSleep = (ms) => new Promise(resolve => {
+    if (skipRef.current) return resolve();
+    const timeout = setTimeout(resolve, ms);
+    const check = setInterval(() => {
+      if (skipRef.current) {
+        clearTimeout(timeout);
+        clearInterval(check);
+        resolve();
+      }
+    }, 50);
+  });
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (state === 'result') {
+          reset();
+        } else if (['opening', 'reveal_nationality', 'reveal_position', 'reveal_club'].includes(state)) {
+          skipRef.current = true;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [state]);
 
   const openPack = async (packId) => {
     if (!user) {
@@ -159,6 +188,7 @@ const Packs = () => {
     const packObj = PACKS.find(p => p.id === packId);
     if (!packObj) return;
 
+    skipRef.current = false;
     setActivePack(packId);
     setState('opening');
 
@@ -169,17 +199,17 @@ const Packs = () => {
       setUser(prev => ({ ...prev, coins: prev.coins - packObj.price }));
       setRevealedCard(card);
 
-      // Sequential Reveal Logic
-      await new Promise(r => setTimeout(r, 2000)); // Initial charge
+      // Sequential Reveal Logic — each step skippable with Space
+      await skippableSleep(2000); // Initial charge
       
       setState('reveal_nationality');
-      await new Promise(r => setTimeout(r, 3000));
+      await skippableSleep(3000);
 
       setState('reveal_position');
-      await new Promise(r => setTimeout(r, 3000));
+      await skippableSleep(3000);
 
       setState('reveal_club');
-      await new Promise(r => setTimeout(r, 3000));
+      await skippableSleep(3000);
 
       setState('result');
     } catch (err) {
@@ -213,6 +243,36 @@ const Packs = () => {
             Unleash the power of legendary icons and future stars.
           </p>
         </motion.div>
+        {/* Reveal Phase */}
+        {['opening', 'reveal_nationality', 'reveal_position', 'reveal_club'].includes(state) && (
+          <motion.div
+            key="reveal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ textAlign: 'center', padding: '60px 0' }}
+          >
+
+            <motion.div
+              animate={{ opacity: [0.3, 0.8, 0.3] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              style={{ fontSize: 13, color: 'var(--text-muted)', letterSpacing: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            >
+              <kbd style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderBottom: '3px solid rgba(255,255,255,0.2)',
+                borderRadius: 4,
+                padding: '4px 20px',
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: 'white',
+                fontWeight: 'bold'
+              }}>SPACE</kbd> 
+              SKIP
+            </motion.div>
+          </motion.div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">

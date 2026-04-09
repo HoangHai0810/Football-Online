@@ -12,10 +12,11 @@ const SoloMatch = () => {
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
   const { user } = useAuth();
-  const [teamName, setTeamName] = useState(user?.username || 'YOUR TEAM');
+  const [teamName, setTeamName] = useState(user?.clubName || user?.username || 'YOUR TEAM');
   
   useEffect(() => {
-    if (user?.username) setTeamName(user.username);
+    if (user?.clubName) setTeamName(user.clubName);
+    else if (user?.username) setTeamName(user.username);
   }, [user]);
 
   const commentaryEndRef = useRef(null);

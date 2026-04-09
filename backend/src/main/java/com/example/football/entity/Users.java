@@ -36,6 +36,9 @@ public class Users implements UserDetails {
     private Long coins = 10000L;
 
     @Builder.Default
+    private String clubName = "FC ARENA";
+
+    @Builder.Default
     private String role = "ROLE_USER";
 
     @Override

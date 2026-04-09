@@ -152,7 +152,7 @@ const Quests = () => {
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: 18, marginBottom: 8, color: m.claimed ? 'var(--text-muted)' : 'white' }}>
+                  <h3 style={{ fontSize: 17, marginBottom: 8, color: m.claimed ? 'var(--text-muted)' : 'white', paddingRight: 56 }}>
                     {m.mission.description}
                   </h3>
                   

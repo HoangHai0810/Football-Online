@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 const FORMATIONS = {
   '4-3-3': [
@@ -148,11 +149,18 @@ const PitchNode = ({ card, slotInfo, onDrop, onDragStart }) => {
 };
 
 const Squad = () => {
+  const { user, setUser } = useAuth();
   const [cards, setCards] = useState([]);
-  const [lineup, setLineup] = useState({}); // slotIndex -> cardId
+  const [lineup, setLineup] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [currentFormation, setCurrentFormation] = useState('4-3-3');
+  const [clubName, setClubName] = useState('');
+  const [editingClub, setEditingClub] = useState(false);
+
+  useEffect(() => {
+    if (user?.clubName) setClubName(user.clubName);
+  }, [user]);
 
   useEffect(() => {
     Promise.all([
@@ -204,11 +212,24 @@ const Squad = () => {
 
   const saveLineup = () => {
     setSaving(true);
-    // ensure we don't send nested strings if the backend expects a specific format
     api.post('/squad', { lineupJson: JSON.stringify(lineup), formation: currentFormation })
       .then(() => toast.success("Lineup saved successfully!"))
       .catch(() => toast.error("Failed to save lineup"))
       .finally(() => setSaving(false));
+  };
+
+  const saveClubName = async () => {
+    if (!clubName.trim()) return;
+    try {
+      await api.patch('/users/club', { clubName });
+      setUser(prev => ({ ...prev, clubName: clubName.trim().toUpperCase() }));
+      setClubName(clubName.trim().toUpperCase());
+      toast.success('Club name updated!');
+    } catch (err) {
+      toast.error('Failed to update club name');
+    } finally {
+      setEditingClub(false);
+    }
   };
 
   const getCardForSlot = (slot) => {
@@ -233,7 +254,35 @@ const Squad = () => {
     <div className="page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
         <div>
-          <h1 className="page-title">MY <span>SQUAD</span></h1>
+          {editingClub ? (
+            <input
+              autoFocus
+              value={clubName}
+              onChange={e => setClubName(e.target.value.toUpperCase())}
+              onBlur={saveClubName}
+              onKeyDown={e => e.key === 'Enter' && saveClubName()}
+              style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: 38,
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '2px solid var(--gold)',
+                color: 'var(--gold)',
+                outline: 'none',
+                width: 340,
+                letterSpacing: 2,
+              }}
+            />
+          ) : (
+            <h1
+              className="page-title"
+              onClick={() => setEditingClub(true)}
+              title="Click to rename your club"
+              style={{ cursor: 'pointer' }}
+            >
+              {clubName || 'MY'} <span>SQUAD</span> <span style={{ fontSize: 18, opacity: 0.4, verticalAlign: 'middle' }}>✏️</span>
+            </h1>
+          )}
           <p className="page-subtitle">Organize your 11 starters. Drag to swap positions.</p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>

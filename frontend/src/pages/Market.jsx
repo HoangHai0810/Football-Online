@@ -251,9 +251,10 @@ const Market = () => {
                 className="player-list-item"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1fr auto',
+                  gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1fr 100px',
                   padding: '12px 16px',
                   cursor: 'default',
+                  alignItems: 'center',
                 }}
               >
                 <div style={{ fontWeight: 700, fontSize: 14 }}>{player.name}</div>

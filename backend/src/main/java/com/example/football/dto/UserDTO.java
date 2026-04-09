@@ -12,4 +12,5 @@ public class UserDTO {
     private String username;
     private Long coins;
     private String role;
+    private String clubName;
 }

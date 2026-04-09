@@ -96,6 +96,9 @@ public class PlayerCardService {
         if (materials.isEmpty()) {
             throw new RuntimeException("No material cards provided or found");
         }
+        if (materials.size() > 5) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Maximum 5 material cards allowed");
+        }
 
         double totalChance = 0;
         int targetOvr = targetCard.getTemplate().getOvr();

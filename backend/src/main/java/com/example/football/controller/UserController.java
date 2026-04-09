@@ -8,13 +8,11 @@ import com.example.football.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -34,8 +32,23 @@ public class UserController {
                         .email(user.getEmail())
                         .coins(user.getCoins())
                         .role(user.getRole())
+                        .clubName(user.getClubName())
                         .build()))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/club")
+    public ResponseEntity<?> updateClubName(@RequestBody Map<String, String> body) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        String newName = body.get("clubName");
+        if (newName == null || newName.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Club name cannot be empty"));
+        }
+        return userRepository.findByUsername(username).map(user -> {
+            user.setClubName(newName.trim().toUpperCase());
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("clubName", user.getClubName()));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/stats")
