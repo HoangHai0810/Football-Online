@@ -40,10 +40,10 @@ public class PlayerTemplate {
     @Column(nullable = false)
     private BodyType bodyType;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String nationality;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String club;
 
     @Enumerated(EnumType.STRING)
