@@ -28,7 +28,7 @@ const calculatePrice = (ovr) => {
 };
 
 const Market = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,6 +70,7 @@ const Market = () => {
     setBuying(true);
     try {
       await api.post(`/cards/buy?userId=${user.id}&templateId=${player.id}&cost=${cost}`);
+      setUser(prev => ({ ...prev, coins: prev.coins - cost }));
       toast.success(`${player.name} added to your Reserve!`);
     } catch (e) {
       toast.error(e.response?.data?.message || "Transaction failed. Not enough coins?");

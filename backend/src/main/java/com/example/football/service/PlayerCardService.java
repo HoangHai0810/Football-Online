@@ -9,6 +9,8 @@ import com.example.football.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -41,10 +43,10 @@ public class PlayerCardService {
 
     public PlayerCard openRandomCardPack(Long userId, int cost, int minOvr) {
         Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         
         if (user.getCoins() < cost) {
-            throw new RuntimeException("Not enough coins to open this pack");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough coins to open this pack");
         }
         
         user.setCoins(user.getCoins() - cost);
@@ -131,14 +133,14 @@ public class PlayerCardService {
     @Transactional
     public PlayerCard buyPlayer(Long userId, Long templateId, int cost) {
         Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         
         if (user.getCoins() < cost) {
-            throw new RuntimeException("Not enough coins to buy this player");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough coins to buy this player");
         }
         
         PlayerTemplate template = playerTemplateRepository.findById(templateId)
-                .orElseThrow(() -> new RuntimeException("Player not found in market"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found in market"));
                 
         user.setCoins(user.getCoins() - cost);
         userRepository.save(user);

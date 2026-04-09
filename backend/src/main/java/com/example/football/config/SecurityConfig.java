@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/templates/**").permitAll()
                 .requestMatchers("/api/cards/**").permitAll()
                 .requestMatchers("/api/players/**").permitAll()
+                .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

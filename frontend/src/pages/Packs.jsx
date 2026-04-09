@@ -146,7 +146,7 @@ const PackCard = ({ pack, onOpen }) => {
 };
 
 const Packs = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [state, setState] = useState('idle');  // idle | opening | result | error
   const [revealedCard, setRevealedCard] = useState(null);
   const [activePack, setActivePack] = useState(null);
@@ -165,6 +165,8 @@ const Packs = () => {
     try {
       const res = await api.post(`/cards/open-pack?userId=${user.id}&cost=${packObj.price}&minOvr=${packObj.minOvr || 0}`);
       const card = res.data.template;
+      // Instantly deduct the coins in the React UI
+      setUser(prev => ({ ...prev, coins: prev.coins - packObj.price }));
       setRevealedCard(card);
 
       // Sequential Reveal Logic
