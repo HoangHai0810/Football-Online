@@ -42,7 +42,7 @@ services:
     rootDir: ./frontend
     envVars:
       - key: VITE_API_URL
-        value: https://football-backend.onrender.com
+        value: https://football-backend-bpn2.onrender.com
     routes:
       - type: rewrite
         source: /*

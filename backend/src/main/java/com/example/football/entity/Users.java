@@ -26,8 +26,14 @@ public class Users implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(unique = true, nullable = false)
+    private String username;
+
     @Column(nullable = false)
     private String password;
+
+    @Builder.Default
+    private Long coins = 10000L;
 
     @Builder.Default
     private String role = "ROLE_USER";
@@ -39,7 +45,7 @@ public class Users implements UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return username;
     }
 
     @Override

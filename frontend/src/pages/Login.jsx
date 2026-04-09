@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Lock, Mail, Eye, EyeOff, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 const Login = () => {
@@ -11,6 +12,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [form, setForm] = useState({ username: '', email: '', password: '' });
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -25,7 +27,7 @@ const Login = () => {
       const endpoint = isRegister ? '/auth/register' : '/auth/login';
       const res = await api.post(endpoint, payload);
       if (res.data.token) {
-        localStorage.setItem('token', res.data.token);
+        login(res.data.token);
       }
       navigate('/dashboard');
     } catch (err) {

@@ -2,6 +2,8 @@ package com.example.football.config;
 
 import com.example.football.entity.*;
 import com.example.football.repository.PlayerTemplateRepository;
+import com.example.football.repository.MissionRepository;
+import com.example.football.service.PlayerSeeder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
@@ -14,11 +16,17 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
     private final PlayerTemplateRepository repository;
+    private final MissionRepository missionRepository;
+    private final PlayerSeeder playerSeeder;
 
     @Override
     public void run(String... args) throws Exception {
         if (repository.count() == 0) {
             seedPlayers();
+        }
+        playerSeeder.seedOneThousandPlayers();
+        if (missionRepository.count() == 0) {
+            seedMissions();
         }
     }
 
@@ -32,6 +40,7 @@ public class DataInitializer implements CommandLineRunner {
                 .weight(72)
                 .bodyType(BodyType.LEAN)
                 .nationality("Argentina")
+                .club("Inter Miami")
                 .season(Season.ICON)
                 .ovr(115)
                 .pace(105).shooting(112).passing(118).dribbling(120).defending(45).physical(80)
@@ -53,6 +62,7 @@ public class DataInitializer implements CommandLineRunner {
                 .weight(83)
                 .bodyType(BodyType.REPRESENTATIVE)
                 .nationality("Portugal")
+                .club("Al Nassr")
                 .season(Season.ICON)
                 .ovr(114)
                 .pace(110).shooting(118).passing(102).dribbling(108).defending(40).physical(95)
@@ -74,6 +84,7 @@ public class DataInitializer implements CommandLineRunner {
                 .weight(73)
                 .bodyType(BodyType.LEAN)
                 .nationality("France")
+                .club("Real Madrid")
                 .season(Season.TOTY)
                 .ovr(112)
                 .pace(122).shooting(108).passing(100).dribbling(115).defending(42).physical(88)
@@ -95,6 +106,7 @@ public class DataInitializer implements CommandLineRunner {
                 .weight(70)
                 .bodyType(BodyType.REPRESENTATIVE)
                 .nationality("Belgium")
+                .club("Manchester City")
                 .season(Season.LIVE)
                 .ovr(110)
                 .pace(85).shooting(105).passing(125).dribbling(108).defending(75).physical(88)
@@ -116,6 +128,7 @@ public class DataInitializer implements CommandLineRunner {
                 .weight(92)
                 .bodyType(BodyType.STOCKY)
                 .nationality("Netherlands")
+                .club("Liverpool")
                 .season(Season.LIVE)
                 .ovr(109)
                 .pace(92).shooting(65).passing(88).dribbling(82).defending(118).physical(115)
@@ -132,5 +145,19 @@ public class DataInitializer implements CommandLineRunner {
 
         repository.saveAll(players);
         System.out.println("Seeded database with 5 top players.");
+    }
+
+    private void seedMissions() {
+        List<Mission> missions = Arrays.asList(
+            Mission.builder().description("Open 1 Premium Pack").type(MissionType.OPEN_PACK).targetAmount(1).rewardCoins(5000L).build(),
+            Mission.builder().description("Open 3 Elite Packs").type(MissionType.OPEN_PACK).targetAmount(3).rewardCoins(15000L).build(),
+            Mission.builder().description("Win 1 Solo Match").type(MissionType.WIN_MATCH).targetAmount(1).rewardCoins(8000L).build(),
+            Mission.builder().description("Win 5 Tournaments").type(MissionType.WIN_MATCH).targetAmount(5).rewardCoins(50000L).build(),
+            Mission.builder().description("Upgrade 1 Player").type(MissionType.UPGRADE_PLAYER).targetAmount(1).rewardCoins(2000L).build(),
+            Mission.builder().description("Collect 10 Players").type(MissionType.COLLECT_PLAYER).targetAmount(10).rewardCoins(10000L).build(),
+            Mission.builder().description("Daily Login").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(1000L).build()
+        );
+        missionRepository.saveAll(missions);
+        System.out.println("Seeded database with 7 missions.");
     }
 }

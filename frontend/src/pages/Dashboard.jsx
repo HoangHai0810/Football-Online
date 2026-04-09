@@ -83,9 +83,31 @@ const QuickCard = ({ to, icon: Icon, title, desc, color, i }) => (
   </motion.div>
 );
 
+import { useAuth } from '../context/AuthContext';
+
 const Dashboard = () => {
+  const { isAuthenticated, user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="animate-spin" style={{ width: 40, height: 40, border: '4px solid var(--gold)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="page" style={{ textAlign: 'center', paddingTop: 100 }}>
+        <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 64, color: 'var(--gold)' }}>WELCOME TO THE ARENA</h1>
+        <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Please login to manage your squad and compete.</p>
+        <Link to="/login" className="btn btn-gold btn-lg">LOGIN NOW</Link>
+      </div>
+    );
+  }
+
   const stats = [
-    { label: 'Current Balance', value: '1.25M', change: '+ 50K today', colorClass: 'gold-card', icon: TrendingUp },
+    { label: 'Current Balance', value: user?.coins?.toLocaleString() || '0', change: '+ 50K today', colorClass: 'gold-card', icon: TrendingUp },
     { label: 'Squad OVR', value: '112', change: '+ 3 this week', colorClass: 'blue-card', icon: Star },
     { label: 'Cards Owned', value: '47', change: '+ 2 new', colorClass: 'green-card', icon: Zap },
     { label: 'Season Rank', value: '#23', colorClass: 'purple-card', icon: Award },

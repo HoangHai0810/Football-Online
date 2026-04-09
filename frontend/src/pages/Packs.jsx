@@ -133,27 +133,28 @@ const Packs = () => {
     setActivePack(packId);
     setState('opening');
 
-    await new Promise(r => setTimeout(r, 2200));
-
     try {
       const res = await api.post('/cards/open-pack?userId=1');
-      setRevealedCard(res.data.template);
+      const card = res.data.template;
+      setRevealedCard(card);
+
+      // Sequential Reveal Logic
+      await new Promise(r => setTimeout(r, 2000)); // Initial charge
+      
+      setState('reveal_nationality');
+      await new Promise(r => setTimeout(r, 3000));
+
+      setState('reveal_position');
+      await new Promise(r => setTimeout(r, 3000));
+
+      setState('reveal_club');
+      await new Promise(r => setTimeout(r, 3000));
+
       setState('result');
-    } catch {
-      // Demo mode: show a fake card if backend returns error
-      setRevealedCard({
-        name: 'Lionel Messi',
-        ovr: 115,
-        position: 'RW',
-        season: 'ICON',
-        pace: 105,
-        shooting: 112,
-        passing: 118,
-        dribbling: 120,
-        defending: 45,
-        physical: 80,
-      });
-      setState('result');
+    } catch (err) {
+      console.error(err);
+      setState('idle');
+      alert("Failed to open pack. Check balance.");
     }
   };
 
@@ -214,61 +215,72 @@ const Packs = () => {
             exit={{ opacity: 0, scale: 1.1 }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 32 }}
           >
-            <div style={{ position: 'relative', width: 180, height: 180 }}>
-              {/* Outer ring */}
+            <div style={{ position: 'relative', width: 200, height: 200 }}>
               <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+                transition={{ rotate: { duration: 2, repeat: Infinity, ease: 'linear' }, scale: { duration: 1, repeat: Infinity } }}
                 style={{
                   position: 'absolute',
                   inset: 0,
                   borderRadius: '50%',
-                  border: '3px dashed rgba(240,195,45,0.5)',
+                  border: '4px solid var(--gold)',
+                  boxShadow: '0 0 30px var(--gold)',
+                  opacity: 0.3
                 }}
               />
-              {/* Mid ring */}
               <motion.div
-                animate={{ rotate: -360 }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
-                style={{
-                  position: 'absolute',
-                  inset: 20,
-                  borderRadius: '50%',
-                  border: '2px solid rgba(240,195,45,0.3)',
-                }}
-              />
-              {/* Inner glow */}
-              <motion.div
-                animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 1, repeat: Infinity }}
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
                 style={{
                   position: 'absolute',
                   inset: 0,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  justifyContent: 'center'
                 }}
               >
-                <Sparkles size={72} color="var(--gold)" />
+                <Sparkles size={80} color="var(--gold)" />
               </motion.div>
             </div>
-
             <div style={{ textAlign: 'center' }}>
-              <motion.div
-                animate={{ opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 1, repeat: Infinity }}
-                style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: 36,
-                  letterSpacing: 4,
-                  color: 'var(--gold)',
-                }}
-              >
-                REVEALING...
-              </motion.div>
-              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 8 }}>
-                Searching the archive for your player
-              </p>
+              <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 42, letterSpacing: 4, color: 'var(--gold)' }}>
+                INITIATING TRANSFER...
+              </h2>
+            </div>
+          </motion.div>
+        )}
+
+        {state.startsWith('reveal_') && (
+          <motion.div
+            key={state}
+            initial={{ opacity: 0, scale: 0.5, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, scale: 1.5, filter: 'blur(20px)' }}
+            transition={{ duration: 0.8 }}
+            style={{ 
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+              minHeight: 500, textAlign: 'center' 
+            }}
+          >
+            <div style={{ 
+              fontSize: 24, letterSpacing: 8, color: 'var(--text-muted)', 
+              textTransform: 'uppercase', marginBottom: 20 
+            }}>
+              {state.replace('reveal_', '')}
+            </div>
+            <div style={{ 
+              fontFamily: "'Bebas Neue', sans-serif", fontSize: 120, 
+              color: 'var(--gold)', textShadow: '0 0 40px rgba(240,195,45,0.4)',
+              lineHeight: 1
+            }}>
+              {state === 'reveal_nationality' && revealedCard.nationality}
+              {state === 'reveal_position' && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <Shield size={120} style={{ marginBottom: 20 }} />
+                  {revealedCard.position}
+                </div>
+              )}
+              {state === 'reveal_club' && revealedCard.club}
             </div>
           </motion.div>
         )}
@@ -281,23 +293,23 @@ const Packs = () => {
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 40 }}
           >
             {/* Walkout banner */}
-            {revealedCard.season === 'ICON' && (
+            {(revealedCard.ovr >= 110 || revealedCard.season === 'ICON') && (
               <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
                 style={{
-                  padding: '12px 32px',
-                  background: 'linear-gradient(135deg, rgba(240,195,45,0.25), rgba(240,195,45,0.05))',
-                  border: '1px solid rgba(240,195,45,0.4)',
-                  borderRadius: 50,
+                  padding: '16px 48px',
+                  background: 'linear-gradient(135deg, var(--gold), #ffcc33)',
+                  borderRadius: 12,
                   fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: 18,
-                  letterSpacing: 4,
-                  color: 'var(--gold)',
+                  fontSize: 24,
+                  letterSpacing: 6,
+                  color: '#0a0f1e',
+                  boxShadow: '0 10px 40px rgba(240,195,45,0.5)',
                   textAlign: 'center',
                 }}
               >
-                ✨ WALKOUT — ICON LEGEND UNLOCKED ✨
+                ✨ SPECTACULAR PULL — {revealedCard.season} LEGEND ✨
               </motion.div>
             )}
 
@@ -305,7 +317,7 @@ const Packs = () => {
             <motion.div
               initial={{ opacity: 0, rotateY: 90, scale: 0.7 }}
               animate={{ opacity: 1, rotateY: 0, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 18, delay: 0.1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
               style={{ perspective: 1000 }}
             >
               <PlayerCard player={revealedCard} size="large" />
@@ -315,15 +327,14 @@ const Packs = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.5 }}
               style={{ display: 'flex', gap: 16 }}
             >
-              <button className="btn btn-glass btn-lg" onClick={reset}>
-                BACK TO STORE
+              <button className="btn btn-glass btn-lg px-8" onClick={reset}>
+                CONTINUE
               </button>
-              <button className="btn btn-gold btn-lg" onClick={reset}>
-                <Star size={16} />
-                COLLECT & OPEN AGAIN
+              <button className="btn btn-gold btn-lg px-8" onClick={() => openPack(activePack)}>
+                <PackageOpen size={18} /> OPEN ANOTHER
               </button>
             </motion.div>
           </motion.div>

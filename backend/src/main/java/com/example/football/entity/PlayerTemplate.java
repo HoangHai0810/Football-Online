@@ -43,6 +43,9 @@ public class PlayerTemplate {
     @Column(nullable = false)
     private String nationality;
 
+    @Column(nullable = false)
+    private String club;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Season season;
