@@ -10,6 +10,7 @@ import Tournaments from './pages/Tournaments';
 import SoloMatch from './pages/SoloMatch';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
 import './styles/globals.css';
 
 const COINS_KEY = 'fc_coins';
@@ -70,6 +71,27 @@ const App = () => {
       <Router>
         <div style={{ minHeight: '100vh' }}>
           <Navbar />
+          <Toaster 
+            position="top-center"
+            toastOptions={{
+              style: {
+                background: 'rgba(10, 15, 30, 0.85)',
+                backdropFilter: 'blur(12px)',
+                color: '#fff',
+                border: '1px solid rgba(240,195,45,0.2)',
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '14px',
+              },
+              success: {
+                iconTheme: { primary: '#f0c32d', secondary: '#0a0f1e' },
+                style: { border: '1px solid rgba(240,195,45,0.4)' }
+              },
+              error: {
+                iconTheme: { primary: '#ff4d4d', secondary: '#0a0f1e' },
+                style: { border: '1px solid rgba(255,77,77,0.4)' }
+              }
+            }}
+          />
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />

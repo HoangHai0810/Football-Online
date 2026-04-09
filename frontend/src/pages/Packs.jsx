@@ -3,15 +3,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PackageOpen, Sparkles, Zap, Star, Shield } from 'lucide-react';
 import PlayerCard from '../components/PlayerCard';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const PACKS = [
   {
+    id: 'starter',
+    name: 'STARTER PACK',
+    description: 'Perfect for building your squad foundation. Guaranteed 75+ OVR player.',
+    price: 3500,
+    guaranteed: '75+ OVR GUARANTEED',
+    minOvr: 75,
+    icon: PackageOpen,
+    colorFrom: 'rgba(200,200,200,0.15)',
+    colorTo: 'rgba(200,200,200,0.03)',
+    border: 'rgba(200,200,200,0.35)',
+    iconColor: '#c8c8c8',
+    iconBg: 'rgba(200,200,200,0.12)',
+    badgeClass: 'badge-silver',
+    shimmerColor: 'rgba(200,200,200,0.3)',
+  },
+  {
     id: 'premium',
     name: 'PREMIUM PACK',
-    description: 'A carefully curated selection of top-rated players. Guaranteed 100+ OVR.',
-    price: 500,
-    guaranteed: '100+ OVR GUARANTEED',
-    icon: PackageOpen,
+    description: 'A carefully curated selection of top-rated players. Guaranteed 85+ OVR.',
+    price: 15000,
+    guaranteed: '85+ OVR GUARANTEED',
+    minOvr: 85,
+    icon: Shield,
     colorFrom: 'rgba(240,195,45,0.15)',
     colorTo: 'rgba(240,195,45,0.03)',
     border: 'rgba(240,195,45,0.35)',
@@ -23,9 +42,10 @@ const PACKS = [
   {
     id: 'elite',
     name: 'ELITE PACK',
-    description: 'Access the top 1% of players. Includes TOTY and LIVE season exclusives.',
-    price: 1500,
-    guaranteed: 'TOTY / LIVE SEASON',
+    description: 'Access the top tier of players. Includes TOTY and LIVE season exclusives.',
+    price: 50000,
+    guaranteed: '95+ OVR GUARANTEED',
+    minOvr: 95,
     icon: Zap,
     colorFrom: 'rgba(64,196,255,0.15)',
     colorTo: 'rgba(64,196,255,0.03)',
@@ -38,9 +58,10 @@ const PACKS = [
   {
     id: 'icon',
     name: 'ICON PACK',
-    description: 'The rarest pack in existence. Guaranteed ICON-season legend pull.',
-    price: 5000,
-    guaranteed: 'ICON GUARANTEED',
+    description: 'The rarest pack in existence. Guaranteed true legend pull.',
+    price: 250000,
+    guaranteed: '105+ OVR GUARANTEED',
+    minOvr: 105,
     icon: Star,
     colorFrom: 'rgba(255,100,200,0.15)',
     colorTo: 'rgba(255,100,200,0.03)',
@@ -125,16 +146,24 @@ const PackCard = ({ pack, onOpen }) => {
 };
 
 const Packs = () => {
+  const { user } = useAuth();
   const [state, setState] = useState('idle');  // idle | opening | result | error
   const [revealedCard, setRevealedCard] = useState(null);
   const [activePack, setActivePack] = useState(null);
 
   const openPack = async (packId) => {
+    if (!user) {
+      toast.error("You must be logged in to open packs");
+      return;
+    }
+    const packObj = PACKS.find(p => p.id === packId);
+    if (!packObj) return;
+
     setActivePack(packId);
     setState('opening');
 
     try {
-      const res = await api.post('/cards/open-pack?userId=1');
+      const res = await api.post(`/cards/open-pack?userId=${user.id}&cost=${packObj.price}&minOvr=${packObj.minOvr || 0}`);
       const card = res.data.template;
       setRevealedCard(card);
 
@@ -154,7 +183,7 @@ const Packs = () => {
     } catch (err) {
       console.error(err);
       setState('idle');
-      alert("Failed to open pack. Check balance.");
+      toast.error(err.response?.data?.message || "Failed to open pack. Not enough coins?");
     }
   };
 

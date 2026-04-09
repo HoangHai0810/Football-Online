@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../services/api';
+import toast from 'react-hot-toast';
 
 const FORMATIONS = {
   '4-3-3': [
@@ -205,8 +206,8 @@ const Squad = () => {
     setSaving(true);
     // ensure we don't send nested strings if the backend expects a specific format
     api.post('/squad', { lineupJson: JSON.stringify(lineup), formation: currentFormation })
-      .then(() => alert("Lineup saved successfully!"))
-      .catch(() => alert("Failed to save lineup"))
+      .then(() => toast.success("Lineup saved successfully!"))
+      .catch(() => toast.error("Failed to save lineup"))
       .finally(() => setSaving(false));
   };
 

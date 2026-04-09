@@ -39,13 +39,24 @@ public class PlayerCardService {
         return playerCardRepository.findByOwnerId(userId);
     }
 
-    public PlayerCard openRandomCardPack(Long userId) {
+    public PlayerCard openRandomCardPack(Long userId, int cost, int minOvr) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        List<PlayerTemplate> templates = playerTemplateRepository.findAll();
+        if (user.getCoins() < cost) {
+            throw new RuntimeException("Not enough coins to open this pack");
+        }
+        
+        user.setCoins(user.getCoins() - cost);
+        userRepository.save(user);
+        
+        List<PlayerTemplate> templates = playerTemplateRepository.findAll()
+                .stream()
+                .filter(t -> t.getOvr() >= minOvr)
+                .toList();
+
         if (templates.isEmpty()) {
-            throw new RuntimeException("No player templates available");
+            throw new RuntimeException("No player templates available for this criteria");
         }
 
         double totalWeight = 0;
@@ -115,5 +126,29 @@ public class PlayerCardService {
         playerCardRepository.deleteAll(materials);
 
         return playerCardRepository.save(targetCard);
+    }
+
+    @Transactional
+    public PlayerCard buyPlayer(Long userId, Long templateId, int cost) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (user.getCoins() < cost) {
+            throw new RuntimeException("Not enough coins to buy this player");
+        }
+        
+        PlayerTemplate template = playerTemplateRepository.findById(templateId)
+                .orElseThrow(() -> new RuntimeException("Player not found in market"));
+                
+        user.setCoins(user.getCoins() - cost);
+        userRepository.save(user);
+
+        PlayerCard card = PlayerCard.builder()
+                .owner(user)
+                .template(template)
+                .upgradeLevel(1)
+                .build();
+
+        return playerCardRepository.save(card);
     }
 }

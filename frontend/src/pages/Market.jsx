@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, ShoppingCart, X } from 'lucide-react';
 import PlayerCard from '../components/PlayerCard';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const SEASON_CLASS = {
   ICON: 'badge-gold',
@@ -26,6 +28,7 @@ const calculatePrice = (ovr) => {
 };
 
 const Market = () => {
+  const { user } = useAuth();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,6 +37,7 @@ const Market = () => {
   const [filterPos, setFilterPos] = useState('ALL');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
+  const [buying, setBuying] = useState(false);
 
   useEffect(() => {
     api.get('/templates')
@@ -56,6 +60,24 @@ const Market = () => {
       return matchSearch && matchSeason && matchPos;
     });
   }, [players, search, filterSeason, filterPos]);
+
+  const buyPlayer = async (player) => {
+    if (!user) {
+      toast.error("You must be logged in!");
+      return;
+    }
+    const cost = calculatePrice(player.ovr);
+    setBuying(true);
+    try {
+      await api.post(`/cards/buy?userId=${user.id}&templateId=${player.id}&cost=${cost}`);
+      toast.success(`${player.name} added to your Reserve!`);
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Transaction failed. Not enough coins?");
+    } finally {
+      setBuying(false);
+      setSelectedPlayer(null);
+    }
+  };
 
   const seasons = ['ALL', ...new Set(players.map(p => p.season))];
   const positions = ['ALL', ...new Set(players.map(p => p.position))];
@@ -182,6 +204,8 @@ const Market = () => {
                 <button
                   className="btn btn-gold btn-sm"
                   style={{ fontWeight: 800, fontSize: 12 }}
+                  onClick={() => buyPlayer(player)}
+                  disabled={buying}
                 >
                   <ShoppingCart size={13} />
                   BUY — {calculatePrice(player.ovr).toLocaleString()} COINS
@@ -242,6 +266,8 @@ const Market = () => {
                   className="btn btn-gold btn-sm"
                   style={{ fontSize: 11, padding: '6px 14px' }}
                   title={`${calculatePrice(player.ovr).toLocaleString()} Coins`}
+                  onClick={() => buyPlayer(player)}
+                  disabled={buying}
                 >
                   BUY
                 </button>
@@ -326,7 +352,12 @@ const Market = () => {
 
                 <div style={{ marginTop: 'auto', display: 'flex', gap: 12 }}>
                   <button className="btn btn-glass" style={{ flex: 1 }} onClick={() => setSelectedPlayer(null)}>CANCEL</button>
-                  <button className="btn btn-gold" style={{ flex: 1 }}>
+                  <button 
+                    className="btn btn-gold" 
+                    style={{ flex: 1 }}
+                    onClick={() => buyPlayer(selectedPlayer)}
+                    disabled={buying}
+                  >
                     <ShoppingCart size={15} />
                     BUY — {calculatePrice(selectedPlayer.ovr).toLocaleString()} COINS
                   </button>
