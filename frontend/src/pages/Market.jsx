@@ -201,7 +201,7 @@ const Market = () => {
                 transition={{ delay: i * 0.04 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
               >
-                <PlayerCard player={player} onClick={() => setSelectedPlayer(player)} />
+                <PlayerCard player={player} onClick={() => setSelectedPlayer(player)} upgradeLevel={1} />
                 <button
                   className="btn btn-gold btn-sm"
                   style={{ fontWeight: 800, fontSize: 12 }}
@@ -314,7 +314,7 @@ const Market = () => {
               >
                 <X size={20} />
               </button>
-              <PlayerCard player={selectedPlayer} size="large" />
+              <PlayerCard player={selectedPlayer} size="large" upgradeLevel={1} />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
                   <div style={{ fontSize: 11, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 4 }}>PLAYER PROFILE</div>

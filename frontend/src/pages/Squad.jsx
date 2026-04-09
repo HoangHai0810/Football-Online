@@ -128,12 +128,23 @@ const PitchNode = ({ card, slotInfo, onDrop, onDragStart }) => {
       >
         {initials}
         {player && (
-          <div style={{
-            position: 'absolute', bottom: -3, right: -4, background: isPenalty ? '#ff4757' : 'var(--gold)',
-            color: isPenalty ? '#fff' : '#0a0f1e', fontSize: 10, fontWeight: 900, padding: '1px 5px', borderRadius: 4, fontFamily: 'Outfit, sans-serif',
-          }}>
-            {effOvr}
-          </div>
+          <>
+            <div style={{
+              position: 'absolute', bottom: -3, right: -4, background: isPenalty ? '#ff4757' : 'var(--gold)',
+              color: isPenalty ? '#fff' : '#0a0f1e', fontSize: 10, fontWeight: 900, padding: '1px 5px', borderRadius: 4, fontFamily: 'Outfit, sans-serif',
+              zIndex: 3
+            }}>
+              {effOvr}
+            </div>
+            {card.upgradeLevel > 0 && (
+              <div style={{
+                position: 'absolute', top: -3, right: -12, background: 'var(--gold)',
+                color: '#000', fontSize: 9, fontWeight: 900, padding: '1px 4px', borderRadius: '0 4px 4px 0'
+              }}>
+                +{card.upgradeLevel}
+              </div>
+            )}
+          </>
         )}
       </motion.div>
       <div style={{ textAlign: 'center' }}>
@@ -163,8 +174,9 @@ const Squad = () => {
   }, [user]);
 
   useEffect(() => {
+    if (!user) return;
     Promise.all([
-      api.get('/cards/user/1').catch(() => ({ data: [] })), // Hack fallback, actual API should use /cards/me or ignore the /1 if controller uses token
+      api.get(`/cards/user/${user.id}`).catch(() => ({ data: [] })),
       api.get('/squad').catch(() => ({ data: {} }))
     ]).then(([cardsRes, squadRes]) => {
       setCards(cardsRes.data);
@@ -365,8 +377,13 @@ const Squad = () => {
                   whileHover={{ x: 4 }}
                   style={{ cursor: 'grab' }}
                 >
-                  <div className="ovr-badge" style={{ background: bg, color: 'white' }}>
+                  <div className="ovr-badge" style={{ background: bg, color: 'white', position: 'relative' }}>
                     {card.effectiveOvr || p.ovr}
+                    {card.upgradeLevel > 0 && (
+                      <span style={{ position: 'absolute', top: -4, right: -12, fontSize: 8, background: 'var(--gold)', color: '#000', padding: '0 3px', fontWeight: 900, borderRadius: 2 }}>
+                        +{card.upgradeLevel}
+                      </span>
+                    )}
                   </div>
                   <div className="player-info">
                     <div className="player-name">{p.name}</div>

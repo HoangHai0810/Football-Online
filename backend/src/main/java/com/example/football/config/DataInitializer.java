@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,11 +24,22 @@ public class DataInitializer implements CommandLineRunner {
     private final PlayerSeeder playerSeeder;
 
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
+        long corruptedCount = repository.findAll().stream()
+                .filter(t -> t.getPace() == null || t.getShooting() == null || t.getOvr() == null)
+                .count();
+        
+        if (corruptedCount > 0) {
+            System.out.println("Found " + corruptedCount + " corrupted templates. Purging...");
+            repository.deleteAll();
+        }
+
         if (repository.count() == 0) {
             seedPlayers();
+            playerSeeder.seedOneThousandPlayers();
         }
-        playerSeeder.seedOneThousandPlayers();
+        
         if (missionRepository.count() == 0) {
             seedMissions();
         }

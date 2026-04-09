@@ -194,10 +194,10 @@ const Packs = () => {
 
     try {
       const res = await api.post(`/cards/open-pack?userId=${user.id}&cost=${packObj.price}&minOvr=${packObj.minOvr || 0}`);
-      const card = res.data.template;
+      const fullCard = res.data;
       // Instantly deduct the coins in the React UI
       setUser(prev => ({ ...prev, coins: prev.coins - packObj.price }));
-      setRevealedCard(card);
+      setRevealedCard(fullCard);
 
       // Sequential Reveal Logic — each step skippable with Space
       await skippableSleep(2000); // Initial charge
@@ -353,26 +353,26 @@ const Packs = () => {
               minHeight: 500, textAlign: 'center' 
             }}
           >
-            <div style={{ 
-              fontSize: 24, letterSpacing: 8, color: 'var(--text-muted)', 
-              textTransform: 'uppercase', marginBottom: 20 
-            }}>
-              {state.replace('reveal_', '')}
-            </div>
-            <div style={{ 
-              fontFamily: "'Bebas Neue', sans-serif", fontSize: 120, 
-              color: 'var(--gold)', textShadow: '0 0 40px rgba(240,195,45,0.4)',
-              lineHeight: 1
-            }}>
-              {state === 'reveal_nationality' && revealedCard.nationality}
-              {state === 'reveal_position' && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Shield size={120} style={{ marginBottom: 20 }} />
-                  {revealedCard.position}
-                </div>
-              )}
-              {state === 'reveal_club' && revealedCard.club}
-            </div>
+            {state === 'reveal_nationality' && (
+              <motion.div key="nat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 3, opacity: 0.6, marginBottom: 8 }}>PLAYER NATIONALITY</div>
+                <div style={{ fontSize: 44, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 4 }}>{revealedCard.template.nationality}</div>
+              </motion.div>
+            )}
+
+            {state === 'reveal_position' && (
+              <motion.div key="pos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 3, opacity: 0.6, marginBottom: 8 }}>FIELD POSITION</div>
+                <div style={{ fontSize: 44, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 4, color: 'var(--gold)' }}>{revealedCard.template.position}</div>
+              </motion.div>
+            )}
+
+            {state === 'reveal_club' && (
+              <motion.div key="club" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 3, opacity: 0.6, marginBottom: 8 }}>PROFESSIONAL CLUB</div>
+                <div style={{ fontSize: 44, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 4 }}>{revealedCard.template.club}</div>
+              </motion.div>
+            )}
           </motion.div>
         )}
 
@@ -384,7 +384,7 @@ const Packs = () => {
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 40 }}
           >
             {/* Walkout banner */}
-            {(revealedCard.ovr >= 110 || revealedCard.season === 'ICON') && (
+            {(revealedCard.template.ovr >= 110 || revealedCard.template.season === 'ICON') && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -400,7 +400,7 @@ const Packs = () => {
                   textAlign: 'center',
                 }}
               >
-                ✨ SPECTACULAR PULL — {revealedCard.season} LEGEND ✨
+                ✨ SPECTACULAR PULL — {revealedCard.template.season} LEGEND ✨
               </motion.div>
             )}
 
@@ -411,7 +411,7 @@ const Packs = () => {
               transition={{ type: 'spring', stiffness: 200, damping: 20 }}
               style={{ perspective: 1000 }}
             >
-              <PlayerCard player={revealedCard} size="large" />
+              <PlayerCard player={revealedCard.template} size="large" upgradeLevel={revealedCard.upgradeLevel || 1} />
             </motion.div>
 
             {/* Action buttons */}
