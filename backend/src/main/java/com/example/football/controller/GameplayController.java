@@ -13,7 +13,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/gameplay")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class GameplayController {
 
     private final MatchService matchService;

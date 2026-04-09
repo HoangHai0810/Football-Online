@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/squad")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class SquadController {
 
     private final SquadFormationRepository squadRepo;

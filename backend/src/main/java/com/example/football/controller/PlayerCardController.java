@@ -13,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/cards")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class PlayerCardController {
 
     private final PlayerCardService playerCardService;

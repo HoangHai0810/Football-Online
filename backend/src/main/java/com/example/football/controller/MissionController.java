@@ -13,7 +13,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/missions")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class MissionController {
 
     private final MissionService missionService;
