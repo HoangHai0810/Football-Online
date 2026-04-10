@@ -7,6 +7,7 @@ import com.example.football.entity.Users;
 import com.example.football.entity.MissionType;
 import com.example.football.repository.UserRepository;
 import com.example.football.service.MissionService;
+import com.example.football.service.StartupService;
 import com.example.football.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
     private final MissionService missionService;
+    private final StartupService startupService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody AuthRequest request) {
@@ -46,6 +48,8 @@ public class AuthController {
                 .build();
 
         userRepository.save(user);
+        startupService.initializeNewUser(user);
+        
         String token = jwtUtils.generateToken(user);
         
         try {

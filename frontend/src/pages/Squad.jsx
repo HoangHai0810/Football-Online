@@ -159,7 +159,7 @@ const PitchNode = ({ slotInfo, card, onDrop, onSelect, active, sourceSlot }) => 
           {player ? player.name.split(' ').pop() : slotInfo.pos}
         </div>
         <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.65)', textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
-          {slotInfo.pos}
+          {slotInfo.pos} {player && player.position !== slotInfo.pos && <span style={{ color: 'var(--gold)', fontWeight: 700 }}>({player.position})</span>}
         </div>
       </div>
     </div>

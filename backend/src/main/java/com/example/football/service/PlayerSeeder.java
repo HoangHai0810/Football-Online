@@ -34,7 +34,7 @@ public class PlayerSeeder {
         new RealPlayer("Diego Maradona", "Argentina", "Napoli", Position.CAM),
         new RealPlayer("Johan Cruyff", "Netherlands", "FC Barcelona", Position.CF),
         new RealPlayer("Ronaldinho", "Brazil", "FC Barcelona", Position.LW),
-        new RealPlayer("Ronaldo Nazário", "Brazil", "Real Madrid", Position.ST),
+        new RealPlayer("Ronaldo", "Brazil", "Real Madrid", Position.ST),
         new RealPlayer("Zinedine Zidane", "France", "Real Madrid", Position.CAM),
         new RealPlayer("Paolo Maldini", "Italy", "AC Milan", Position.CB),
         new RealPlayer("Lev Yashin", "Russia", "Dynamo Moscow", Position.GK),
@@ -255,7 +255,7 @@ public class PlayerSeeder {
     );
 
     private static final String[] GENERIC_FIRST = {"James", "Lucas", "Tom", "Oliver", "Noah", "Liam", "Ethan", "Mason", "Jack", "William", "Ben", "Daniel", "Matthew", "John", "Paul"};
-    private static final String[] GENERIC_LAST = {"Jones", "Smith", "Taylor", "Brown", "Wilson", "Evans", "White", "Walker", "Roberts", "Green", "Hall", "Thomas", "Baker", "Hill"};
+    private static final String[] GENERIC_LAST = {"Adams", "Clark", "Wright", "Mitchell", "Carter", "Phillips", "Campbell", "Parker", "Turner", "Collins", "Edwards", "Stewart", "Morris", "Rogers", "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox", "Howard", "Ward", "Torres", "Peterson", "Gray", "Ramirez"};
     private static final String[] COUNTRIES = {"Brazil", "France", "England", "Germany", "Spain", "Italy", "Argentina", "Portugal", "Netherlands", "Belgium", "USA", "Japan", "Vietnam"};
     private static final String[] CLUBS = {"Real Madrid", "Man City", "Liverpool", "Barcelona", "Bayern Munich", "PSG", "Arsenal", "Inter Milan", "AC Milan", "Man Utd", "Chelsea", "Dortmund", "Ajax"};
 
@@ -267,7 +267,7 @@ public class PlayerSeeder {
         // 1. Seed Elite/Icon Players first
         for (RealPlayer rp : ELITE_PLAYERS) {
             int ovr = 88 + random.nextInt(10);
-            if (rp.name.equals("Pelé") || rp.name.equals("Maradona") || rp.name.equals("Zidane")) ovr = 110 + random.nextInt(5);
+            if (rp.name.equals("Pelé") || rp.name.equals("Maradona") || rp.name.equals("Zidane")) ovr = 110 + random.nextInt(4);
             
             players.add(createPlayer(rp.name, rp.pos, rp.nationality, rp.club, ovr));
         }

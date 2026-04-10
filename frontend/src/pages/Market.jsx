@@ -35,6 +35,9 @@ const Market = () => {
   const [search, setSearch] = useState('');
   const [filterSeason, setFilterSeason] = useState('ALL');
   const [filterPos, setFilterPos] = useState('ALL');
+  const [ovrMin, setOvrMin] = useState('');
+  const [ovrMax, setOvrMax] = useState('');
+  const [sortBy, setSortBy] = useState('OVR_DESC');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
   const [buying, setBuying] = useState(false);
@@ -52,14 +55,26 @@ const Market = () => {
   }, []);
 
   const filtered = useMemo(() => {
-    return players.filter(p => {
+    let result = players.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(search.toLowerCase())
         || (p.nationality || '').toLowerCase().includes(search.toLowerCase());
       const matchSeason = filterSeason === 'ALL' || p.season === filterSeason;
       const matchPos = filterPos === 'ALL' || p.position === filterPos;
-      return matchSearch && matchSeason && matchPos;
+      const matchOvrMin = !ovrMin || p.ovr >= parseInt(ovrMin);
+      const matchOvrMax = !ovrMax || p.ovr <= parseInt(ovrMax);
+      return matchSearch && matchSeason && matchPos && matchOvrMin && matchOvrMax;
     });
-  }, [players, search, filterSeason, filterPos]);
+
+    result.sort((a, b) => {
+      if (sortBy === 'OVR_DESC') return b.ovr - a.ovr;
+      if (sortBy === 'OVR_ASC') return a.ovr - b.ovr;
+      if (sortBy === 'PRICE_DESC') return calculatePrice(b.ovr) - calculatePrice(a.ovr);
+      if (sortBy === 'PRICE_ASC') return calculatePrice(a.ovr) - calculatePrice(b.ovr);
+      return 0; // Default or NAME_ASC could be added
+    });
+
+    return result;
+  }, [players, search, filterSeason, filterPos, ovrMin, ovrMax, sortBy]);
 
   const buyPlayer = async (player) => {
     if (!user) {
@@ -137,6 +152,41 @@ const Market = () => {
           {positions.map(p => (
             <option key={p} value={p} style={{ background: '#0a1020' }}>{p}</option>
           ))}
+        </select>
+
+        {/* OVR Range */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: '#888' }}>OVR:</span>
+            <input
+                type="number"
+                className="form-input"
+                style={{ width: 70, padding: '10px' }}
+                placeholder="Min"
+                value={ovrMin}
+                onChange={e => setOvrMin(e.target.value)}
+            />
+            <span style={{ color: '#888' }}>-</span>
+            <input
+                type="number"
+                className="form-input"
+                style={{ width: 70, padding: '10px' }}
+                placeholder="Max"
+                value={ovrMax}
+                onChange={e => setOvrMax(e.target.value)}
+            />
+        </div>
+
+        {/* Sort */}
+        <select
+          className="form-input"
+          style={{ width: 160, padding: '10px 14px', marginLeft: 'auto' }}
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value)}
+        >
+          <option value="OVR_DESC" style={{ background: '#0a1020' }}>Highest OVR</option>
+          <option value="OVR_ASC" style={{ background: '#0a1020' }}>Lowest OVR</option>
+          <option value="PRICE_DESC" style={{ background: '#0a1020' }}>Highest Price</option>
+          <option value="PRICE_ASC" style={{ background: '#0a1020' }}>Lowest Price</option>
         </select>
 
         {/* View Toggle */}

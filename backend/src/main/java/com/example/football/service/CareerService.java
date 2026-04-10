@@ -78,6 +78,24 @@ public class CareerService {
         career.setCurrentWeek(career.getCurrentWeek() + 1);
         if (career.getCurrentWeek() > 38) { // End of season
             awardTrophies(league, career.getUser(), career.getCurrentSeason());
+            
+            // Handle Promotion/Relegation
+            List<TournamentStanding> standings = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(league);
+            int userRank = -1;
+            for (int i = 0; i < standings.size(); i++) {
+                if (standings.get(i).isUserTeam()) {
+                    userRank = i + 1;
+                    break;
+                }
+            }
+
+            if (userRank != -1) {
+                if (userRank <= 3 && career.getCurrentTier() > 1) {
+                    career.setCurrentTier(career.getCurrentTier() - 1); // Promote
+                } else if (userRank >= 18 && career.getCurrentTier() < 3) {
+                    career.setCurrentTier(career.getCurrentTier() + 1); // Relegate
+                }
+            }
 
             career.setCurrentWeek(1);
             career.setCurrentSeason(career.getCurrentSeason() + 1);

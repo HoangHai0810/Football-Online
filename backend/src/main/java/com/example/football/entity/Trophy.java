@@ -2,34 +2,35 @@ package com.example.football.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_careers")
+@Table(name = "trophies")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserCareer {
+public class Trophy {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnore
     private Users user;
 
     @Column(nullable = false)
-    @Builder.Default
-    private Integer currentSeason = 1;
+    private String tournamentName;
 
     @Column(nullable = false)
-    @Builder.Default
-    private Integer currentWeek = 1;
+    private Integer seasonIndex;
 
     @Column(nullable = false)
+    private String rank; // "WINNER", "RUNNER_UP", "TOP_4"
+
     @Builder.Default
-    private Integer currentTier = 3;
+    private LocalDateTime wonAt = LocalDateTime.now();
 }

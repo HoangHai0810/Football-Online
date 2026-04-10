@@ -94,7 +94,7 @@ const PACKS = [
   {
     id: 'toty_upgrade',
     name: 'TOTY UPGRADE PACK',
-    description: 'The ultimate Team of the Year pack. Guaranteed TOTY player dropping between +2 to +5.',
+    description: 'The ultimate Team of the Year pack. Guaranteed TOTY player +2 to +5.',
     price: 125000,
     guaranteed: '+2 TO +5 TOTY SEASON',
     season: 'TOTY',

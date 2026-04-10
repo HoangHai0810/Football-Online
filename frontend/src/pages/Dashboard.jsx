@@ -134,7 +134,7 @@ const Dashboard = () => {
     { to: '/squad', icon: Users, title: 'MY SQUAD', desc: 'Manage your 11 starters, formations, and tactical setup.', color: '#40c4ff' },
     { to: '/packs', icon: Package, title: 'OPEN PACKS', desc: 'Try your luck with elite player packs — ICON guaranteed.', color: '#f0c32d' },
     { to: '/market', icon: ShoppingCart, title: 'TRANSFER MARKET', desc: 'Browse and recruit world-class talents for your club.', color: '#00e676' },
-    { to: '/packs', icon: Trophy, title: 'TROPHIES', desc: 'View your achievements, streaks, and season ranking.', color: '#ff6b6b' },
+    { to: '/trophies', icon: Trophy, title: 'TROPHIES', desc: 'View your achievements, streaks, and season ranking.', color: '#ff6b6b' },
   ];
 
   return (
