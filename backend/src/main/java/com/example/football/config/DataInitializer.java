@@ -33,26 +33,36 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
+        // 1. Clean up corrupted templates if any
         long corruptedCount = repository.findAll().stream()
                 .filter(t -> t.getPace() == null || t.getOvr() == null || t.getAcceleration() == null)
                 .count();
         
         if (corruptedCount > 0) {
-            System.out.println("Found " + corruptedCount + " corrupted or incomplete templates. Purging database to re-seed...");
+            System.out.println("DataInitializer: Found corrupted templates. Purging...");
             playerCardRepository.deleteAll();
             repository.deleteAll();
         }
 
-        if (repository.count() == 0) {
+        // 2. Seed players if count is low (ensure we have enough for packs)
+        if (repository.count() < 500) {
+            System.out.println("DataInitializer: Seeding players...");
             seedPlayers();
             playerSeeder.seedOneThousandPlayers();
         }
         
-        if (missionRepository.count() == 0) {
+        // 3. Sync Missions
+        if (missionRepository.count() < 10) {
+            System.out.println("DataInitializer: Syncing missions...");
+            missionRepository.deleteAll();
             seedMissions();
         }
 
-        if (aiClubRepository.count() == 0) {
+        // 4. Sync AI Clubs (Important for Tiered League)
+        // If we don't have exactly 60 clubs (20 per tier), we refresh them
+        if (aiClubRepository.count() != 60) {
+            System.out.println("DataInitializer: Refreshing AI Clubs to match tiered system (60 clubs)...");
+            aiClubRepository.deleteAll();
             seedAiClubs();
         }
     }
@@ -212,77 +222,85 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedAiClubs() {
-        if (aiClubRepository.count() > 0) return;
-
-        List<AiClub> clubs = new ArrayList<>();
-
+        // We want to ensure we have our 60 specific clubs. 
+        // We check by name to avoid duplicates and preserve IDs for foreign keys.
+        List<AiClub> newClubs = new ArrayList<>();
+        
         // Tier 1: Elite Clubs (95-105 OVR)
-        clubs.add(AiClub.builder().name("Real Madrid").leagueTier(1).baseOvr(105).build());
-        clubs.add(AiClub.builder().name("Manchester City").leagueTier(1).baseOvr(104).build());
-        clubs.add(AiClub.builder().name("Liverpool").leagueTier(1).baseOvr(103).build());
-        clubs.add(AiClub.builder().name("Bayern Munchen").leagueTier(1).baseOvr(102).build());
-        clubs.add(AiClub.builder().name("Inter Milan").leagueTier(1).baseOvr(101).build());
-        clubs.add(AiClub.builder().name("Paris SG").leagueTier(1).baseOvr(100).build());
-        clubs.add(AiClub.builder().name("Arsenal").leagueTier(1).baseOvr(99).build());
-        clubs.add(AiClub.builder().name("Barcelona").leagueTier(1).baseOvr(98).build());
-        clubs.add(AiClub.builder().name("Atletico").leagueTier(1).baseOvr(97).build());
-        clubs.add(AiClub.builder().name("Bayer Leverkusen").leagueTier(1).baseOvr(96).build());
-        clubs.add(AiClub.builder().name("Stuttgart").leagueTier(1).baseOvr(95).build());
-        clubs.add(AiClub.builder().name("Aston Villa").leagueTier(1).baseOvr(95).build());
-        clubs.add(AiClub.builder().name("AC Milan").leagueTier(1).baseOvr(96).build());
-        clubs.add(AiClub.builder().name("Juventus").leagueTier(1).baseOvr(97).build());
-        clubs.add(AiClub.builder().name("Dortmund").leagueTier(1).baseOvr(98).build());
-        clubs.add(AiClub.builder().name("RB Leipzig").leagueTier(1).baseOvr(96).build());
-        clubs.add(AiClub.builder().name("Tottenham").leagueTier(1).baseOvr(95).build());
-        clubs.add(AiClub.builder().name("Man United").leagueTier(1).baseOvr(96).build());
-        clubs.add(AiClub.builder().name("Newcastle").leagueTier(1).baseOvr(95).build());
-        clubs.add(AiClub.builder().name("Napoli").leagueTier(1).baseOvr(96).build());
+        addOrUpdateClub(newClubs, "Real Madrid", 1, 105);
+        addOrUpdateClub(newClubs, "Manchester City", 1, 104);
+        addOrUpdateClub(newClubs, "Liverpool", 1, 103);
+        addOrUpdateClub(newClubs, "Bayern Munchen", 1, 102);
+        addOrUpdateClub(newClubs, "Inter Milan", 1, 101);
+        addOrUpdateClub(newClubs, "Paris SG", 1, 100);
+        addOrUpdateClub(newClubs, "Arsenal", 1, 99);
+        addOrUpdateClub(newClubs, "Barcelona", 1, 98);
+        addOrUpdateClub(newClubs, "Atletico", 1, 97);
+        addOrUpdateClub(newClubs, "Bayer Leverkusen", 1, 96);
+        addOrUpdateClub(newClubs, "Stuttgart", 1, 95);
+        addOrUpdateClub(newClubs, "Aston Villa", 1, 95);
+        addOrUpdateClub(newClubs, "AC Milan", 1, 96);
+        addOrUpdateClub(newClubs, "Juventus", 1, 97);
+        addOrUpdateClub(newClubs, "Dortmund", 1, 98);
+        addOrUpdateClub(newClubs, "RB Leipzig", 1, 96);
+        addOrUpdateClub(newClubs, "Tottenham", 1, 95);
+        addOrUpdateClub(newClubs, "Man United", 1, 96);
+        addOrUpdateClub(newClubs, "Newcastle", 1, 95);
+        addOrUpdateClub(newClubs, "Napoli", 1, 96);
 
         // Tier 2: Mid-tier Clubs (80-94 OVR)
-        clubs.add(AiClub.builder().name("Leicester City").leagueTier(2).baseOvr(88).build());
-        clubs.add(AiClub.builder().name("Southampton").leagueTier(2).baseOvr(85).build());
-        clubs.add(AiClub.builder().name("Ipswich Town").leagueTier(2).baseOvr(82).build());
-        clubs.add(AiClub.builder().name("Burnley").leagueTier(2).baseOvr(86).build());
-        clubs.add(AiClub.builder().name("Luton Town").leagueTier(2).baseOvr(83).build());
-        clubs.add(AiClub.builder().name("Sheffield Utd").leagueTier(2).baseOvr(82).build());
-        clubs.add(AiClub.builder().name("Leeds United").leagueTier(2).baseOvr(87).build());
-        clubs.add(AiClub.builder().name("West Brom").leagueTier(2).baseOvr(84).build());
-        clubs.add(AiClub.builder().name("Norwich City").leagueTier(2).baseOvr(84).build());
-        clubs.add(AiClub.builder().name("Hull City").leagueTier(2).baseOvr(81).build());
-        clubs.add(AiClub.builder().name("Middlesbrough").leagueTier(2).baseOvr(83).build());
-        clubs.add(AiClub.builder().name("Coventry City").leagueTier(2).baseOvr(82).build());
-        clubs.add(AiClub.builder().name("Preston").leagueTier(2).baseOvr(80).build());
-        clubs.add(AiClub.builder().name("Bristol City").leagueTier(2).baseOvr(80).build());
-        clubs.add(AiClub.builder().name("Cardiff City").leagueTier(2).baseOvr(81).build());
-        clubs.add(AiClub.builder().name("Swansea City").leagueTier(2).baseOvr(82).build());
-        clubs.add(AiClub.builder().name("Watford").leagueTier(2).baseOvr(83).build());
-        clubs.add(AiClub.builder().name("Sunderland").leagueTier(2).baseOvr(84).build());
-        clubs.add(AiClub.builder().name("Plymouth Argyle").leagueTier(2).baseOvr(80).build());
-        clubs.add(AiClub.builder().name("QPR").leagueTier(2).baseOvr(81).build());
+        addOrUpdateClub(newClubs, "Leicester City", 2, 88);
+        addOrUpdateClub(newClubs, "Southampton", 2, 85);
+        addOrUpdateClub(newClubs, "Ipswich Town", 2, 82);
+        addOrUpdateClub(newClubs, "Burnley", 2, 86);
+        addOrUpdateClub(newClubs, "Luton Town", 2, 83);
+        addOrUpdateClub(newClubs, "Sheffield Utd", 2, 82);
+        addOrUpdateClub(newClubs, "Leeds United", 2, 87);
+        addOrUpdateClub(newClubs, "West Brom", 2, 84);
+        addOrUpdateClub(newClubs, "Norwich City", 2, 84);
+        addOrUpdateClub(newClubs, "Hull City", 2, 81);
+        addOrUpdateClub(newClubs, "Middlesbrough", 2, 83);
+        addOrUpdateClub(newClubs, "Coventry City", 2, 82);
+        addOrUpdateClub(newClubs, "Preston", 2, 80);
+        addOrUpdateClub(newClubs, "Bristol City", 2, 80);
+        addOrUpdateClub(newClubs, "Cardiff City", 2, 81);
+        addOrUpdateClub(newClubs, "Swansea City", 2, 82);
+        addOrUpdateClub(newClubs, "Watford", 2, 83);
+        addOrUpdateClub(newClubs, "Sunderland", 2, 84);
+        addOrUpdateClub(newClubs, "Plymouth Argyle", 2, 80);
+        addOrUpdateClub(newClubs, "QPR", 2, 81);
 
-        // Tier 3: Lower-tier Clubs (70-79 OVR) - Including V-League teams
-        clubs.add(AiClub.builder().name("Ha Noi FC").leagueTier(3).baseOvr(79).build());
-        clubs.add(AiClub.builder().name("Viettel FC").leagueTier(3).baseOvr(78).build());
-        clubs.add(AiClub.builder().name("CAHN FC").leagueTier(3).baseOvr(79).build());
-        clubs.add(AiClub.builder().name("Thep Xanh Nam Dinh").leagueTier(3).baseOvr(77).build());
-        clubs.add(AiClub.builder().name("LPBank HAGL").leagueTier(3).baseOvr(72).build());
-        clubs.add(AiClub.builder().name("Becamex Binh Duong").leagueTier(3).baseOvr(75).build());
-        clubs.add(AiClub.builder().name("Hai Phong FC").leagueTier(3).baseOvr(74).build());
-        clubs.add(AiClub.builder().name("Dong A Thanh Hoa").leagueTier(3).baseOvr(74).build());
-        clubs.add(AiClub.builder().name("Song Lam Nghe An").leagueTier(3).baseOvr(73).build());
-        clubs.add(AiClub.builder().name("TP.HCM FC").leagueTier(3).baseOvr(72).build());
-        clubs.add(AiClub.builder().name("Hong Linh Ha Tinh").leagueTier(3).baseOvr(71).build());
-        clubs.add(AiClub.builder().name("Quang Nam FC").leagueTier(3).baseOvr(70).build());
-        clubs.add(AiClub.builder().name("Khanh Hoa FC").leagueTier(3).baseOvr(70).build());
-        clubs.add(AiClub.builder().name("MerryLand Quy Nhon").leagueTier(3).baseOvr(73).build());
-        clubs.add(AiClub.builder().name("Da Nang FC").leagueTier(3).baseOvr(71).build());
-        clubs.add(AiClub.builder().name("PVF-CAND").leagueTier(3).baseOvr(70).build());
-        clubs.add(AiClub.builder().name("Wrexham AFC").leagueTier(3).baseOvr(72).build());
-        clubs.add(AiClub.builder().name("Stockport County").leagueTier(3).baseOvr(71).build());
-        clubs.add(AiClub.builder().name("Mansfield Town").leagueTier(3).baseOvr(70).build());
-        clubs.add(AiClub.builder().name("MK Dons").leagueTier(3).baseOvr(70).build());
+        // Tier 3: Lower-tier Clubs (70-79 OVR)
+        addOrUpdateClub(newClubs, "Ha Noi FC", 3, 79);
+        addOrUpdateClub(newClubs, "Viettel FC", 3, 78);
+        addOrUpdateClub(newClubs, "CAHN FC", 3, 79);
+        addOrUpdateClub(newClubs, "Thep Xanh Nam Dinh", 3, 77);
+        addOrUpdateClub(newClubs, "LPBank HAGL", 3, 72);
+        addOrUpdateClub(newClubs, "Becamex Binh Duong", 3, 75);
+        addOrUpdateClub(newClubs, "Hai Phong FC", 3, 74);
+        addOrUpdateClub(newClubs, "Dong A Thanh Hoa", 3, 74);
+        addOrUpdateClub(newClubs, "Song Lam Nghe An", 3, 73);
+        addOrUpdateClub(newClubs, "TP.HCM FC", 3, 72);
+        addOrUpdateClub(newClubs, "Hong Linh Ha Tinh", 3, 71);
+        addOrUpdateClub(newClubs, "Quang Nam FC", 3, 70);
+        addOrUpdateClub(newClubs, "Khanh Hoa FC", 3, 70);
+        addOrUpdateClub(newClubs, "MerryLand Quy Nhon", 3, 73);
+        addOrUpdateClub(newClubs, "Da Nang FC", 3, 71);
+        addOrUpdateClub(newClubs, "PVF-CAND", 3, 70);
+        addOrUpdateClub(newClubs, "Wrexham AFC", 3, 72);
+        addOrUpdateClub(newClubs, "Stockport County", 3, 71);
+        addOrUpdateClub(newClubs, "Mansfield Town", 3, 70);
+        addOrUpdateClub(newClubs, "MK Dons", 3, 70);
 
-        aiClubRepository.saveAll(clubs);
-        System.out.println("Seeded database with 60 AI Clubs across 3 Tiers.");
+        aiClubRepository.saveAll(newClubs);
+        System.out.println("DataInitializer: Synced 60 AI Clubs (Upsert).");
+    }
+
+    private void addOrUpdateClub(List<AiClub> list, String name, int tier, int ovr) {
+        AiClub club = aiClubRepository.findByName(name).orElse(new AiClub());
+        club.setName(name);
+        club.setLeagueTier(tier);
+        club.setBaseOvr(ovr);
+        list.add(club);
     }
 }
