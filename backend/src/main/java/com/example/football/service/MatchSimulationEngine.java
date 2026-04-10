@@ -84,6 +84,22 @@ public class MatchSimulationEngine {
         }
 
         fixture.setPlayed(true);
+
+        // Check if user was eliminated (Knockout only)
+        if (fixture.isKnockout()) {
+            boolean userLost = false;
+            if (fixture.isHomeIsUser()) {
+                if (fixture.getHomeScore() < fixture.getAwayScore()) userLost = true;
+                if (fixture.getHomePenaltyScore() != null && fixture.getHomePenaltyScore() < fixture.getAwayPenaltyScore()) userLost = true;
+            } else if (fixture.isAwayIsUser()) {
+                if (fixture.getAwayScore() < fixture.getHomeScore()) userLost = true;
+                if (fixture.getAwayPenaltyScore() != null && fixture.getAwayPenaltyScore() < fixture.getHomePenaltyScore()) userLost = true;
+            }
+
+            if (userLost) {
+                fixture.getTournament().setIsEliminated(true);
+            }
+        }
     }
 
     private int getHomeOvr(MatchFixture fixture) {

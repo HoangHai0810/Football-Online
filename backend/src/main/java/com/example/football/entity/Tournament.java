@@ -33,6 +33,10 @@ public class Tournament {
     @Builder.Default
     private Boolean isCompleted = false;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isEliminated = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @com.fasterxml.jackson.annotation.JsonIgnore

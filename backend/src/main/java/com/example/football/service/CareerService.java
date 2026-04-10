@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -58,6 +59,12 @@ public class CareerService {
         return fixtureRepository.findByTournamentAndMatchWeek(tournament, week);
     }
 
+    public List<MatchFixture> getAllFixturesByTournament(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
+        return fixtureRepository.findByTournament(tournament);
+    }
+
     @Transactional
     public Map<String, Object> advanceWeek(Long userId) {
         UserCareer career = getCareerByUserId(userId);
@@ -75,17 +82,21 @@ public class CareerService {
         }
         fixtureRepository.saveAll(allCurrentFixtures);
 
+        // Process Knockout Advancement
+        for (Tournament t : activeTournaments) {
+            if (t.getType().equals("CUP") || t.getType().equals("CONTINENTAL") || t.getType().equals("SUPER_CUP")) {
+                processKnockoutAdvancement(t, career.getCurrentWeek());
+            }
+        }
+
         // Advance career week
         career.setCurrentWeek(career.getCurrentWeek() + 1);
         
         if (career.getCurrentWeek() > 38) { // End of season
             for (Tournament t : activeTournaments) {
+                awardTournamentRewards(t, career.getUser());
                 if (t.getType().equals("LEAGUE")) {
-                    awardTrophies(t, career.getUser(), career.getCurrentSeason());
-                    handleLeagueProgression(t, career);
-                } else if (t.getType().equals("CUP") || t.getType().equals("CONTINENTAL")) {
-                    // Specific logic for final matches could be added here
-                    awardTrophies(t, career.getUser(), career.getCurrentSeason());
+                    handleLeaguePromotionAndRelegation(t, career);
                 }
                 t.setIsCompleted(true);
             }
@@ -104,7 +115,106 @@ public class CareerService {
         );
     }
 
-    private void handleLeagueProgression(Tournament league, UserCareer career) {
+    private void processKnockoutAdvancement(Tournament tournament, int currentWeek) {
+        // Defined weeks for rounds: 2 (R16), 12 (Quarter), 22 (Semi), 32 (Final)
+        int nextWeek;
+        if (currentWeek == 2) nextWeek = 12;
+        else if (currentWeek == 12) nextWeek = 22;
+        else if (currentWeek == 22) nextWeek = 32;
+        else return; // Not a knockout advancement week or already Final
+
+        List<MatchFixture> currentFixtures = fixtureRepository.findByTournamentAndMatchWeek(tournament, currentWeek);
+        if (currentFixtures.isEmpty()) return;
+
+        // Ensure all matches in the current round are played
+        boolean allPlayed = currentFixtures.stream().allMatch(MatchFixture::isPlayed);
+        if (!allPlayed) return;
+
+        // Collect winners
+        List<Object> winners = new ArrayList<>();
+        for (MatchFixture f : currentFixtures) {
+            if (f.isUserWinner()) {
+                winners.add(tournament.getUser());
+            } else {
+                AiClub winnerAi = f.getWinnerAiClub();
+                if (winnerAi != null) winners.add(winnerAi);
+            }
+        }
+
+        // Shuffle and pair for next round
+        java.util.Collections.shuffle(winners);
+        for (int i = 0; i < winners.size(); i += 2) {
+            if (i + 1 < winners.size()) {
+                saveFixture(tournament, nextWeek, winners.get(i), winners.get(i+1), true);
+            }
+        }
+    }
+
+    private void saveFixture(Tournament tournament, int week, Object home, Object away, boolean isKnockout) {
+        MatchFixture fixture = MatchFixture.builder()
+                .tournament(tournament).matchWeek(week).isKnockout(isKnockout)
+                .homeUser(home instanceof Users ? (Users) home : null)
+                .homeAiClub(home instanceof AiClub ? (AiClub) home : null)
+                .homeIsUser(home instanceof Users)
+                .awayUser(away instanceof Users ? (Users) away : null)
+                .awayAiClub(away instanceof AiClub ? (AiClub) away : null)
+                .awayIsUser(away instanceof Users)
+                .build();
+        fixtureRepository.save(fixture);
+    }
+
+    private void awardTournamentRewards(Tournament tournament, Users user) {
+        long rewardAmount = 0;
+        String reason = "Tournament Reward: " + tournament.getName();
+
+        if (tournament.getType().equals("LEAGUE")) {
+            List<TournamentStanding> standings = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(tournament);
+            for (int i = 0; i < standings.size(); i++) {
+                if (standings.get(i).isUserTeam()) {
+                    int rank = i + 1;
+                    if (rank == 1) rewardAmount = 500000;
+                    else if (rank == 2) rewardAmount = 200000;
+                    else if (rank <= 4) rewardAmount = 100000;
+                    else if (rank <= 10) rewardAmount = 50000;
+                    reason += " (Rank " + rank + ")";
+                    break;
+                }
+            }
+        } else {
+            // Knockout Reward based on furthest round reached
+            List<MatchFixture> userFixtures = fixtureRepository.findByTournament(tournament).stream()
+                    .filter(f -> f.isHomeIsUser() || f.isAwayIsUser())
+                    .sorted((a,b) -> b.getMatchWeek() - a.getMatchWeek())
+                    .toList();
+
+            if (!userFixtures.isEmpty()) {
+                MatchFixture lastMatch = userFixtures.get(0);
+                boolean wonLast = lastMatch.isUserWinner();
+                
+                if (lastMatch.getMatchWeek() == 32) { // Final
+                    if (wonLast) {
+                        rewardAmount = tournament.getType().equals("CONTINENTAL") ? 1000000 : 300000;
+                        reason += " (WINNER)";
+                    } else {
+                        rewardAmount = tournament.getType().equals("CONTINENTAL") ? 400000 : 100000;
+                        reason += " (RUNNER-UP)";
+                    }
+                } else if (lastMatch.getMatchWeek() == 22 && wonLast) { /* Handled in Final */ }
+                else if (lastMatch.getMatchWeek() == 22) { rewardAmount = 50000; reason += " (Semi-Finalist)"; }
+            }
+        }
+
+        if (rewardAmount > 0) {
+            user.setCoins(user.getCoins() + rewardAmount);
+            userRepository.save(user);
+            // Optionally save to quest/history, but for now just update coins
+        }
+        
+        // Finalize Trophy entry
+        awardTrophies(tournament, user, tournament.getSeasonIndex());
+    }
+
+    private void handleLeaguePromotionAndRelegation(Tournament league, UserCareer career) {
         List<TournamentStanding> standings = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(league);
         int userRank = -1;
         for (int i = 0; i < standings.size(); i++) {

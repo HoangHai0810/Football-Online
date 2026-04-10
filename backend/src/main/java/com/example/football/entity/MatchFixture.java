@@ -57,12 +57,38 @@ public class MatchFixture {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "home_user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Users homeUser;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "away_user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Users awayUser;
 
     private Integer homeScore;
     private Integer awayScore;
+
+    public boolean isUserWinner() {
+        if (!played) return false;
+        if (homeIsUser) {
+            if (homeScore > awayScore) return true;
+            if (homePenaltyScore != null && homePenaltyScore > awayPenaltyScore) return true;
+        } else if (awayIsUser) {
+            if (awayScore > homeScore) return true;
+            if (awayPenaltyScore != null && awayPenaltyScore > homePenaltyScore) return true;
+        }
+        return false;
+    }
+
+    public AiClub getWinnerAiClub() {
+        if (!played) return null;
+        if (isUserWinner()) return null;
+        
+        if (homeScore > awayScore) return homeAiClub;
+        if (awayScore > homeScore) return awayAiClub;
+        if (homePenaltyScore != null && homePenaltyScore > awayPenaltyScore) return homeAiClub;
+        if (awayPenaltyScore != null && awayPenaltyScore > homePenaltyScore) return awayAiClub;
+        
+        return null;
+    }
 }

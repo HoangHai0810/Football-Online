@@ -88,7 +88,11 @@ const TournamentHub = () => {
                                 }}>
                                     <Icon size={32} color={config.color} />
                                 </div>
-                                <div className="badge badge-gold">ACTIVE</div>
+                                {tournament.isEliminated ? (
+                                    <div className="badge" style={{ background: 'rgba(255, 79, 79, 0.15)', color: '#ff4f4f', border: '1px solid rgba(255, 79, 79, 0.3)' }}>ELIMINATED</div>
+                                ) : (
+                                    <div className="badge badge-gold">ACTIVE</div>
+                                )}
                             </div>
 
                             <div>

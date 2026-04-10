@@ -44,6 +44,11 @@ public class CareerController {
         return careerService.getFixturesByWeek(tournamentId, week);
     }
 
+    @GetMapping("/fixtures/{tournamentId}")
+    public List<MatchFixture> getAllFixtures(@PathVariable Long tournamentId) {
+        return careerService.getAllFixturesByTournament(tournamentId);
+    }
+
     @PostMapping("/advance")
     public Map<String, Object> advanceWeek(@RequestParam Long userId) {
         return careerService.advanceWeek(userId);

@@ -10,5 +10,5 @@ import java.util.Optional;
 @Repository
 public interface PlayerTemplateRepository extends JpaRepository<PlayerTemplate, Long> {
     Optional<PlayerTemplate> findByName(String name);
-    Optional<PlayerTemplate> findByNameAndSeason(String name, Season season);
+    Optional<PlayerTemplate> findFirstByNameAndSeason(String name, Season season);
 }

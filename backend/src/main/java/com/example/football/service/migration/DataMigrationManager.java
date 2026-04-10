@@ -33,7 +33,7 @@ public class DataMigrationManager implements CommandLineRunner {
         // Run migrations in order
         migrations.stream()
                 .filter(m -> m.getVersion() > currentVersion)
-                .sorted((a, b) -> Integer.compare(a.getVersion(), b.getSeconds())) // sorted by version
+                .sorted((a, b) -> Integer.compare(a.getVersion(), b.getVersion())) // sorted by version
                 .forEach(this::runMigration);
     }
 

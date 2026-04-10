@@ -34,7 +34,6 @@ public class PlayerSeeder {
         new RealPlayer("Diego Maradona", "Argentina", "Napoli", Position.CAM),
         new RealPlayer("Johan Cruyff", "Netherlands", "FC Barcelona", Position.CF),
         new RealPlayer("Ronaldinho", "Brazil", "FC Barcelona", Position.LW),
-        new RealPlayer("Ronaldo", "Brazil", "Real Madrid", Position.ST),
         new RealPlayer("Zinedine Zidane", "France", "Real Madrid", Position.CAM),
         new RealPlayer("Paolo Maldini", "Italy", "AC Milan", Position.CB),
         new RealPlayer("Lev Yashin", "Russia", "Dynamo Moscow", Position.GK),
@@ -257,18 +256,21 @@ public class PlayerSeeder {
     private static final String[] GENERIC_FIRST = {"James", "Lucas", "Tom", "Oliver", "Noah", "Liam", "Ethan", "Mason", "Jack", "William", "Ben", "Daniel", "Matthew", "John", "Paul"};
     private static final String[] GENERIC_LAST = {"Adams", "Clark", "Wright", "Mitchell", "Carter", "Phillips", "Campbell", "Parker", "Turner", "Collins", "Edwards", "Stewart", "Morris", "Rogers", "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox", "Howard", "Ward", "Torres", "Peterson", "Gray", "Ramirez"};
     private static final String[] COUNTRIES = {"Brazil", "France", "England", "Germany", "Spain", "Italy", "Argentina", "Portugal", "Netherlands", "Belgium", "USA", "Japan", "Vietnam"};
-    private static final String[] CLUBS = {"Real Madrid", "Man City", "Liverpool", "Barcelona", "Bayern Munich", "PSG", "Arsenal", "Inter Milan", "AC Milan", "Man Utd", "Chelsea", "Dortmund", "Ajax"};
+    private static final String[] CLUBS_LIST = {"Real Madrid", "Man City", "Liverpool", "Barcelona", "Bayern Munich", "PSG", "Arsenal", "Inter Milan", "AC Milan", "Man Utd", "Chelsea", "Dortmund", "Ajax"};
 
     public void seedOneThousandPlayers() {
-        if (repository.count() > 300) return; // Keep our hand-seeded + standard ones
+        if (repository.count() > 300) return; 
 
         List<PlayerTemplate> players = new ArrayList<>();
         
         // 1. Seed Elite/Icon Players first
         for (RealPlayer rp : ELITE_PLAYERS) {
-            int ovr = 88 + random.nextInt(10);
-            if (rp.name.equals("Pelé") || rp.name.equals("Maradona") || rp.name.equals("Zidane")) ovr = 110 + random.nextInt(4);
-            
+            int ovr = 85 + random.nextInt(10);
+            if (rp.name.equals("Pelé") || rp.name.equals("Maradona") || rp.name.equals("Zidane") || rp.name.equals("Lionel Messi") || rp.name.equals("Ronaldo")) {
+                ovr = 105 + random.nextInt(6); // 105-110
+            } else if (ovr > 100) {
+                ovr = 100;
+            }
             players.add(createPlayer(rp.name, rp.pos, rp.nationality, rp.club, ovr));
         }
 
@@ -276,12 +278,14 @@ public class PlayerSeeder {
         int remaining = 1000 - players.size();
         for (int i = 0; i < remaining; i++) {
             int ovr = generateOvr();
+            if (ovr > 100) ovr = 95 + random.nextInt(5);
+            
             String name = GENERIC_FIRST[random.nextInt(GENERIC_FIRST.length)] + " " + GENERIC_LAST[random.nextInt(GENERIC_LAST.length)];
             Position pos = Position.values()[random.nextInt(Position.values().length)];
             String nat = COUNTRIES[random.nextInt(COUNTRIES.length)];
-            String club = CLUBS[random.nextInt(CLUBS.length)];
+            String selectedClub = CLUBS_LIST[random.nextInt(CLUBS_LIST.length)];
             
-            players.add(createPlayer(name, pos, nat, club, ovr));
+            players.add(createPlayer(name, pos, nat, selectedClub, ovr));
 
             if (players.size() >= 100) {
                 repository.saveAll(players);
