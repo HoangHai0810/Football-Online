@@ -15,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
 
+import com.example.football.entity.AiClub;
+import com.example.football.repository.AiClubRepository;
+
 @Configuration
 @RequiredArgsConstructor
 @Order(Ordered.LOWEST_PRECEDENCE)
@@ -24,6 +27,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PlayerCardRepository playerCardRepository;
     private final MissionRepository missionRepository;
     private final PlayerSeeder playerSeeder;
+    private final AiClubRepository aiClubRepository;
 
     @Override
     @Transactional
@@ -45,6 +49,10 @@ public class DataInitializer implements CommandLineRunner {
         
         if (missionRepository.count() == 0) {
             seedMissions();
+        }
+
+        if (aiClubRepository.count() == 0) {
+            seedAiClubs();
         }
     }
 
@@ -189,5 +197,32 @@ public class DataInitializer implements CommandLineRunner {
         );
         missionRepository.saveAll(missions);
         System.out.println("Seeded database with " + missions.size() + " diverse missions.");
+    }
+
+    private void seedAiClubs() {
+        List<AiClub> clubs = Arrays.asList(
+            AiClub.builder().name("Manchester Red").leagueTier(1).baseOvr(88).build(),
+            AiClub.builder().name("Manchester Blue").leagueTier(1).baseOvr(91).build(),
+            AiClub.builder().name("London Cannon").leagueTier(1).baseOvr(87).build(),
+            AiClub.builder().name("London Blues").leagueTier(1).baseOvr(85).build(),
+            AiClub.builder().name("Liverpool Red").leagueTier(1).baseOvr(89).build(),
+            AiClub.builder().name("Newcastle Stripes").leagueTier(1).baseOvr(84).build(),
+            AiClub.builder().name("Tottenham Whites").leagueTier(1).baseOvr(85).build(),
+            AiClub.builder().name("Real Madrid Blancos").leagueTier(1).baseOvr(93).build(),
+            AiClub.builder().name("Barcelona Blaugrana").leagueTier(1).baseOvr(90).build(),
+            AiClub.builder().name("Atletico Stripes").leagueTier(1).baseOvr(87).build(),
+            AiClub.builder().name("Bayern Munchen").leagueTier(1).baseOvr(92).build(),
+            AiClub.builder().name("Dortmund Yellows").leagueTier(1).baseOvr(86).build(),
+            AiClub.builder().name("Leverkusen Black").leagueTier(1).baseOvr(88).build(),
+            AiClub.builder().name("Paris SG").leagueTier(1).baseOvr(89).build(),
+            AiClub.builder().name("Monaco RedWhite").leagueTier(1).baseOvr(82).build(),
+            AiClub.builder().name("Juventus Zebras").leagueTier(1).baseOvr(86).build(),
+            AiClub.builder().name("Inter Milan").leagueTier(1).baseOvr(89).build(),
+            AiClub.builder().name("AC Milan").leagueTier(1).baseOvr(87).build(),
+            AiClub.builder().name("Napoli Blues").leagueTier(1).baseOvr(85).build(),
+            AiClub.builder().name("Ajax Godenzonen").leagueTier(1).baseOvr(81).build()
+        );
+        aiClubRepository.saveAll(clubs);
+        System.out.println("Seeded database with 20 AI Clubs.");
     }
 }
