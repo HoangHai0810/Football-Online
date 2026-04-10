@@ -454,7 +454,7 @@ const Packs = () => {
                 background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: 4, 
                 border: '1px solid rgba(255,255,255,0.2)', color: 'white' 
               }}>SPACE</div>
-              BỎ QUA
+              SKIP
             </motion.div>
           </motion.div>
         )}

@@ -106,11 +106,13 @@ public class PlayerCardService {
     }
 
     @Transactional
-    public PlayerCard upgradeCard(Long targetCardId, List<Long> materialCardIds) {
+    public com.example.football.dto.UpgradeResultDTO upgradeCard(Long targetCardId, List<Long> materialCardIds) {
         PlayerCard targetCard = playerCardRepository.findById(targetCardId)
                 .orElseThrow(() -> new RuntimeException("Target card not found"));
         
+        int originalLevel = targetCard.getUpgradeLevel();
         List<PlayerCard> materials = playerCardRepository.findAllById(materialCardIds);
+        
         if (materials.isEmpty()) {
             throw new RuntimeException("No material cards provided or found");
         }
@@ -120,35 +122,65 @@ public class PlayerCardService {
 
         double totalChance = 0;
         int targetOvr = targetCard.getTemplate().getOvr();
+        
+        // Critical Success (Jump) calculation
+        double criticalChance = 0;
+        Long templateId = targetCard.getTemplate().getId();
 
         for (PlayerCard material : materials) {
             int materialOvr = material.getTemplate().getOvr();
-            double diff = materialOvr - targetOvr;
+            double diffOvr = materialOvr - targetOvr;
 
-            double contribution = 0.2 * Math.pow(1.5, diff);
+            double contribution = 0.2 * Math.pow(1.5, diffOvr);
             totalChance += contribution;
+            
+            // Check for same-player fodder for jump chance
+            if (material.getTemplate().getId().equals(templateId)) {
+                int materialLevel = material.getUpgradeLevel();
+                double fodderChance = 0.10; // 10% base for same level
+                if (materialLevel < originalLevel) {
+                    fodderChance = 0.10 - (double)(originalLevel - materialLevel) * 0.10 / originalLevel;
+                }
+                criticalChance += Math.max(0, fodderChance);
+            }
         }
 
         totalChance = Math.min(1.0, totalChance);
         
-        double levelMultiplier = BASE_SUCCESS_RATES.getOrDefault(targetCard.getUpgradeLevel(), 0.1);
+        double levelMultiplier = BASE_SUCCESS_RATES.getOrDefault(originalLevel, 0.1);
         double finalSuccessRate = totalChance * levelMultiplier;
 
         boolean isSuccess = random.nextDouble() <= finalSuccessRate;
+        boolean isCriticalSuccess = false;
+        int intermediateLevel = originalLevel;
 
         if (isSuccess) {
-            targetCard.setUpgradeLevel(targetCard.getUpgradeLevel() + 1);
+            intermediateLevel = originalLevel + 1;
+            targetCard.setUpgradeLevel(intermediateLevel);
+            
+            // Roll for jump if same-player fodder used
+            if (criticalChance > 0 && random.nextDouble() <= criticalChance) {
+                isCriticalSuccess = true;
+                targetCard.setUpgradeLevel(targetCard.getUpgradeLevel() + 1); // Total +2 jump
+            }
         } else {
-            int currentLevel = targetCard.getUpgradeLevel();
-            if (currentLevel > 1) {
-                int dropAmount = random.nextInt(currentLevel - 1) + 1;
-                targetCard.setUpgradeLevel(Math.max(1, currentLevel - dropAmount));
+            if (originalLevel > 1) {
+                int dropAmount = random.nextInt(originalLevel - 1) + 1;
+                targetCard.setUpgradeLevel(Math.max(1, originalLevel - dropAmount));
             }
         }
 
         playerCardRepository.deleteAll(materials);
+        PlayerCard savedCard = playerCardRepository.save(targetCard);
 
-        return playerCardRepository.save(targetCard);
+        return com.example.football.dto.UpgradeResultDTO.builder()
+                .success(isSuccess)
+                .card(savedCard)
+                .originalLevel(originalLevel)
+                .intermediateLevel(intermediateLevel)
+                .criticalSuccess(isCriticalSuccess)
+                .hasJumpChance(criticalChance > 0)
+                .build();
     }
 
     @Transactional

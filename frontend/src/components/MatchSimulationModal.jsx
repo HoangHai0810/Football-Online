@@ -148,7 +148,7 @@ const MatchSimulationModal = ({ fixture, userOvr, onClose, onSimulateMatch }) =>
                             <div style={{ display: 'flex', gap: 16, flexDirection: 'column', alignItems: 'center' }}>
                                 {userOvr === 0 && (
                                     <div style={{ color: 'var(--red)', background: 'rgba(255, 0, 0, 0.1)', padding: '12px 20px', borderRadius: 12, fontSize: 14, fontWeight: 600, border: '1px solid rgba(255, 0, 0, 0.2)', marginBottom: 16, textAlign: 'center', maxWidth: 400 }}>
-                                        ⚠️ Đội hình không đủ 11 cầu thủ chính thức. Vui lòng vào mục SQUAD để sắp xếp đội hình trước khi thi đấu.
+                                        ⚠️ Incomplete lineup (need 11 players). Please visit SQUAD to set your formation before the match.
                                     </div>
                                 )}
                                 <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>

@@ -56,8 +56,8 @@ public class PlayerCardController {
     }
 
     @PostMapping("/upgrade")
-    public PlayerCard upgradeCard(@RequestParam Long targetCardId, @RequestBody List<Long> materialCardIds) {
-        PlayerCard result = playerCardService.upgradeCard(targetCardId, materialCardIds);
+    public com.example.football.dto.UpgradeResultDTO upgradeCard(@RequestParam Long targetCardId, @RequestBody List<Long> materialCardIds) {
+        com.example.football.dto.UpgradeResultDTO result = playerCardService.upgradeCard(targetCardId, materialCardIds);
         try {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
             missionService.updateProgress(username, MissionType.UPGRADE_PLAYER, 1);

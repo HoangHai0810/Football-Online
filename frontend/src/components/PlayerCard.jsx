@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Flame } from 'lucide-react';
 
 const SEASON_CLASS = {
   ICON: 'card-icon',
@@ -22,9 +23,70 @@ const getUpgradeColor = (level) => {
   return 'linear-gradient(135deg, #facc15, #a16207)';                 // Gold
 };
 
-const PlayerCard = ({ player, size = 'normal', onClick, upgradeLevel = 1 }) => {
+export const getStatBonus = (level) => {
+  switch (level) {
+    case 2: return 1;
+    case 3: return 2;
+    case 4: return 4;
+    case 5: return 6;
+    case 6: return 8;
+    case 7: return 11;
+    case 8: return 15;
+    case 9: return 18;
+    case 10: return 21;
+    default: return 0;
+  }
+};
+
+const getFlameColor = (level) => {
+  if (level <= 1) return null;
+  if (level <= 4) return '#b45309'; // Bronze
+  if (level <= 7) return '#cbd5e1'; // Silver
+  return '#facc15';                // Gold
+};
+
+const PlayerCard = ({ 
+  player, 
+  size = 'medium', 
+  onClick, 
+  upgradeLevel = 0,
+  showPurpleAura = false,
+  isFlickeringPurple = false
+}) => {
   const [hovered, setHovered] = useState(false);
   if (!player) return null;
+
+  const purpleColor = '#a855f7'; // Bright purple
+
+  // Lightning Bolt Component for Super Saiyan effect
+  const LightningBolt = ({ delay }) => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ 
+        opacity: [0, 1, 0, 1, 0],
+        scale: [0.8, 1.2, 0.9, 1.3, 1],
+        x: [0, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 20],
+        y: [0, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 20]
+      }}
+      transition={{ 
+        repeat: Infinity, 
+        duration: 0.4, 
+        delay: delay,
+        ease: "easeInOut"
+      }}
+      style={{
+        position: 'absolute',
+        zIndex: 10,
+        color: purpleColor,
+        filter: `drop-shadow(0 0 10px ${purpleColor})`,
+        pointerEvents: 'none'
+      }}
+    >
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+      </svg>
+    </motion.div>
+  );
 
   const seasonClass = SEASON_CLASS[player.season] || 'card-base';
   const seasonGlow = SEASON_GLOW[player.season] || 'rgba(102, 126, 234, 0.5)';
@@ -43,111 +105,169 @@ const PlayerCard = ({ player, size = 'normal', onClick, upgradeLevel = 1 }) => {
 
   const curr = sizes[size] || sizes.normal;
 
+  const bonus = getStatBonus(upgradeLevel);
+  const effectiveOvr = (player.ovr || 0) + bonus;
+
   const stats = [
-    { label: 'PAC', value: player.pace },
-    { label: 'SHO', value: player.shooting },
-    { label: 'PAS', value: player.passing },
-    { label: 'DRI', value: player.dribbling },
-    { label: 'DEF', value: player.defending },
-    { label: 'PHY', value: player.physical },
+    { label: 'PAC', value: (player.pace || 0) + bonus },
+    { label: 'SHO', value: (player.shooting || 0) + bonus },
+    { label: 'PAS', value: (player.passing || 0) + bonus },
+    { label: 'DRI', value: (player.dribbling || 0) + bonus },
+    { label: 'DEF', value: (player.defending || 0) + bonus },
+    { label: 'PHY', value: (player.physical || 0) + bonus },
   ];
+
+  const flameColor = getFlameColor(upgradeLevel);
 
   const initials = player.name
     ? player.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
     : '?';
 
   return (
-    <motion.div
-      className={`player-card ${seasonClass}`}
-      style={{
-        ...cardStyle,
-        boxShadow: hovered
-          ? `0 20px 60px ${seasonGlow}, 0 8px 32px rgba(0,0,0,0.5)`
-          : '0 8px 32px rgba(0,0,0,0.5)',
-        cursor: onClick ? 'pointer' : 'default',
-      }}
-      whileHover={{ y: -8, scale: 1.03 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      onClick={onClick}
-    >
-      {/* Glossy shine overlay */}
-      <div className="card-shine" />
-
-      {/* OVR + Position */}
-      <div className="card-top" style={{ 
-        position: 'absolute', 
-        top: size === 'small' ? 8 : 12, 
-        left: size === 'small' ? 8 : 12,
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="card-ovr" style={{ fontSize: curr.ovr }}>
-            {player.ovr}
-          </span>
-          <span className="card-pos" style={{ fontSize: curr.pos, marginTop: size === 'small' ? -2 : -4 }}>
-            {player.position || '—'}
-          </span>
-        </div>
-      </div>
-
-      {/* Season Badge */}
-      <div className="card-season" style={{ fontSize: curr.season, padding: '2px 6px', top: size === 'small' ? 8 : 10, right: size === 'small' ? 8 : 10 }}>
-        {player.season}
-      </div>
-
-      {/* Level Badge - Top Right Stacked */}
-      {upgradeLevel > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: size === 'small' ? 32 : 40,
-          right: size === 'small' ? 8 : 10,
-          background: getUpgradeColor(upgradeLevel),
-          color: upgradeLevel >= 5 ? '#fff' : '#000',
-          fontWeight: 800,
-          fontSize: curr.badge,
-          padding: '1px 5px',
-          borderRadius: '4px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
-          fontFamily: "'Bebas Neue', sans-serif",
-          whiteSpace: 'nowrap',
-          zIndex: 10
-        }}>
-          +{upgradeLevel}
+    <div style={{ position: 'relative', ...cardStyle, display: 'inline-block' }}>
+      {/* Super Saiyan Purple Aura & Lightning */}
+      {(showPurpleAura || isFlickeringPurple) && (
+        <div style={{ position: 'absolute', inset: -20, zIndex: -2 }}>
+          {/* Main Aura Glow */}
+          <motion.div
+            style={{
+              position: 'absolute', inset: 0,
+              borderRadius: 30,
+              background: `radial-gradient(circle, ${purpleColor}22 0%, transparent 70%)`,
+              border: `2px solid ${purpleColor}44`,
+              boxShadow: `0 0 40px ${purpleColor}66, inset 0 0 20px ${purpleColor}44`,
+            }}
+            animate={isFlickeringPurple ? {
+              opacity: [0.3, 1, 0.3, 1, 0.3],
+              scale: [1, 1.1, 1, 1.1, 1]
+            } : {
+              opacity: [0.6, 0.9, 0.6],
+              scale: [1.05, 1.15, 1.05]
+            }}
+            transition={{ repeat: Infinity, duration: isFlickeringPurple ? 0.3 : 2 }}
+          />
+          
+          {/* Lightning Bolts */}
+          {showPurpleAura && [...Array(8)].map((_, i) => (
+            <div key={i} style={{ 
+              position: 'absolute', 
+              left: `${Math.random() * 100}%`, 
+              top: `${Math.random() * 100}%` 
+            }}>
+              <LightningBolt delay={i * 0.1} />
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Player Portrait */}
-      <div className="card-portrait" style={{ bottom: curr.statsH + 4 }}>
-        <div
-          className="card-portrait-placeholder"
-          style={{
-            width: curr.portrait,
-            height: curr.portrait,
-            fontSize: curr.initials,
-          }}
-        >
-          {initials}
+      {/* Subtle Card Aura (Close to edges, not distracting) */}
+      {!showPurpleAura && !isFlickeringPurple && flameColor && (
+        <div style={{ position: 'absolute', inset: -10, zIndex: -1 }}>
+          <motion.div
+            style={{
+              position: 'absolute', inset: 0,
+              borderRadius: 20,
+              boxShadow: `0 0 40px ${flameColor}, inset 0 0 20px ${flameColor}`,
+              opacity: 0.5
+            }}
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+          />
         </div>
-      </div>
+      )}
 
-      {/* Player Name */}
-      <div className="card-name" style={{ bottom: curr.statsH + 4 }}>
-        <h3 style={{ fontSize: curr.name }}>{player.name}</h3>
-      </div>
+      <motion.div
+        className={`player-card ${seasonClass}`}
+        style={{
+          ...cardStyle,
+          boxShadow: hovered
+            ? `0 20px 60px ${seasonGlow}, 0 8px 32px rgba(0,0,0,0.5)`
+            : '0 8px 32px rgba(0,0,0,0.5)',
+          cursor: onClick ? 'pointer' : 'default',
+        }}
+        whileHover={{ y: -8, scale: 1.03 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={() => setHovered(false)}
+        onClick={onClick}
+      >
+        {/* Glossy shine overlay */}
+        <div className="card-shine" />
 
-      {/* Stats Footer */}
-      <div className="card-stats" style={{ height: curr.statsH }}>
-        {stats.map(s => (
-          <div key={s.label} className="stat">
-            <span className="stat-value" style={{ fontSize: curr.statV }}>
-              {s.value ?? '—'}
+        {/* OVR + Position */}
+        <div className="card-top" style={{ 
+          position: 'absolute', 
+          top: size === 'small' ? 8 : 12, 
+          left: size === 'small' ? 8 : 12,
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span className="card-ovr" style={{ fontSize: curr.ovr }}>
+              {effectiveOvr}
             </span>
-            <span className="stat-label" style={{ fontSize: curr.statL }}>{s.label}</span>
+            <span className="card-pos" style={{ fontSize: curr.pos, marginTop: size === 'small' ? -2 : -4 }}>
+              {player.position || '—'}
+            </span>
           </div>
-        ))}
-      </div>
-    </motion.div>
+        </div>
+
+        {/* Season Badge */}
+        <div className="card-season" style={{ fontSize: curr.season, padding: '2px 6px', top: size === 'small' ? 8 : 10, right: size === 'small' ? 8 : 10 }}>
+          {player.season}
+        </div>
+
+        {/* Level Badge - Top Right Stacked */}
+        {upgradeLevel > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: size === 'small' ? 32 : 40,
+            right: size === 'small' ? 8 : 10,
+            background: getUpgradeColor(upgradeLevel),
+            color: upgradeLevel >= 5 ? '#fff' : '#000',
+            fontWeight: 800,
+            fontSize: curr.badge,
+            padding: '1px 5px',
+            borderRadius: '4px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            fontFamily: "'Bebas Neue', sans-serif",
+            whiteSpace: 'nowrap',
+            zIndex: 10
+          }}>
+            +{upgradeLevel}
+          </div>
+        )}
+
+        {/* Player Portrait */}
+        <div className="card-portrait" style={{ bottom: curr.statsH + 4 }}>
+          <div
+            className="card-portrait-placeholder"
+            style={{
+              width: curr.portrait,
+              height: curr.portrait,
+              fontSize: curr.initials,
+            }}
+          >
+            {initials}
+          </div>
+        </div>
+
+        {/* Player Name */}
+        <div className="card-name" style={{ bottom: curr.statsH + 4 }}>
+          <h3 style={{ fontSize: curr.name }}>{player.name}</h3>
+        </div>
+
+        {/* Stats Footer */}
+        <div className="card-stats" style={{ height: curr.statsH }}>
+          {stats.map(s => (
+            <div key={s.label} className="stat">
+              <span className="stat-value" style={{ fontSize: curr.statV }}>
+                {s.value ?? '—'}
+              </span>
+              <span className="stat-label" style={{ fontSize: curr.statL }}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </div>
   );
 };
 
