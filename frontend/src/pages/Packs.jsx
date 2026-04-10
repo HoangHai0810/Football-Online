@@ -214,18 +214,35 @@ const PackCard = ({ pack, onOpen }) => {
           {pack.price.toLocaleString()} <Coins size={24} />
         </div>
 
-        <button
-          className="btn btn-gold"
-          style={{
-            width: '100%',
-            background: `linear-gradient(135deg, ${pack.iconColor}, ${pack.iconColor}cc)`,
-            color: pack.id === 'premium' ? '#0a0f1e' : 'white',
-            boxShadow: `0 4px 20px ${pack.shimmerColor}`,
-          }}
-          onClick={() => onOpen(pack.id)}
-        >
-          <PackageOpen size={16} /> OPEN PACK
-        </button>
+        <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+          <button
+            className="btn btn-gold"
+            style={{
+              flex: 1,
+              background: `linear-gradient(135deg, ${pack.iconColor}, ${pack.iconColor}cc)`,
+              color: pack.id === 'premium' ? '#0a0f1e' : 'white',
+              boxShadow: `0 4px 20px ${pack.shimmerColor}`,
+              fontSize: 12, padding: '10px'
+            }}
+            onClick={(e) => { e.stopPropagation(); onOpen(pack.id, 1); }}
+          >
+            OPEN x1
+          </button>
+          <button
+            className="btn btn-gold"
+            style={{
+              flex: 1,
+              background: 'rgba(255,255,255,0.1)',
+              border: `1px solid ${pack.iconColor}`,
+              color: 'white',
+              boxShadow: `0 4px 20px ${pack.shimmerColor}`,
+              fontSize: 12, padding: '10px'
+            }}
+            onClick={(e) => { e.stopPropagation(); onOpen(pack.id, 10); }}
+          >
+            BUY x10
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -233,8 +250,9 @@ const PackCard = ({ pack, onOpen }) => {
 
 const Packs = () => {
   const { user, setUser } = useAuth();
-  const [state, setState] = useState('idle');  // idle | opening | result | error
+  const [state, setState] = useState('idle');  // idle | opening | result | multi_result | error
   const [revealedCard, setRevealedCard] = useState(null);
+  const [multiRevealedCards, setMultiRevealedCards] = useState([]);
   const [activePack, setActivePack] = useState(null);
   const skipRef = useRef(false);
 
@@ -266,7 +284,7 @@ const Packs = () => {
     return () => window.removeEventListener('keydown', handleKey);
   }, [state]);
 
-  const openPack = async (packId) => {
+  const openPack = async (packId, quantity = 1) => {
     if (!user) {
       toast.error("You must be logged in to open packs");
       return;
@@ -274,49 +292,68 @@ const Packs = () => {
     const packObj = PACKS.find(p => p.id === packId);
     if (!packObj) return;
 
+    const totalCost = packObj.price * quantity;
+    if (user.coins < totalCost) {
+      toast.error("Not enough coins!");
+      return;
+    }
+
     skipRef.current = false;
     setActivePack(packId);
     setState('opening');
 
     try {
-      const queryParams = new URLSearchParams({
+      const commonParams = {
         userId: user.id,
-        cost: packObj.price,
         minOvr: packObj.minOvr || 0,
         season: packObj.season || '',
         minLevel: packObj.minLevel || 1,
         maxLevel: packObj.maxLevel || 1
-      });
+      };
 
-      const res = await api.post(`/cards/open-pack?${queryParams.toString()}`);
-      const fullCard = res.data;
-      // Instantly deduct the coins in the React UI
-      setUser(prev => ({ ...prev, coins: prev.coins - packObj.price }));
-      setRevealedCard(fullCard);
+      if (quantity === 1) {
+        const queryParams = new URLSearchParams({ ...commonParams, cost: packObj.price });
+        const res = await api.post(`/cards/open-pack?${queryParams.toString()}`);
+        const fullCard = res.data;
+        setUser(prev => ({ ...prev, coins: prev.coins - packObj.price }));
+        setRevealedCard(fullCard);
 
-      // Sequential Reveal Logic — each step skippable with Space
-      await skippableSleep(2000); // Initial charge
-      
-      setState('reveal_nationality');
-      await skippableSleep(3000);
-
-      setState('reveal_position');
-      await skippableSleep(3000);
-
-      setState('reveal_club');
-      await skippableSleep(3000);
-
-      setState('result');
+        await skippableSleep(2000);
+        setState('reveal_nationality');
+        await skippableSleep(3000);
+        setState('reveal_position');
+        await skippableSleep(3000);
+        setState('reveal_club');
+        await skippableSleep(3000);
+        setState('result');
+      } else {
+        const queryParams = new URLSearchParams({ 
+          ...commonParams, 
+          quantity, 
+          costPerPack: packObj.price 
+        });
+        const res = await api.post(`/cards/open-packs-multi?${queryParams.toString()}`);
+        const cards = res.data;
+        setUser(prev => ({ ...prev, coins: prev.coins - totalCost }));
+        setMultiRevealedCards(cards);
+        
+        // Brief loading for multi-open
+        await sleep(1500);
+        setState('multi_result');
+      }
     } catch (err) {
       console.error(err);
       setState('idle');
-      toast.error(err.response?.data?.message || "Failed to open pack. Not enough coins?");
+      toast.error(err.response?.data?.message || "Failed to open pack.");
     }
   };
+
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
   const reset = () => {
     setState('idle');
     setRevealedCard(null);
+    setMultiRevealedCards([]);
     setActivePack(null);
   };
 
@@ -511,6 +548,55 @@ const Packs = () => {
                 <PackageOpen size={18} /> OPEN ANOTHER
               </button>
             </motion.div>
+          </motion.div>
+        )}
+        {state === 'multi_result' && multiRevealedCards.length > 0 && (
+          <motion.div
+            key="multi_result"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{ width: '100%', maxWidth: 1200, margin: '0 auto' }}
+          >
+            <div style={{ textAlign: 'center', marginBottom: 40 }}>
+              <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, letterSpacing: 4, color: 'var(--gold)' }}>
+                BATCH RESULTS ({multiRevealedCards.length} PACKS)
+              </h2>
+            </div>
+            
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: 20,
+              padding: '20px',
+              background: 'rgba(255,255,255,0.02)',
+              borderRadius: 30,
+              border: '1px solid rgba(255,255,255,0.05)'
+            }}>
+              {multiRevealedCards.map((card, i) => (
+                <motion.div
+                  key={card.id || i}
+                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: i * 0.1, type: 'spring' }}
+                  style={{ display: 'flex', justifyContent: 'center' }}
+                >
+                  <PlayerCard 
+                    player={card.template} 
+                    size="small" 
+                    upgradeLevel={card.upgradeLevel || 1} 
+                  />
+                </motion.div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 48, gap: 16 }}>
+              <button className="btn btn-glass btn-lg px-8" onClick={reset}>
+                CONTINUE
+              </button>
+              <button className="btn btn-gold btn-lg px-8" onClick={() => openPack(activePack, multiRevealedCards.length)}>
+                <PackageOpen size={18} /> OPEN ANOTHER x{multiRevealedCards.length}
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

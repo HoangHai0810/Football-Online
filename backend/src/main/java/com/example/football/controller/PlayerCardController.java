@@ -37,10 +37,29 @@ public class PlayerCardController {
             missionService.updateProgress(username, MissionType.OPEN_PACK, 1);
             missionService.updateProgress(username, MissionType.COLLECT_PLAYER, 1);
         } catch (Exception e) {
-            // Log error but don't fail the pack opening if mission update fails
             System.err.println("Failed to update mission progress: " + e.getMessage());
         }
         return card;
+    }
+
+    @PostMapping("/open-packs-multi")
+    public List<PlayerCard> openPacksMulti(
+            @RequestParam Long userId,
+            @RequestParam int quantity,
+            @RequestParam int costPerPack,
+            @RequestParam(defaultValue = "0") int minOvr,
+            @RequestParam(required = false) String season,
+            @RequestParam(defaultValue = "1") int minLevel,
+            @RequestParam(defaultValue = "1") int maxLevel) {
+        List<PlayerCard> cards = playerCardService.openMultipleRandomCardPacks(userId, quantity, costPerPack, minOvr, season, minLevel, maxLevel);
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            missionService.updateProgress(username, MissionType.OPEN_PACK, quantity);
+            missionService.updateProgress(username, MissionType.COLLECT_PLAYER, quantity);
+        } catch (Exception e) {
+            System.err.println("Failed to update mission progress: " + e.getMessage());
+        }
+        return cards;
     }
 
     @PostMapping("/buy")

@@ -52,6 +52,34 @@ public class PlayerCardService {
         user.setCoins(user.getCoins() - cost);
         userRepository.save(user);
         
+        return generateRandomCardInternal(user, minOvr, seasonStr, minLevel, maxLevel);
+    }
+
+    @Transactional
+    public List<PlayerCard> openMultipleRandomCardPacks(Long userId, int quantity, int costPerPack, int minOvr, String seasonStr, int minLevel, int maxLevel) {
+        if (quantity < 1 || quantity > 10) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be between 1 and 10");
+        }
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        long totalCost = (long) costPerPack * quantity;
+        if (user.getCoins() < totalCost) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough coins to open " + quantity + " packs");
+        }
+        
+        user.setCoins(user.getCoins() - totalCost);
+        userRepository.save(user);
+
+        List<PlayerCard> cards = new java.util.ArrayList<>();
+        for (int i = 0; i < quantity; i++) {
+            cards.add(generateRandomCardInternal(user, minOvr, seasonStr, minLevel, maxLevel));
+        }
+        return cards;
+    }
+
+    private PlayerCard generateRandomCardInternal(Users user, int minOvr, String seasonStr, int minLevel, int maxLevel) {
         List<PlayerTemplate> templates = playerTemplateRepository.findAll()
                 .stream()
                 .filter(t -> t.getOvr() >= minOvr)
@@ -84,7 +112,7 @@ public class PlayerCardService {
             double r = random.nextDouble();
             double totalW = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
-                totalW += 1.0 / Math.pow(2, i - minLevel); // Drop rate halves each level step
+                totalW += 1.0 / Math.pow(2, i - minLevel); 
             }
             double threshold = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
@@ -127,6 +155,8 @@ public class PlayerCardService {
         double criticalChance = 0;
         Long templateId = targetCard.getTemplate().getId();
 
+        int safetyLevelFloor = 1;
+
         for (PlayerCard material : materials) {
             int materialOvr = material.getTemplate().getOvr();
             double diffOvr = materialOvr - targetOvr;
@@ -134,12 +164,14 @@ public class PlayerCardService {
             double contribution = 0.2 * Math.pow(1.5, diffOvr);
             totalChance += contribution;
             
-            // Check for same-player fodder for jump chance
+            // Check for same-player fodder for jump chance and safety floor
             if (material.getTemplate().getId().equals(templateId)) {
                 int materialLevel = material.getUpgradeLevel();
-                double fodderChance = 0.10; // 10% base for same level
+                safetyLevelFloor = Math.max(safetyLevelFloor, materialLevel);
+                
+                double fodderChance = 0.90; // 10% base for same level
                 if (materialLevel < originalLevel) {
-                    fodderChance = 0.10 - (double)(originalLevel - materialLevel) * 0.10 / originalLevel;
+                    fodderChance = 0.90 - (double)(originalLevel - materialLevel) * 0.10 / originalLevel;
                 }
                 criticalChance += Math.max(0, fodderChance);
             }
@@ -166,7 +198,9 @@ public class PlayerCardService {
         } else {
             if (originalLevel > 1) {
                 int dropAmount = random.nextInt(originalLevel - 1) + 1;
-                targetCard.setUpgradeLevel(Math.max(1, originalLevel - dropAmount));
+                int droppedLevel = Math.max(1, originalLevel - dropAmount);
+                // Apply safety floor: cannot drop below the level of the best same-player fodder used
+                targetCard.setUpgradeLevel(Math.max(droppedLevel, safetyLevelFloor));
             }
         }
 

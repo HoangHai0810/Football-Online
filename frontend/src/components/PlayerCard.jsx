@@ -63,27 +63,28 @@ const PlayerCard = ({
     <motion.div
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ 
-        opacity: [0, 1, 0, 1, 0],
-        scale: [0.8, 1.2, 0.9, 1.3, 1],
-        x: [0, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 20],
-        y: [0, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 20]
+        opacity: [0, 1, 0, 1, 1, 0],
+        scale: [0.5, 1.5, 0.8, 1.8, 1.2, 1],
+        x: [0, (Math.random() - 0.5) * 60, (Math.random() - 0.5) * 30],
+        y: [0, (Math.random() - 0.5) * 60, (Math.random() - 0.5) * 30],
+        rotate: [0, 45, -45, 90, 0]
       }}
       transition={{ 
         repeat: Infinity, 
-        duration: 0.4, 
+        duration: 0.3, 
         delay: delay,
-        ease: "easeInOut"
+        ease: "easeOut"
       }}
       style={{
         position: 'absolute',
         zIndex: 10,
-        color: purpleColor,
-        filter: `drop-shadow(0 0 10px ${purpleColor})`,
+        color: '#fff', // White core for brightness
+        filter: `drop-shadow(0 0 8px ${purpleColor}) drop-shadow(0 0 15px ${purpleColor}) drop-shadow(0 0 25px #fff)`,
         pointerEvents: 'none'
       }}
     >
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
       </svg>
     </motion.div>
   );
@@ -109,12 +110,12 @@ const PlayerCard = ({
   const effectiveOvr = (player.ovr || 0) + bonus;
 
   const stats = [
-    { label: 'PAC', value: (player.pace || 0) + bonus },
-    { label: 'SHO', value: (player.shooting || 0) + bonus },
-    { label: 'PAS', value: (player.passing || 0) + bonus },
-    { label: 'DRI', value: (player.dribbling || 0) + bonus },
-    { label: 'DEF', value: (player.defending || 0) + bonus },
-    { label: 'PHY', value: (player.physical || 0) + bonus },
+    { label: 'PAC', value: (player.pace || 70) + bonus },
+    { label: 'SHO', value: (player.shooting || 70) + bonus },
+    { label: 'PAS', value: (player.passing || 70) + bonus },
+    { label: 'DRI', value: (player.dribbling || 70) + bonus },
+    { label: 'DEF', value: (player.defending || 70) + bonus },
+    { label: 'PHY', value: (player.physical || 70) + bonus },
   ];
 
   const flameColor = getFlameColor(upgradeLevel);
@@ -133,28 +134,31 @@ const PlayerCard = ({
             style={{
               position: 'absolute', inset: 0,
               borderRadius: 30,
-              background: `radial-gradient(circle, ${purpleColor}22 0%, transparent 70%)`,
-              border: `2px solid ${purpleColor}44`,
-              boxShadow: `0 0 40px ${purpleColor}66, inset 0 0 20px ${purpleColor}44`,
+              background: `radial-gradient(circle, ${purpleColor}44 0%, transparent 80%)`,
+              border: `3px solid ${purpleColor}`,
+              boxShadow: `0 0 60px ${purpleColor}, 0 0 120px ${purpleColor}66, inset 0 0 40px ${purpleColor}`,
             }}
             animate={isFlickeringPurple ? {
-              opacity: [0.3, 1, 0.3, 1, 0.3],
-              scale: [1, 1.1, 1, 1.1, 1]
+              opacity: [0.4, 1, 0.4, 1, 0.4],
+              scale: [1, 1.15, 1, 1.15, 1],
+              filter: ['brightness(1)', 'brightness(2)', 'brightness(1)']
             } : {
-              opacity: [0.6, 0.9, 0.6],
-              scale: [1.05, 1.15, 1.05]
+              opacity: [0.7, 1, 0.7],
+              scale: [1.1, 1.25, 1.1],
+              filter: ['drop-shadow(0 0 20px #fff)', 'drop-shadow(0 0 40px #fff)', 'drop-shadow(0 0 20px #fff)']
             }}
-            transition={{ repeat: Infinity, duration: isFlickeringPurple ? 0.3 : 2 }}
+            transition={{ repeat: Infinity, duration: isFlickeringPurple ? 0.2 : 0.8 }}
           />
           
-          {/* Lightning Bolts */}
-          {showPurpleAura && [...Array(8)].map((_, i) => (
+          {/* Lightning Bolts - Increased count */}
+          {showPurpleAura && [...Array(18)].map((_, i) => (
             <div key={i} style={{ 
               position: 'absolute', 
               left: `${Math.random() * 100}%`, 
-              top: `${Math.random() * 100}%` 
+              top: `${Math.random() * 100}%`,
+              transform: `rotate(${Math.random() * 360}deg)`
             }}>
-              <LightningBolt delay={i * 0.1} />
+              <LightningBolt delay={i * 0.05} />
             </div>
           ))}
         </div>
