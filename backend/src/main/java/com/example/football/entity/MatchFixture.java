@@ -40,6 +40,21 @@ public class MatchFixture {
     @Builder.Default
     private boolean awayIsUser = false;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean played = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isKnockout = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean extraTimeUsed = false;
+
+    private Integer homePenaltyScore;
+    private Integer awayPenaltyScore;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "home_user_id")
     private Users homeUser;
@@ -50,8 +65,4 @@ public class MatchFixture {
 
     private Integer homeScore;
     private Integer awayScore;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean isPlayed = false;
 }

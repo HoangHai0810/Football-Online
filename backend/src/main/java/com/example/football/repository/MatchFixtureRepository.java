@@ -10,5 +10,6 @@ import java.util.List;
 @Repository
 public interface MatchFixtureRepository extends JpaRepository<MatchFixture, Long> {
     List<MatchFixture> findByTournamentAndMatchWeek(Tournament tournament, Integer matchWeek);
+    List<MatchFixture> findByTournamentInAndMatchWeek(List<Tournament> tournaments, Integer matchWeek);
     List<MatchFixture> findByTournament(Tournament tournament);
 }

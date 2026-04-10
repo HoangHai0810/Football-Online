@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Calendar, Play, ChevronRight, Loader2, Info, Zap } from 'lucide-react';
+import { Trophy, Calendar, Play, ChevronRight, Loader2, Info, Zap, ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,7 @@ const Tournaments = () => {
     const [career, setCareer] = useState(null);
     const [standings, setStandings] = useState([]);
     const [nextFixture, setNextFixture] = useState(null);
+    const [tournament, setTournament] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showMatchModal, setShowMatchModal] = useState(false);
     const [userOvr, setUserOvr] = useState(85);
@@ -24,6 +25,11 @@ const Tournaments = () => {
             const stateRes = await api.get(`/career/state?userId=${user.id}`);
             const state = stateRes.data;
             setCareer(state);
+
+            // Fetch tournament details
+            const tournamentsRes = await api.get(`/career/tournaments?userId=${user.id}`);
+            const currentT = tournamentsRes.data.find(t => t.id.toString() === id);
+            setTournament(currentT);
 
             const leagueRes = await api.get(`/career/standings/${id}`);
             setStandings(leagueRes.data);
@@ -35,7 +41,7 @@ const Tournaments = () => {
             setLoading(false);
         } catch (err) {
             console.error("Error fetching career data:", err);
-            toast.error("Failed to load league data.");
+            toast.error("Failed to load tournament data.");
             setLoading(false);
         }
     };
@@ -46,7 +52,7 @@ const Tournaments = () => {
             // Fetch real user OVR
             api.get('/users/stats').then(res => setUserOvr(res.data.teamOvr)).catch(() => {});
         }
-    }, [user]);
+    }, [user, id]);
 
     const handleAdvance = async () => {
         try {
@@ -64,7 +70,7 @@ const Tournaments = () => {
         }
     };
 
-    if (loading) {
+    if (loading || !tournament) {
         return (
             <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Loader2 className="animate-spin" size={48} color="var(--gold)" />
@@ -74,8 +80,31 @@ const Tournaments = () => {
 
     const opponent = nextFixture?.homeIsUser ? nextFixture.awayAiClub : nextFixture?.homeAiClub;
 
+    const getMainTitle = () => {
+        const parts = tournament.name.split(' ');
+        if (parts.length > 1) {
+            const last = parts.pop();
+            return <>{parts.join(' ')} <span>{last}</span></>;
+        }
+        return tournament.name;
+    };
+
     return (
         <div className="page">
+            <button 
+                onClick={() => navigate('/tournaments')}
+                style={{ 
+                    display: 'flex', alignItems: 'center', gap: 8, 
+                    background: 'none', border: 'none', color: 'var(--text-muted)',
+                    cursor: 'pointer', marginBottom: 24, fontSize: 14, fontWeight: 500,
+                    transition: 'color 0.2s ease'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--gold)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+            >
+                <ArrowLeft size={16} /> BACK TO TOURNAMENT HUB
+            </button>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
@@ -85,9 +114,12 @@ const Tournaments = () => {
                         <div className="badge badge-silver" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <Calendar size={14} /> WEEK {career.currentWeek}
                         </div>
+                        <div className="badge badge-blue">
+                             {tournament.type} {tournament.tier > 0 ? `TIER ${tournament.tier}` : ''}
+                        </div>
                     </div>
-                    <h1 className="page-title" style={{ marginBottom: 0 }}>SUPER <span>LEAGUE</span></h1>
-                    <p className="page-subtitle">Compete against Europe's elite clubs for top honors.</p>
+                    <h1 className="page-title" style={{ marginBottom: 0 }}>{getMainTitle()}</h1>
+                    <p className="page-subtitle">Your journey to football dominance continues here.</p>
                 </div>
 
                 <button 
@@ -104,7 +136,9 @@ const Tournaments = () => {
                 {/* Left Column: Standings */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: 18, textTransform: 'uppercase', letterSpacing: 2 }}>League Table</h2>
+                        <h2 style={{ fontSize: 18, textTransform: 'uppercase', letterSpacing: 2 }}>
+                            {tournament.type === 'LEAGUE' ? 'League Table' : 'Current Standings'}
+                        </h2>
                     </div>
                     <StandingsTable standings={standings} userTeamName={user.clubName} />
                 </div>
@@ -126,7 +160,7 @@ const Tournaments = () => {
 
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                                 <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700 }}>
-                                    {opponent?.name[0] || '?'}
+                                    {opponent?.name?.[0] || '?'}
                                 </div>
                                 <div style={{ fontSize: 14, fontWeight: 700 }}>{opponent?.name || 'TBA'}</div>
                             </div>
@@ -136,7 +170,7 @@ const Tournaments = () => {
                             <Zap size={20} color="var(--gold)" />
                             <div>
                                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>PREDICTED DIFFICULTY</div>
-                                <div style={{ fontSize: 14, fontWeight: 700 }}>MEDIUM {opponent?.baseOvr ? `(${opponent.baseOvr} OVR)` : ''}</div>
+                                <div style={{ fontSize: 14, fontWeight: 700 }}>{tournament.tier === 1 ? 'LEGENDARY' : 'NORMAL'} {opponent?.baseOvr ? `(${opponent.baseOvr} OVR)` : ''}</div>
                             </div>
                         </div>
                     </div>
@@ -144,13 +178,24 @@ const Tournaments = () => {
                     <div className="glass" style={{ padding: 24, borderRadius: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <Info size={18} color="var(--blue)" />
-                            <div style={{ fontSize: 14, fontWeight: 700 }}>League Rules</div>
+                            <div style={{ fontSize: 14, fontWeight: 700 }}>Tournament Rules</div>
                         </div>
                         <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.8 }}>
-                            <li>Win: 3 Points, Draw: 1 Point, Loss: 0 Points</li>
-                            <li>Ranking priority: Points {'>'} Goal Difference {'>'} Goals For</li>
-                            <li>Top 4 qualify for <span style={{ color: '#4fcaff' }}>Continental Masters</span></li>
-                            <li>Bottom 3 relegated to Lower Division</li>
+                            {tournament.type === 'LEAGUE' ? (
+                                <>
+                                    <li>Win: 3 Points, Draw: 1 Point, Loss: 0 Points</li>
+                                    <li>Ranking priority: Points {'>'} GD {'>'} Goals For</li>
+                                    {tournament.tier === 1 && <li>Top 4 qualify for <span style={{ color: '#f0c32d' }}>Champions Cup</span></li>}
+                                    {tournament.tier > 1 && <li>Top 3 promoted to Higher Division</li>}
+                                    {tournament.tier < 3 && <li>Bottom 3 relegated to Lower Division</li>}
+                                </>
+                            ) : (
+                                <>
+                                    <li>Knockout format: Win or Go Home</li>
+                                    <li>Includes Extra Time and Penalties</li>
+                                    <li>Ultimate Glory and Massive Rewards</li>
+                                </>
+                            )}
                         </ul>
                     </div>
                 </div>

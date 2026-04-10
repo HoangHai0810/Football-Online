@@ -59,6 +59,30 @@ public class MatchSimulationEngine {
 
         fixture.setHomeScore(homeScore);
         fixture.setAwayScore(awayScore);
+
+        // Knockout Logic: Extra Time & Penalties if draw
+        if (fixture.isKnockout() && homeScore == awayScore) {
+            // Simulate Extra Time (Simplified: 50% chance of 1 more goal for one side)
+            double etRand = random.nextDouble();
+            if (etRand < 0.3) {
+                fixture.setHomeScore(homeScore + 1);
+                fixture.setExtraTimeUsed(true);
+            } else if (etRand < 0.6) {
+                fixture.setAwayScore(awayScore + 1);
+                fixture.setExtraTimeUsed(true);
+            } else {
+                // Still draw after ET -> Penalties
+                int homePen = 3 + random.nextInt(3); // 3-5
+                int awayPen = 3 + random.nextInt(3);
+                while (homePen == awayPen) {
+                    awayPen = 3 + random.nextInt(3);
+                }
+                fixture.setHomePenaltyScore(homePen);
+                fixture.setAwayPenaltyScore(awayPen);
+                fixture.setExtraTimeUsed(true);
+            }
+        }
+
         fixture.setPlayed(true);
     }
 

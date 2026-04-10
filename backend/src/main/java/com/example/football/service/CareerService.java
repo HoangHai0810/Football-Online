@@ -61,54 +61,66 @@ public class CareerService {
     @Transactional
     public Map<String, Object> advanceWeek(Long userId) {
         UserCareer career = getCareerByUserId(userId);
-        Tournament league = tournamentRepository.findByUserAndSeasonIndexAndType(career.getUser(), career.getCurrentSeason(), "LEAGUE")
-                .get(0);
+        List<Tournament> activeTournaments = tournamentRepository.findByUserAndSeasonIndex(career.getUser(), career.getCurrentSeason());
 
-        List<MatchFixture> currentFixtures = fixtureRepository.findByTournamentAndMatchWeek(league, career.getCurrentWeek());
+        List<MatchFixture> allCurrentFixtures = fixtureRepository.findByTournamentInAndMatchWeek(activeTournaments, career.getCurrentWeek());
         
-        for (MatchFixture fixture : currentFixtures) {
+        for (MatchFixture fixture : allCurrentFixtures) {
             if (!fixture.isPlayed()) {
                 matchSimulationEngine.simulateMatch(fixture);
-                updateStandings(fixture);
+                if (!fixture.isKnockout()) {
+                    updateStandings(fixture);
+                }
             }
         }
-        fixtureRepository.saveAll(currentFixtures);
+        fixtureRepository.saveAll(allCurrentFixtures);
 
         // Advance career week
         career.setCurrentWeek(career.getCurrentWeek() + 1);
+        
         if (career.getCurrentWeek() > 38) { // End of season
-            awardTrophies(league, career.getUser(), career.getCurrentSeason());
-            
-            // Handle Promotion/Relegation
-            List<TournamentStanding> standings = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(league);
-            int userRank = -1;
-            for (int i = 0; i < standings.size(); i++) {
-                if (standings.get(i).isUserTeam()) {
-                    userRank = i + 1;
-                    break;
+            for (Tournament t : activeTournaments) {
+                if (t.getType().equals("LEAGUE")) {
+                    awardTrophies(t, career.getUser(), career.getCurrentSeason());
+                    handleLeagueProgression(t, career);
+                } else if (t.getType().equals("CUP") || t.getType().equals("CONTINENTAL")) {
+                    // Specific logic for final matches could be added here
+                    awardTrophies(t, career.getUser(), career.getCurrentSeason());
                 }
+                t.setIsCompleted(true);
             }
-
-            if (userRank != -1) {
-                if (userRank <= 3 && career.getCurrentTier() > 1) {
-                    career.setCurrentTier(career.getCurrentTier() - 1); // Promote
-                } else if (userRank >= 18 && career.getCurrentTier() < 3) {
-                    career.setCurrentTier(career.getCurrentTier() + 1); // Relegate
-                }
-            }
+            tournamentRepository.saveAll(activeTournaments);
 
             career.setCurrentWeek(1);
             career.setCurrentSeason(career.getCurrentSeason() + 1);
-            // Trigger next season generation immediately
             seasonGeneratorService.createNewSeason(career.getUser());
         }
         userCareerRepository.save(career);
 
         return Map.of(
             "weekSimulated", career.getCurrentWeek() - 1,
-            "fixtures", currentFixtures,
+            "fixtures", allCurrentFixtures,
             "career", career
         );
+    }
+
+    private void handleLeagueProgression(Tournament league, UserCareer career) {
+        List<TournamentStanding> standings = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(league);
+        int userRank = -1;
+        for (int i = 0; i < standings.size(); i++) {
+            if (standings.get(i).isUserTeam()) {
+                userRank = i + 1;
+                break;
+            }
+        }
+
+        if (userRank != -1) {
+            if (userRank <= 3 && career.getCurrentTier() > 1) {
+                career.setCurrentTier(career.getCurrentTier() - 1); // Promote
+            } else if (userRank >= 18 && career.getCurrentTier() < 3) {
+                career.setCurrentTier(career.getCurrentTier() + 1); // Relegate
+            }
+        }
     }
 
     private void updateStandings(MatchFixture fixture) {

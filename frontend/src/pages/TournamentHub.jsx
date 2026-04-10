@@ -33,12 +33,13 @@ const TournamentHub = () => {
         );
     }
 
-    // Static templates for the visual hub
-    const ALL_TOURNAMENTS = [
-        { type: 'LEAGUE', name: 'SUPER LEAGUE', color: 'var(--blue)', icon: Shield, defaultLocked: false },
-        { type: 'CUP', name: 'NATIONAL CUP', color: '#ff4f4f', icon: Zap, defaultLocked: true, req: 'Complete 1 Season to Unlock' },
-        { type: 'CONTINENTAL', name: 'CHAMPIONS MASTERS', color: 'var(--gold)', icon: Trophy, defaultLocked: true, req: 'Top 4 Finish in Super League Required' },
-    ];
+    // Types mapping for visual consistency
+    const TOURNAMENT_CONFIG = {
+        'LEAGUE': { color: 'var(--blue)', icon: Shield, defaultName: 'Professional League' },
+        'CUP': { color: '#ff4f4f', icon: Zap, defaultName: 'National Cup' },
+        'CONTINENTAL': { color: 'var(--gold)', icon: Trophy, defaultName: 'Champions Masters' },
+        'SUPER_CUP': { color: '#2ecc71', icon: Trophy, defaultName: 'Season Shield' }
+    };
 
     return (
         <div className="page">
@@ -49,72 +50,62 @@ const TournamentHub = () => {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
-                {ALL_TOURNAMENTS.map((t, i) => {
-                    const activeTournament = tournaments.find(active => active.type === t.type);
-                    const isLocked = !activeTournament && t.defaultLocked;
-                    const Icon = t.icon;
+                {tournaments.map((tournament, i) => {
+                    const config = TOURNAMENT_CONFIG[tournament.type] || TOURNAMENT_CONFIG['LEAGUE'];
+                    const Icon = config.icon;
 
                     return (
                         <motion.div
-                            key={t.type}
+                            key={tournament.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className={`glass ${!isLocked ? 'hover-lift' : ''}`}
+                            className="glass hover-lift"
                             style={{
                                 borderRadius: 24,
                                 padding: 32,
-                                border: `1px solid ${isLocked ? 'rgba(255,255,255,0.05)' : t.color + '33'}`,
+                                border: `1px solid ${config.color}33`,
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 20,
-                                cursor: isLocked ? 'not-allowed' : 'pointer',
+                                cursor: 'pointer',
                                 position: 'relative',
-                                overflow: 'hidden',
-                                opacity: isLocked ? 0.6 : 1,
-                                filter: isLocked ? 'grayscale(100%)' : 'none'
+                                overflow: 'hidden'
                             }}
-                            onClick={() => {
-                                if (!isLocked && activeTournament) {
-                                    navigate(`/career/${activeTournament.id}`);
-                                }
-                            }}
+                            onClick={() => navigate(`/career/${tournament.id}`)}
                         >
                             <div style={{ position: 'absolute', top: -20, right: -20, opacity: 0.1 }}>
-                                <Icon size={120} color={isLocked ? 'white' : t.color} />
+                                <Icon size={120} color={config.color} />
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div style={{ 
                                     width: 64, height: 64, 
                                     borderRadius: 16, 
-                                    background: isLocked ? 'rgba(255,255,255,0.05)' : `${t.color}15`,
+                                    background: `${config.color}15`,
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    border: `1px solid ${isLocked ? 'transparent' : t.color + '33'}`
+                                    border: `1px solid ${config.color}33`
                                 }}>
-                                    <Icon size={32} color={isLocked ? '#666' : t.color} />
+                                    <Icon size={32} color={config.color} />
                                 </div>
-                                {isLocked && <div className="badge" style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid #333' }}><Lock size={12} /> LOCKED</div>}
+                                <div className="badge badge-gold">ACTIVE</div>
                             </div>
 
                             <div>
                                 <h3 style={{ fontSize: 24, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2, marginBottom: 8 }}>
-                                    {activeTournament ? activeTournament.name : t.name}
+                                    {tournament.name}
                                 </h3>
                                 <div style={{ display: 'flex', gap: 16 }}>
-                                    <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>STATUS: <span style={{ color: 'white' }}>{isLocked ? 'UNAVAILABLE' : 'ACTIVE'}</span></div>
+                                    <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>TYPE: <span style={{ color: 'white', textTransform: 'uppercase' }}>{tournament.type}</span></div>
+                                    {tournament.tier > 0 && (
+                                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>TIER: <span style={{ color: 'var(--gold)' }}>{tournament.tier}</span></div>
+                                    )}
                                 </div>
                             </div>
 
-                            {isLocked ? (
-                                <div style={{ marginTop: 'auto', padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: 16, color: '#aaa', fontSize: 13, textAlign: 'center' }}>
-                                    {t.req}
-                                </div>
-                            ) : (
-                                <button className="btn btn-glass" style={{ width: '100%', borderColor: `${t.color}33`, marginTop: 'auto' }}>
-                                    ENTER TOURNAMENT <ChevronRight size={16} />
-                                </button>
-                            )}
+                            <button className="btn btn-glass" style={{ width: '100%', borderColor: `${config.color}33`, marginTop: 'auto' }}>
+                                ENTER TOURNAMENT <ChevronRight size={16} />
+                            </button>
                         </motion.div>
                     );
                 })}
