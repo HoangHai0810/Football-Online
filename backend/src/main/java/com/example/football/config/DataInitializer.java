@@ -33,36 +33,20 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // 1. Clean up corrupted templates if any
-        long corruptedCount = repository.findAll().stream()
-                .filter(t -> t.getPace() == null || t.getOvr() == null || t.getAcceleration() == null)
-                .count();
-        
-        if (corruptedCount > 0) {
-            System.out.println("DataInitializer: Found corrupted templates. Purging...");
-            playerCardRepository.deleteAll();
-            repository.deleteAll();
-        }
-
-        // 2. Seed players if count is low (ensure we have enough for packs)
-        if (repository.count() < 500) {
-            System.out.println("DataInitializer: Seeding players...");
+        // Initial seeds for totally empty database
+        if (repository.count() == 0) {
+            System.out.println("DataInitializer: Initial seed for players...");
             seedPlayers();
             playerSeeder.seedOneThousandPlayers();
         }
         
-        // 3. Sync Missions
-        if (missionRepository.count() < 10) {
-            System.out.println("DataInitializer: Syncing missions...");
-            missionRepository.deleteAll();
+        if (missionRepository.count() == 0) {
+            System.out.println("DataInitializer: Initial seed for missions...");
             seedMissions();
         }
 
-        // 4. Sync AI Clubs (Important for Tiered League)
-        // If we don't have exactly 60 clubs (20 per tier), we refresh them
-        if (aiClubRepository.count() != 60) {
-            System.out.println("DataInitializer: Refreshing AI Clubs to match tiered system (60 clubs)...");
-            aiClubRepository.deleteAll();
+        if (aiClubRepository.count() == 0) {
+            System.out.println("DataInitializer: Initial seed for AI Clubs...");
             seedAiClubs();
         }
     }

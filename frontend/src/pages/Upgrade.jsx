@@ -44,6 +44,8 @@ const Upgrade = () => {
   const [phase, setPhase] = useState('selection'); 
   const [result, setResult] = useState(null); // { success: boolean, newLevel: number, oldLevel: number }
   const skipRef = useRef(false);
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [materialVisibleCount, setMaterialVisibleCount] = useState(20);
 
   const fetchCards = async () => {
     if (!user) return;
@@ -284,19 +286,30 @@ const Upgrade = () => {
             </div>
             <div className="glass" style={{ padding: 24, borderRadius: 20, minHeight: 400, overflowY: 'auto' }}>
               {!targetCard ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16 }}>
-                  {cards.map(c => (
-                    <motion.div
-                      key={c.id}
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.97 }}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => { setTargetCard(c); setMaterialCards([]); }}
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16 }}>
+                    {cards.slice(0, visibleCount).map(c => (
+                      <motion.div
+                        key={c.id}
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.97 }}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => { setTargetCard(c); setMaterialCards([]); }}
+                      >
+                        <PlayerCard player={c.template} size="small" upgradeLevel={c.upgradeLevel} />
+                      </motion.div>
+                    ))}
+                  </div>
+                  {cards.length > visibleCount && (
+                    <button 
+                      className="btn btn-glass btn-sm" 
+                      style={{ width: '100%', marginTop: 20 }}
+                      onClick={() => setVisibleCount(prev => prev + 20)}
                     >
-                      <PlayerCard player={c.template} size="small" upgradeLevel={c.upgradeLevel} />
-                    </motion.div>
-                  ))}
-                </div>
+                      SHOW MORE ({cards.length - visibleCount})
+                    </button>
+                  )}
+                </>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>TARGET PLAYER</div>
@@ -329,38 +342,49 @@ const Upgrade = () => {
                     Select a target card first.
                   </div>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
-                    {availableMaterials.map(c => {
-                      const isMaterial = materialCards.some(m => m.id === c.id);
-                      return (
-                        <motion.div
-                          key={c.id}
-                          whileHover={{ scale: 1.04 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => toggleMaterial(c)}
-                          style={{
-                            cursor: 'pointer',
-                            position: 'relative',
-                            opacity: isMaterial ? 1 : 0.6,
-                            border: isMaterial ? '2px solid var(--gold)' : '2px solid transparent',
-                            borderRadius: 12,
-                            transition: 'all 0.2s ease',
-                          }}
-                        >
-                          <PlayerCard player={c.template} size="small" upgradeLevel={c.upgradeLevel} />
-                          {isMaterial && (
-                            <div style={{
-                              position: 'absolute', top: 4, right: 4,
-                              width: 18, height: 18, borderRadius: '50%',
-                              background: 'var(--gold)', display: 'flex',
-                              alignItems: 'center', justifyContent: 'center',
-                              fontSize: 11, fontWeight: 800, color: '#000',
-                            }}>✓</div>
-                          )}
-                        </motion.div>
-                      );
-                    })}
-                  </div>
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+                      {availableMaterials.slice(0, materialVisibleCount).map(c => {
+                        const isMaterial = materialCards.some(m => m.id === c.id);
+                        return (
+                          <motion.div
+                            key={c.id}
+                            whileHover={{ scale: 1.04 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => toggleMaterial(c)}
+                            style={{
+                              cursor: 'pointer',
+                              position: 'relative',
+                              opacity: isMaterial ? 1 : 0.6,
+                              border: isMaterial ? '2px solid var(--gold)' : '2px solid transparent',
+                              borderRadius: 12,
+                              transition: 'all 0.2s ease',
+                            }}
+                          >
+                            <PlayerCard player={c.template} size="small" upgradeLevel={c.upgradeLevel} />
+                            {isMaterial && (
+                              <div style={{
+                                position: 'absolute', top: 4, right: 4,
+                                width: 18, height: 18, borderRadius: '50%',
+                                background: 'var(--gold)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center',
+                                fontSize: 11, fontWeight: 800, color: '#000',
+                              }}>✓</div>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                    {availableMaterials.length > materialVisibleCount && (
+                      <button 
+                        className="btn btn-glass btn-sm" 
+                        style={{ width: '100%', marginTop: 20 }}
+                        onClick={() => setMaterialVisibleCount(prev => prev + 20)}
+                      >
+                        SHOW MORE ({availableMaterials.length - materialVisibleCount})
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

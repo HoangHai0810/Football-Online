@@ -175,6 +175,7 @@ const Squad = () => {
   const [currentFormation, setCurrentFormation] = useState('4-3-3');
   const [clubName, setClubName] = useState('');
   const [editingClub, setEditingClub] = useState(false);
+  const [benchVisibleCount, setBenchVisibleCount] = useState(20);
 
   useEffect(() => {
     if (user?.clubName) setClubName(user.clubName);
@@ -372,39 +373,53 @@ const Squad = () => {
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
           ) : (
-            cards.filter(c => !Object.values(lineup).includes(c.id)).map(card => {
-              const p = card.template;
-              const bg = SEASON_COLOR[p.season] || SEASON_COLOR.BASE;
-              return (
-                <motion.div
-                  key={card.id}
-                  className="player-list-item"
-                  draggable
-                  onDragStart={e => e.dataTransfer.setData('cardId', card.id)}
-                  whileHover={{ x: 4 }}
-                  style={{ cursor: 'grab' }}
+            <>
+              {cards.filter(c => !Object.values(lineup).includes(c.id))
+                .slice(0, benchVisibleCount)
+                .map(card => {
+                  const p = card.template;
+                  const bg = SEASON_COLOR[p.season] || SEASON_COLOR.BASE;
+                  return (
+                    <motion.div
+                      key={card.id}
+                      className="player-list-item"
+                      draggable
+                      onDragStart={e => e.dataTransfer.setData('cardId', card.id)}
+                      whileHover={{ x: 4 }}
+                      style={{ cursor: 'grab' }}
+                    >
+                      <div className="ovr-badge" style={{ background: bg, color: 'white', position: 'relative' }}>
+                        {card.effectiveOvr || p.ovr}
+                        {card.upgradeLevel > 0 && (
+                          <span style={{ position: 'absolute', top: -4, right: -12, fontSize: 8, background: 'var(--gold)', color: '#000', padding: '0 3px', fontWeight: 900, borderRadius: 2 }}>
+                            +{card.upgradeLevel}
+                          </span>
+                        )}
+                      </div>
+                      <div className="player-info">
+                        <div className="player-name">{p.name}</div>
+                        <div className="player-meta">
+                          {p.position} · {p.season}
+                          {card.upgradeLevel > 1 && <span style={{ color: 'var(--gold)', marginLeft: 6 }}>+{card.upgradeLevel}</span>}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <span className={`badge badge-${p.season === 'ICON' ? 'gold' : 'blue'}`}>{p.season}</span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              
+              {cards.filter(c => !Object.values(lineup).includes(c.id)).length > benchVisibleCount && (
+                <button 
+                  className="btn btn-glass btn-sm" 
+                  style={{ marginTop: 8, width: '100%', fontSize: 11 }}
+                  onClick={() => setBenchVisibleCount(prev => prev + 20)}
                 >
-                  <div className="ovr-badge" style={{ background: bg, color: 'white', position: 'relative' }}>
-                    {card.effectiveOvr || p.ovr}
-                    {card.upgradeLevel > 0 && (
-                      <span style={{ position: 'absolute', top: -4, right: -12, fontSize: 8, background: 'var(--gold)', color: '#000', padding: '0 3px', fontWeight: 900, borderRadius: 2 }}>
-                        +{card.upgradeLevel}
-                      </span>
-                    )}
-                  </div>
-                  <div className="player-info">
-                    <div className="player-name">{p.name}</div>
-                    <div className="player-meta">
-                      {p.position} · {p.season}
-                      {card.upgradeLevel > 1 && <span style={{ color: 'var(--gold)', marginLeft: 6 }}>+{card.upgradeLevel}</span>}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <span className={`badge badge-${p.season === 'ICON' ? 'gold' : 'blue'}`}>{p.season}</span>
-                  </div>
-                </motion.div>
-              );
-            })
+                  SHOW MORE ({cards.filter(c => !Object.values(lineup).includes(c.id)).length - benchVisibleCount})
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

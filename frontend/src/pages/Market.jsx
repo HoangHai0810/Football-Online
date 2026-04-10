@@ -41,6 +41,7 @@ const Market = () => {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
   const [buying, setBuying] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(24); // Start with 24 cards
 
   useEffect(() => {
     api.get('/templates')
@@ -53,6 +54,11 @@ const Market = () => {
         setError('Could not load transfer market — backend offline.');
       });
   }, []);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [search, filterSeason, filterPos, ovrMin, ovrMax, sortBy]);
 
   const filtered = useMemo(() => {
     let result = players.filter(p => {
@@ -75,6 +81,10 @@ const Market = () => {
 
     return result;
   }, [players, search, filterSeason, filterPos, ovrMin, ovrMax, sortBy]);
+
+  const pagedPlayers = useMemo(() => {
+    return filtered.slice(0, visibleCount);
+  }, [filtered, visibleCount]);
 
   const buyPlayer = async (player) => {
     if (!user) {
@@ -241,14 +251,14 @@ const Market = () => {
           }}
         >
           <AnimatePresence>
-            {filtered.map((player, i) => (
+            {pagedPlayers.map((player, i) => (
               <motion.div
                 key={player.id}
-                layout
-                initial={{ opacity: 0, y: 20 }}
+                layout={false} // Disable layout animation for better performance with large lists
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: i * 0.04 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 200, margin: '0 auto' }}
               >
                 <div style={{ cursor: 'pointer', transition: 'transform 0.2s ease' }} onClick={() => setSelectedPlayer(player)} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
@@ -293,13 +303,13 @@ const Market = () => {
             <span>Action</span>
           </div>
           <AnimatePresence>
-            {filtered.map((player, i) => (
+            {pagedPlayers.map((player, i) => (
               <motion.div
                 key={player.id}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ delay: i * 0.03 }}
+                transition={{ duration: 0.15 }}
                 className="player-list-item"
                 style={{
                   display: 'grid',
@@ -328,6 +338,19 @@ const Market = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+        </div>
+      )}
+
+      {/* Pagination Footer */}
+      {!loading && filtered.length > visibleCount && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40, marginBottom: 60 }}>
+          <button 
+            className="btn btn-glass" 
+            style={{ padding: '12px 48px', fontSize: 14, letterSpacing: 2 }}
+            onClick={() => setVisibleCount(prev => prev + 24)}
+          >
+             LOAD MORE ({filtered.length - visibleCount} REMAINING)
+          </button>
         </div>
       )}
 
