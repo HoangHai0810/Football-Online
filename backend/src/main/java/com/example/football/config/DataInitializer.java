@@ -2,6 +2,7 @@ package com.example.football.config;
 
 import com.example.football.entity.*;
 import com.example.football.repository.PlayerTemplateRepository;
+import com.example.football.repository.PlayerCardRepository;
 import com.example.football.repository.MissionRepository;
 import com.example.football.service.PlayerSeeder;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
     private final PlayerTemplateRepository repository;
+    private final PlayerCardRepository playerCardRepository;
     private final MissionRepository missionRepository;
     private final PlayerSeeder playerSeeder;
 
@@ -32,6 +34,7 @@ public class DataInitializer implements CommandLineRunner {
         
         if (corruptedCount > 0) {
             System.out.println("Found " + corruptedCount + " corrupted or incomplete templates. Purging database to re-seed...");
+            playerCardRepository.deleteAll();
             repository.deleteAll();
         }
 
