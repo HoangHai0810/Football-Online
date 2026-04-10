@@ -167,15 +167,27 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedMissions() {
         List<Mission> missions = Arrays.asList(
-            Mission.builder().description("Open 1 Premium Pack").type(MissionType.OPEN_PACK).targetAmount(1).rewardCoins(5000L).build(),
-            Mission.builder().description("Open 3 Elite Packs").type(MissionType.OPEN_PACK).targetAmount(3).rewardCoins(15000L).build(),
-            Mission.builder().description("Win 1 Solo Match").type(MissionType.WIN_MATCH).targetAmount(1).rewardCoins(8000L).build(),
-            Mission.builder().description("Win 5 Tournaments").type(MissionType.WIN_MATCH).targetAmount(5).rewardCoins(50000L).build(),
-            Mission.builder().description("Upgrade 1 Player").type(MissionType.UPGRADE_PLAYER).targetAmount(1).rewardCoins(2000L).build(),
-            Mission.builder().description("Collect 10 Players").type(MissionType.COLLECT_PLAYER).targetAmount(10).rewardCoins(10000L).build(),
-            Mission.builder().description("Daily Login").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(1000L).build()
+            Mission.builder().description("Starter Pack Opening: Open 1 Pack").type(MissionType.OPEN_PACK).targetAmount(1).rewardCoins(3000L).build(),
+            Mission.builder().description("Pack Hunter: Open 3 Packs").type(MissionType.OPEN_PACK).targetAmount(3).rewardCoins(10000L).build(),
+            Mission.builder().description("Pack Addict: Open 10 Packs").type(MissionType.OPEN_PACK).targetAmount(10).rewardCoins(40000L).build(),
+            Mission.builder().description("Crazy Box: Open 25 Packs").type(MissionType.OPEN_PACK).targetAmount(25).rewardCoins(125000L).build(),
+            
+            Mission.builder().description("First Signing: Collect 1 Player").type(MissionType.COLLECT_PLAYER).targetAmount(1).rewardCoins(2000L).build(),
+            Mission.builder().description("Building Squad: Collect 5 Players").type(MissionType.COLLECT_PLAYER).targetAmount(5).rewardCoins(12000L).build(),
+            Mission.builder().description("Talent Scout: Collect 20 Players").type(MissionType.COLLECT_PLAYER).targetAmount(20).rewardCoins(55000L).build(),
+            Mission.builder().description("Ultimate Collector: Collect 20 Players").type(MissionType.COLLECT_PLAYER).targetAmount(20).rewardCoins(100000L).build(),
+            
+            Mission.builder().description("First Upgrade: Upgrade 1 Player").type(MissionType.UPGRADE_PLAYER).targetAmount(1).rewardCoins(3000L).build(),
+            Mission.builder().description("Enhancement: Upgrade 5 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(5).rewardCoins(18000L).build(),
+            Mission.builder().description("Upgrade Master: Upgrade 15 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(15).rewardCoins(65000L).build(),
+            
+            Mission.builder().description("First Victory: Win 1 Match").type(MissionType.WIN_MATCH).targetAmount(1).rewardCoins(5000L).build(),
+            Mission.builder().description("Winning Streak: Win 3 Matches").type(MissionType.WIN_MATCH).targetAmount(3).rewardCoins(18000L).build(),
+            Mission.builder().description("Tournament Champion: Win 5 Tourneys").type(MissionType.WIN_MATCH).targetAmount(5).rewardCoins(50000L).build(),
+            
+            Mission.builder().description("Daily Login Bonus").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(2000L).build()
         );
         missionRepository.saveAll(missions);
-        System.out.println("Seeded database with 7 missions.");
+        System.out.println("Seeded database with " + missions.size() + " diverse missions.");
     }
 }

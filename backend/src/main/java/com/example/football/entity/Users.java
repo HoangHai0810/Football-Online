@@ -35,8 +35,9 @@ public class Users implements UserDetails {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private String password;
 
+    @Column(nullable = false)
     @Builder.Default
-    private Long coins = 10000L;
+    private Long coins = 30000L;
 
     @Builder.Default
     private String clubName = "FC ARENA";

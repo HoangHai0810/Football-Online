@@ -24,8 +24,14 @@ public class PlayerCardController {
     }
 
     @PostMapping("/open-pack")
-    public PlayerCard openPack(@RequestParam Long userId, @RequestParam(defaultValue = "5000") int cost, @RequestParam(defaultValue = "0") int minOvr) {
-        PlayerCard card = playerCardService.openRandomCardPack(userId, cost, minOvr);
+    public PlayerCard openPack(
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "5000") int cost,
+            @RequestParam(defaultValue = "0") int minOvr,
+            @RequestParam(required = false) String season,
+            @RequestParam(defaultValue = "1") int minLevel,
+            @RequestParam(defaultValue = "1") int maxLevel) {
+        PlayerCard card = playerCardService.openRandomCardPack(userId, cost, minOvr, season, minLevel, maxLevel);
         try {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
             missionService.updateProgress(username, MissionType.OPEN_PACK, 1);

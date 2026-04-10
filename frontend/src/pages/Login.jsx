@@ -83,7 +83,7 @@ const Login = () => {
                 textShadow: '0 0 30px rgba(240,195,45,0.35)',
                 lineHeight: 1,
               }}>
-                FC CHALLANGE
+                FC CHALLENGE
               </div>
               <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, var(--glass-border), transparent)', margin: '16px 0' }} />
             </div>

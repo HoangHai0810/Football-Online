@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Package, ShoppingCart, Trophy, TrendingUp, Star, Zap, Award } from 'lucide-react';
+import { Users, Package, ShoppingCart, Trophy, TrendingUp, Star, Zap, Award, Coins } from 'lucide-react';
 import api from '../services/api';
 
 const fadeUp = {
@@ -207,7 +207,7 @@ const Dashboard = () => {
             Account Balance
           </div>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, letterSpacing: 2, lineHeight: 1, color: 'var(--gold)' }}>
-            {statsData?.coins?.toLocaleString() || '0'} <span style={{ fontSize: 20, opacity: 0.7 }}>COINS</span>
+            {statsData?.coins?.toLocaleString() || '0'} <Coins size={20} style={{ opacity: 0.7, verticalAlign: 'text-bottom' }} />
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
             Complete <strong style={{ color: 'var(--gold)' }}>Quests</strong> to earn more coins!

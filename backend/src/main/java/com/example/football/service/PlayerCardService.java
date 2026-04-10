@@ -41,7 +41,7 @@ public class PlayerCardService {
         return playerCardRepository.findByOwnerId(userId);
     }
 
-    public PlayerCard openRandomCardPack(Long userId, int cost, int minOvr) {
+    public PlayerCard openRandomCardPack(Long userId, int cost, int minOvr, String seasonStr, int minLevel, int maxLevel) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         
@@ -55,10 +55,11 @@ public class PlayerCardService {
         List<PlayerTemplate> templates = playerTemplateRepository.findAll()
                 .stream()
                 .filter(t -> t.getOvr() >= minOvr)
+                .filter(t -> seasonStr == null || seasonStr.isBlank() || t.getSeason().name().equalsIgnoreCase(seasonStr))
                 .toList();
 
         if (templates.isEmpty()) {
-            throw new RuntimeException("No player templates available for this criteria");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No player templates available for this criteria");
         }
 
         double totalWeight = 0;
@@ -78,10 +79,27 @@ public class PlayerCardService {
             }
         }
 
+        int targetLevel = minLevel;
+        if (maxLevel > minLevel) {
+            double r = random.nextDouble();
+            double totalW = 0;
+            for (int i = minLevel; i <= maxLevel; i++) {
+                totalW += 1.0 / Math.pow(2, i - minLevel); // Drop rate halves each level step
+            }
+            double threshold = 0;
+            for (int i = minLevel; i <= maxLevel; i++) {
+                threshold += (1.0 / Math.pow(2, i - minLevel)) / totalW;
+                if (r <= threshold) {
+                    targetLevel = i;
+                    break;
+                }
+            }
+        }
+
         PlayerCard card = PlayerCard.builder()
                 .owner(user)
                 .template(selectedTemplate)
-                .upgradeLevel(1)
+                .upgradeLevel(targetLevel)
                 .build();
 
         return playerCardRepository.save(card);

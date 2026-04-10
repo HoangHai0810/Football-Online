@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, ShoppingCart, X } from 'lucide-react';
+import { Search, Filter, ShoppingCart, X, Coins } from 'lucide-react';
 import PlayerCard from '../components/PlayerCard';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -73,7 +73,7 @@ const Market = () => {
       setUser(prev => ({ ...prev, coins: prev.coins - cost }));
       toast.success(`${player.name} added to your Reserve!`);
     } catch (e) {
-      toast.error(e.response?.data?.message || "Transaction failed. Not enough coins?");
+      toast.error(e.response?.data?.message || "Transaction failed. Not enough coins");
     } finally {
       setBuying(false);
       setSelectedPlayer(null);
@@ -199,17 +199,19 @@ const Market = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: i * 0.04 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 200, margin: '0 auto' }}
               >
-                <PlayerCard player={player} onClick={() => setSelectedPlayer(player)} upgradeLevel={1} />
+                <div style={{ cursor: 'pointer', transition: 'transform 0.2s ease' }} onClick={() => setSelectedPlayer(player)} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+                  <PlayerCard player={player} />
+                </div>
                 <button
                   className="btn btn-gold btn-sm"
-                  style={{ fontWeight: 800, fontSize: 12 }}
+                  style={{ fontWeight: 800, fontSize: 13, padding: '10px 0', textTransform: 'uppercase', boxShadow: '0 4px 15px rgba(240,195,45,0.2)' }}
                   onClick={() => buyPlayer(player)}
                   disabled={buying}
                 >
                   <ShoppingCart size={13} />
-                  BUY — {calculatePrice(player.ovr).toLocaleString()} COINS
+                  BUY — {calculatePrice(player.ovr).toLocaleString()} <Coins size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: '4px' }} />
                 </button>
               </motion.div>
             ))}
@@ -361,7 +363,7 @@ const Market = () => {
                     disabled={buying}
                   >
                     <ShoppingCart size={15} />
-                    BUY — {calculatePrice(selectedPlayer.ovr).toLocaleString()} COINS
+                    BUY — {calculatePrice(selectedPlayer.ovr).toLocaleString()} <Coins size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: '4px' }} />
                   </button>
                 </div>
               </div>

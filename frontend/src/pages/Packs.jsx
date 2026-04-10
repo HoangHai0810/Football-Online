@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PackageOpen, Sparkles, Zap, Star, Shield } from 'lucide-react';
+import { PackageOpen, Sparkles, Zap, Star, Shield, Coins } from 'lucide-react';
 import PlayerCard from '../components/PlayerCard';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -10,10 +10,10 @@ const PACKS = [
   {
     id: 'starter',
     name: 'STARTER PACK',
-    description: 'Perfect for building your squad foundation. Guaranteed 75+ OVR player.',
-    price: 3500,
-    guaranteed: '75+ OVR GUARANTEED',
-    minOvr: 75,
+    description: 'Perfect for building your squad foundation. Guaranteed 70+ OVR player.',
+    price: 3000,
+    guaranteed: '70+ OVR GUARANTEED',
+    minOvr: 70,
     icon: PackageOpen,
     colorFrom: 'rgba(200,200,200,0.15)',
     colorTo: 'rgba(200,200,200,0.03)',
@@ -22,6 +22,24 @@ const PACKS = [
     iconBg: 'rgba(200,200,200,0.12)',
     badgeClass: 'badge-silver',
     shimmerColor: 'rgba(200,200,200,0.3)',
+  },
+  {
+    id: 'veteran',
+    name: 'VETERAN PACK',
+    description: 'A solid pick for mid-tier depth. Drops 80+ player upgraded +3 to +6.',
+    price: 25000,
+    guaranteed: '80+ OVR | +3 TO +6',
+    minOvr: 80,
+    minLevel: 3,
+    maxLevel: 6,
+    icon: Shield,
+    colorFrom: 'rgba(230,126,34,0.15)',
+    colorTo: 'rgba(230,126,34,0.03)',
+    border: 'rgba(230,126,34,0.35)',
+    iconColor: '#e67e22',
+    iconBg: 'rgba(230,126,34,0.12)',
+    badgeClass: 'badge-bronze',
+    shimmerColor: 'rgba(230,126,34,0.3)',
   },
   {
     id: 'premium',
@@ -40,13 +58,49 @@ const PACKS = [
     shimmerColor: 'rgba(240,195,45,0.3)',
   },
   {
-    id: 'elite',
-    name: 'ELITE PACK',
-    description: 'Access the top tier of players. Includes TOTY and LIVE season exclusives.',
-    price: 50000,
-    guaranteed: '95+ OVR GUARANTEED',
-    minOvr: 95,
+    id: 'live_master',
+    name: 'LIVE UPGRADE PACK',
+    description: 'High risk, massive reward. Guaranteed LIVE season player between +5 to +8.',
+    price: 45000,
+    guaranteed: '+5 TO +8 LIVE SEASON',
+    season: 'LIVE',
+    minLevel: 5,
+    maxLevel: 8,
     icon: Zap,
+    colorFrom: 'rgba(46,204,113,0.15)',
+    colorTo: 'rgba(46,204,113,0.03)',
+    border: 'rgba(46,204,113,0.35)',
+    iconColor: '#2ecc71',
+    iconBg: 'rgba(46,204,113,0.12)',
+    badgeClass: 'badge-live',
+    shimmerColor: 'rgba(46,204,113,0.3)',
+  },
+  {
+    id: 'all_star',
+    name: 'ALL-STAR PACK',
+    description: 'A pack containing only the best base formats. Guaranteed 90+ OVR.',
+    price: 75000,
+    guaranteed: '90+ OVR GUARANTEED',
+    minOvr: 90,
+    icon: Sparkles,
+    colorFrom: 'rgba(155,89,182,0.15)',
+    colorTo: 'rgba(155,89,182,0.03)',
+    border: 'rgba(155,89,182,0.35)',
+    iconColor: '#9b59b6',
+    iconBg: 'rgba(155,89,182,0.12)',
+    badgeClass: 'badge-purple',
+    shimmerColor: 'rgba(155,89,182,0.3)',
+  },
+  {
+    id: 'toty_upgrade',
+    name: 'TOTY UPGRADE PACK',
+    description: 'The ultimate Team of the Year pack. Guaranteed TOTY player dropping between +2 to +5.',
+    price: 125000,
+    guaranteed: '+2 TO +5 TOTY SEASON',
+    season: 'TOTY',
+    minLevel: 2,
+    maxLevel: 5,
+    icon: Star,
     colorFrom: 'rgba(64,196,255,0.15)',
     colorTo: 'rgba(64,196,255,0.03)',
     border: 'rgba(64,196,255,0.35)',
@@ -56,12 +110,30 @@ const PACKS = [
     shimmerColor: 'rgba(64,196,255,0.3)',
   },
   {
+    id: 'golden_ticket',
+    name: 'GOLDEN TICKET PACK',
+    description: 'A pack guaranteeing a highly upgraded card. Guaranteed 85+ OVR with +8 to +10 levels.',
+    price: 200000,
+    guaranteed: '85+ OVR | +8 TO +10',
+    minOvr: 85,
+    minLevel: 8,
+    maxLevel: 10,
+    icon: Sparkles,
+    colorFrom: 'rgba(255,215,0,0.15)',
+    colorTo: 'rgba(255,215,0,0.03)',
+    border: 'rgba(255,215,0,0.35)',
+    iconColor: '#ffd700',
+    iconBg: 'rgba(255,215,0,0.12)',
+    badgeClass: 'badge-ultimate',
+    shimmerColor: 'rgba(255,215,0,0.3)',
+  },
+  {
     id: 'icon',
     name: 'ICON PACK',
     description: 'The rarest pack in existence. Guaranteed true legend pull.',
-    price: 250000,
-    guaranteed: '105+ OVR GUARANTEED',
-    minOvr: 105,
+    price: 350000,
+    guaranteed: 'GUARANTEED ICON',
+    season: 'ICON',
     icon: Star,
     colorFrom: 'rgba(255,100,200,0.15)',
     colorTo: 'rgba(255,100,200,0.03)',
@@ -118,14 +190,28 @@ const PackCard = ({ pack, onOpen }) => {
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, letterSpacing: 2, marginBottom: 8 }}>
             {pack.name}
           </div>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 12 }}>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 16 }}>
             {pack.description}
           </div>
-          <span className={`badge ${pack.badgeClass}`}>{pack.guaranteed}</span>
+          <div 
+            className={`badge ${pack.badgeClass}`} 
+            style={{ 
+              fontSize: '15px', 
+              fontWeight: 800, 
+              padding: '10px 18px', 
+              letterSpacing: 1, 
+              textTransform: 'uppercase', 
+              boxShadow: `0 4px 15px ${pack.shimmerColor}`,
+              display: 'inline-flex',
+              border: `1px solid ${pack.border}`
+            }}
+          >
+            {pack.guaranteed}
+          </div>
         </div>
 
-        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: pack.iconColor }}>
-          {pack.price.toLocaleString()} COINS
+        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: pack.iconColor, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+          {pack.price.toLocaleString()} <Coins size={24} />
         </div>
 
         <button
@@ -193,7 +279,16 @@ const Packs = () => {
     setState('opening');
 
     try {
-      const res = await api.post(`/cards/open-pack?userId=${user.id}&cost=${packObj.price}&minOvr=${packObj.minOvr || 0}`);
+      const queryParams = new URLSearchParams({
+        userId: user.id,
+        cost: packObj.price,
+        minOvr: packObj.minOvr || 0,
+        season: packObj.season || '',
+        minLevel: packObj.minLevel || 1,
+        maxLevel: packObj.maxLevel || 1
+      });
+
+      const res = await api.post(`/cards/open-pack?${queryParams.toString()}`);
       const fullCard = res.data;
       // Instantly deduct the coins in the React UI
       setUser(prev => ({ ...prev, coins: prev.coins - packObj.price }));
@@ -244,35 +339,6 @@ const Packs = () => {
           </p>
         </motion.div>
         {/* Reveal Phase */}
-        {['opening', 'reveal_nationality', 'reveal_position', 'reveal_club'].includes(state) && (
-          <motion.div
-            key="reveal"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ textAlign: 'center', padding: '60px 0' }}
-          >
-
-            <motion.div
-              animate={{ opacity: [0.3, 0.8, 0.3] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              style={{ fontSize: 13, color: 'var(--text-muted)', letterSpacing: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-            >
-              <kbd style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderBottom: '3px solid rgba(255,255,255,0.2)',
-                borderRadius: 4,
-                padding: '4px 20px',
-                fontFamily: 'monospace',
-                fontSize: 12,
-                color: 'white',
-                fontWeight: 'bold'
-              }}>SPACE</kbd> 
-              SKIP
-            </motion.div>
-          </motion.div>
-        )}
       </div>
 
       <AnimatePresence mode="wait">

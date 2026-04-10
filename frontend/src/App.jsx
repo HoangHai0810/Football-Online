@@ -33,7 +33,7 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <Link to="/dashboard" className="navbar-brand">FC CHALLANGE</Link>
+      <Link to="/dashboard" className="navbar-brand">FC CHALLENGE</Link>
 
       <div className="navbar-links">
         <NavLink to="/dashboard" label="Dashboard" />
