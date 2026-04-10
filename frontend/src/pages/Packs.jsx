@@ -131,7 +131,7 @@ const PACKS = [
     id: 'icon',
     name: 'ICON PACK',
     description: 'The rarest pack in existence. Guaranteed true legend pull.',
-    price: 350000,
+    price: 250000,
     guaranteed: 'GUARANTEED ICON',
     season: 'ICON',
     icon: Star,
