@@ -169,9 +169,9 @@ public class PlayerCardService {
                 int materialLevel = material.getUpgradeLevel();
                 safetyLevelFloor = Math.max(safetyLevelFloor, materialLevel);
                 
-                double fodderChance = 0.90; // 10% base for same level
+                double fodderChance = 0.10; // 10% base for same level
                 if (materialLevel < originalLevel) {
-                    fodderChance = 0.90 - (double)(originalLevel - materialLevel) * 0.10 / originalLevel;
+                    fodderChance = 0.10 - (double)(originalLevel - materialLevel) * 0.10 / originalLevel;
                 }
                 criticalChance += Math.max(0, fodderChance);
             }

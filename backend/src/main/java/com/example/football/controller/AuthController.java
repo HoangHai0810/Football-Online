@@ -43,7 +43,7 @@ public class AuthController {
                 .email(request.getEmail())
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .coins(10000000L)
+                .coins(30000L)
                 .role("ROLE_USER")
                 .build();
 
