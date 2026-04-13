@@ -27,6 +27,7 @@ public class CareerService {
     private final TrophyRepository trophyRepository;
     private final TournamentPlayerStatRepository playerStatRepository;
 
+    @Transactional
     public UserCareer getCareerByUserId(Long userId) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -37,41 +38,48 @@ public class CareerService {
                 });
     }
 
+    @Transactional(readOnly = true)
     public List<TournamentStanding> getStandings(Long tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
         return standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(tournament);
     }
 
+    @Transactional
     public List<Tournament> getTournamentsByUserId(Long userId) {
         UserCareer career = getCareerByUserId(userId);
         return tournamentRepository.findByUserAndSeasonIndex(career.getUser(), career.getCurrentSeason());
     }
 
+    @Transactional(readOnly = true)
     public List<Trophy> getTrophies(Long userId) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         return trophyRepository.findByUserOrderByWonAtDesc(user);
     }
 
+    @Transactional(readOnly = true)
     public List<MatchFixture> getFixturesByWeek(Long tournamentId, Integer week) {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
         return fixtureRepository.findByTournamentAndMatchWeek(tournament, week);
     }
 
+    @Transactional(readOnly = true)
     public List<MatchFixture> getAllFixturesByTournament(Long tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
         return fixtureRepository.findByTournament(tournament);
     }
 
+    @Transactional(readOnly = true)
     public List<TournamentPlayerStat> getTopScorers(Long tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
         return playerStatRepository.findByTournamentOrderByGoalsDescAssistsDesc(tournament).stream().limit(10).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<TournamentPlayerStat> getTopAssists(Long tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
@@ -185,6 +193,7 @@ public class CareerService {
         );
     }
 
+    @Transactional
     public MatchFixture getNextUserFixture(Long userId) {
         UserCareer career = getCareerByUserId(userId);
         List<Tournament> activeTournaments = tournamentRepository.findByUserAndSeasonIndex(career.getUser(), career.getCurrentSeason());
