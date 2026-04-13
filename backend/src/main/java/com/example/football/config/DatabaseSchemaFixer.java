@@ -2,20 +2,22 @@ package com.example.football.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DatabaseSchemaFixer implements InitializingBean {
+@Order(1)
+public class DatabaseSchemaFixer implements CommandLineRunner {
 
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public void afterPropertiesSet() {
-        log.info("Starting production database schema fix...");
+    public void run(String... args) {
+        log.info("Starting production database schema fix (Deferred to Post-Startup)...");
 
         String[] constraints = {
             "players_season_check",
