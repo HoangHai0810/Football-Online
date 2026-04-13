@@ -1,10 +1,16 @@
 package com.example.football.service;
 
 import com.example.football.entity.PlayerTemplate;
+import com.example.football.entity.Season;
 import com.example.football.repository.PlayerTemplateRepository;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -15,6 +21,42 @@ public class PlayerTemplateService {
 
     public List<PlayerTemplate> getAllTemplates() {
         return playerTemplateRepository.findAll();
+    }
+
+    public Page<PlayerTemplate> getTemplatesPaged(String search, String season, String pos, Integer minOvr, Integer maxOvr, Pageable pageable) {
+        Specification<PlayerTemplate> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (search != null && !search.isEmpty()) {
+                String likePattern = "%" + search.toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), likePattern),
+                        cb.like(cb.lower(root.get("nationality")), likePattern)
+                ));
+            }
+
+            if (season != null && !season.equals("ALL")) {
+                try {
+                    predicates.add(cb.equal(root.get("season"), Season.valueOf(season)));
+                } catch (Exception ignored) {}
+            }
+
+            if (pos != null && !pos.equals("ALL")) {
+                predicates.add(cb.equal(root.get("position"), pos));
+            }
+
+            if (minOvr != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("ovr"), minOvr));
+            }
+
+            if (maxOvr != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("ovr"), maxOvr));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return playerTemplateRepository.findAll(spec, pageable);
     }
 
     public PlayerTemplate saveTemplate(PlayerTemplate template) {

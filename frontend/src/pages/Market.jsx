@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, ShoppingCart, X, Coins } from 'lucide-react';
 import PlayerCard from '../components/PlayerCard';
@@ -41,50 +41,79 @@ const Market = () => {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
   const [buying, setBuying] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(24); // Start with 24 cards
+  
+  // Real Pagination State
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observer = useRef();
+  const fetchingRef = useRef(false);
 
-  useEffect(() => {
-    api.get('/templates')
-      .then(res => {
-        setPlayers(res.data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-        setError('Could not load transfer market — backend offline.');
-      });
-  }, []);
+  const fetchPlayers = useCallback(async (pageNum, isNewSearch = false) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    setVisibleCount(24);
+    if (isNewSearch) {
+      setLoading(true);
+      setError(null);
+    } else {
+      setLoadingMore(true);
+    }
+
+    try {
+      const sortParam = sortBy.startsWith('OVR') 
+        ? `ovr,${sortBy.endsWith('DESC') ? 'desc' : 'asc'}`
+        : sortBy.startsWith('PRICE') 
+          ? `ovr,${sortBy.endsWith('DESC') ? 'desc' : 'asc'}`
+          : 'ovr,desc';
+
+      const params = {
+        page: pageNum,
+        size: 25,
+        sort: sortParam,
+        search: search || undefined,
+        season: filterSeason !== 'ALL' ? filterSeason : undefined,
+        pos: filterPos !== 'ALL' ? filterPos : undefined,
+        minOvr: ovrMin || undefined,
+        maxOvr: ovrMax || undefined,
+      };
+
+      const res = await api.get('/templates', { params });
+      const newPlayers = res.data.content || [];
+      
+      setPlayers(prev => isNewSearch ? newPlayers : [...prev, ...newPlayers]);
+      setHasMore(!res.data.last);
+      setPage(pageNum);
+    } catch (err) {
+      setError('Could not load transfer market — backend offline.');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+      fetchingRef.current = false;
+    }
   }, [search, filterSeason, filterPos, ovrMin, ovrMax, sortBy]);
 
-  const filtered = useMemo(() => {
-    let result = players.filter(p => {
-      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase())
-        || (p.nationality || '').toLowerCase().includes(search.toLowerCase());
-      const matchSeason = filterSeason === 'ALL' || p.season === filterSeason;
-      const matchPos = filterPos === 'ALL' || p.position === filterPos;
-      const matchOvrMin = !ovrMin || p.ovr >= parseInt(ovrMin);
-      const matchOvrMax = !ovrMax || p.ovr <= parseInt(ovrMax);
-      return matchSearch && matchSeason && matchPos && matchOvrMin && matchOvrMax;
-    });
+  // Initial load or filter change
+  useEffect(() => {
+    fetchPlayers(0, true);
+  }, [fetchPlayers]);
 
-    result.sort((a, b) => {
-      if (sortBy === 'OVR_DESC') return b.ovr - a.ovr;
-      if (sortBy === 'OVR_ASC') return a.ovr - b.ovr;
-      if (sortBy === 'PRICE_DESC') return calculatePrice(b.ovr) - calculatePrice(a.ovr);
-      if (sortBy === 'PRICE_ASC') return calculatePrice(a.ovr) - calculatePrice(b.ovr);
-      return 0; // Default or NAME_ASC could be added
-    });
+  // Intersection Observer for Infinite Scroll
+  const lastPlayerRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        fetchPlayers(page + 1);
+      }
+    }, { rootMargin: '400px' });
+    
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore, page, fetchPlayers]);
 
-    return result;
-  }, [players, search, filterSeason, filterPos, ovrMin, ovrMax, sortBy]);
-
-  const pagedPlayers = useMemo(() => {
-    return filtered.slice(0, visibleCount);
-  }, [filtered, visibleCount]);
+  const seasons = ['ALL', 'LIVE', 'ICON', 'TOTY', 'TOTS', 'HERO', 'WORLD_CUP', 'CHAMPIONS_LEAGUE', 'BASE'];
+  const positions = ['ALL', 'GK', 'LB', 'CB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST', 'CF'];
 
   const buyPlayer = async (player) => {
     if (!user) {
@@ -105,8 +134,6 @@ const Market = () => {
     }
   };
 
-  const seasons = ['ALL', ...new Set(players.map(p => p.season))];
-  const positions = ['ALL', ...new Set(players.map(p => p.position))];
 
   return (
     <div className="page">
@@ -218,7 +245,7 @@ const Market = () => {
         </div>
 
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-          {filtered.length} players found
+          {players.length} players loaded
         </div>
       </div>
 
@@ -235,7 +262,7 @@ const Market = () => {
           <p>{error}</p>
           <button className="btn btn-glass" onClick={() => window.location.reload()}>Retry</button>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : players.length === 0 ? (
         <div className="empty-state glass">
           <div className="empty-icon"><Search size={32} /></div>
           <h3>No Players Found</h3>
@@ -251,9 +278,10 @@ const Market = () => {
           }}
         >
           <AnimatePresence>
-            {pagedPlayers.map((player, i) => (
+            {players.map((player, i) => (
               <motion.div
                 key={player.id}
+                ref={i === players.length - 1 ? lastPlayerRef : null}
                 layout={false} // Disable layout animation for better performance with large lists
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -303,9 +331,10 @@ const Market = () => {
             <span>Action</span>
           </div>
           <AnimatePresence>
-            {pagedPlayers.map((player, i) => (
+            {players.map((player, i) => (
               <motion.div
                 key={player.id}
+                ref={i === players.length - 1 ? lastPlayerRef : null}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0 }}
@@ -341,16 +370,17 @@ const Market = () => {
         </div>
       )}
 
-      {/* Pagination Footer */}
-      {!loading && filtered.length > visibleCount && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40, marginBottom: 60 }}>
-          <button 
-            className="btn btn-glass" 
-            style={{ padding: '12px 48px', fontSize: 14, letterSpacing: 2 }}
-            onClick={() => setVisibleCount(prev => prev + 24)}
-          >
-             LOAD MORE ({filtered.length - visibleCount} REMAINING)
-          </button>
+      {/* Infinite Scroll Loader */}
+      {loadingMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+          <div className="spinner" style={{ width: 32, height: 32 }} />
+        </div>
+      )}
+
+      {/* End of results message */}
+      {!hasMore && players.length > 0 && (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 13, letterSpacing: 1 }}>
+          — END OF TRANSFER MARKET —
         </div>
       )}
 

@@ -3,10 +3,10 @@ package com.example.football.controller;
 import com.example.football.entity.PlayerTemplate;
 import com.example.football.service.PlayerTemplateService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/templates")
@@ -16,8 +16,14 @@ public class PlayerController {
     private final PlayerTemplateService playerTemplateService;
 
     @GetMapping
-    public List<PlayerTemplate> getAllTemplates() {
-        return playerTemplateService.getAllTemplates();
+    public Page<PlayerTemplate> getAllTemplates(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String season,
+            @RequestParam(required = false) String pos,
+            @RequestParam(required = false) Integer minOvr,
+            @RequestParam(required = false) Integer maxOvr,
+            Pageable pageable) {
+        return playerTemplateService.getTemplatesPaged(search, season, pos, minOvr, maxOvr, pageable);
     }
 
     @GetMapping("/{id}")
