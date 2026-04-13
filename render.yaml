@@ -35,6 +35,23 @@ services:
         value: prod
 
   - type: web
+    name: football-chatbot
+    runtime: docker
+    dockerContext: ./chatbot
+    dockerfilePath: ./chatbot/Dockerfile
+    plan: free
+    region: singapore
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: FOOTBALL_BACKEND_URL
+        value: https://football-backend-bpn2.onrender.com
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: PYTHONPATH
+        value: src
+
+  - type: web
     name: football-frontend
     runtime: static
     buildCommand: npm run build
@@ -43,6 +60,8 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://football-backend-bpn2.onrender.com
+      - key: VITE_CHATBOT_URL
+        value: https://football-chatbot-bpn2.onrender.com/api/ai/chat
     routes:
       - type: rewrite
         source: /*

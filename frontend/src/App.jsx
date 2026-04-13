@@ -13,6 +13,7 @@ import Upgrade from './pages/Upgrade';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
+import AiAssistant from './components/AiAssistant';
 import './styles/globals.css';
 
 const COINS_KEY = 'fc_coins';
@@ -108,6 +109,7 @@ const App = () => {
             <Route path="/trophies" element={<PrivateRoute><Trophies /></PrivateRoute>} />
             <Route path="/upgrade" element={<PrivateRoute><Upgrade /></PrivateRoute>} />
           </Routes>
+          <AiAssistant />
         </div>
       </Router>
     </AuthProvider>

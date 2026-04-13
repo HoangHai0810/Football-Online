@@ -24,6 +24,15 @@ frontend/.env.local
 frontend/.env.production.local
 
 # ===========================
+# CHATBOT
+# ===========================
+chatbot/.env
+chatbot/.venv
+chatbot/venv
+chatbot/src/football_chatbot.egg-info
+chatbot/src/agent/__pycache__
+
+# ===========================
 # Environment / Secrets
 # ===========================
 *.env
