@@ -50,6 +50,22 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
                 log.warn("Could not execute schema fix: {} - Error: {}", sql, e.getMessage());
             }
         }
+
+        String[] matchFixtureCols = {
+            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS is_knockout BOOLEAN DEFAULT false",
+            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS extra_time_used BOOLEAN DEFAULT false",
+            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS home_penalty_score INTEGER DEFAULT 0",
+            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS away_penalty_score INTEGER DEFAULT 0"
+        };
+
+        for (String sql : matchFixtureCols) {
+            try {
+                log.info("Executing schema fix: {}", sql);
+                jdbcTemplate.execute(sql);
+            } catch (Exception e) {
+                log.warn("Could not execute schema fix: {} - Error: {}", sql, e.getMessage());
+            }
+        }
         
         log.info("Schema fix process completed.");
     }

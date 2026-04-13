@@ -61,7 +61,7 @@ services:
       - key: VITE_API_URL
         value: https://football-backend-bpn2.onrender.com
       - key: VITE_CHATBOT_URL
-        value: https://football-chatbot-faav.onrender.com
+        value: https://football-chatbot-faav.onrender.com/api/ai/chat
     routes:
       - type: rewrite
         source: /*
