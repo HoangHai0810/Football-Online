@@ -132,6 +132,21 @@ const SEASON_COLOR = {
   BASE: 'linear-gradient(135deg,#667eea,#4a2080)',
 };
 
+const getStatBonus = (level) => {
+  switch (level) {
+    case 2: return 1;
+    case 3: return 2;
+    case 4: return 4;
+    case 5: return 6;
+    case 6: return 8;
+    case 7: return 11;
+    case 8: return 15;
+    case 9: return 18;
+    case 10: return 21;
+    default: return 0;
+  }
+};
+
 // Simplified positional groups to assess penalties
 const getPosGroup = (pos) => {
   if (pos === 'GK') return 'GK';
@@ -142,7 +157,11 @@ const getPosGroup = (pos) => {
 
 const calculateEffectiveOvr = (player, slotPos) => {
   if (!player) return 0;
-  const baseOvr = player.effectiveOvr || player.template?.ovr || 0;
+  
+  // Calculate base OVR including upgrade bonus
+  const bonus = getStatBonus(player.upgradeLevel || 1);
+  const baseOvr = (player.effectiveOvr || player.template?.ovr || 0) + (player.effectiveOvr ? 0 : bonus);
+  
   const natPos = player.template?.position;
   if (!natPos || !slotPos) return baseOvr;
   
@@ -239,6 +258,8 @@ const Squad = () => {
   const [editingClub, setEditingClub] = useState(false);
   const [benchVisibleCount, setBenchVisibleCount] = useState(20);
   const [showFormationMenu, setShowFormationMenu] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortType, setSortType] = useState('ovr');
 
   useEffect(() => {
     if (user?.clubName) setClubName(user.clubName);
@@ -271,7 +292,23 @@ const Squad = () => {
   }, []);
 
   const handleDrop = (cardId, targetSlot, sourceSlot) => {
+    const cardToDrop = cards.find(c => c.id === cardId);
+    if (!cardToDrop) return;
+
     setLineup(prev => {
+      // Check if this player name is already in another slot
+      const duplicateSlot = Object.entries(prev).find(([slot, id]) => {
+        if (Number(slot) === targetSlot) return false;
+        if (sourceSlot !== null && Number(slot) === sourceSlot) return false;
+        const c = cards.find(x => x.id === id);
+        return c && c.template.name === cardToDrop.template.name;
+      });
+
+      if (duplicateSlot) {
+        toast.error(`${cardToDrop.template.name} is already in the lineup!`);
+        return prev;
+      }
+
       const next = { ...prev };
       // If dropping to an occupied slot, swap them
       const existingCardId = next[targetSlot];
@@ -336,34 +373,55 @@ const Squad = () => {
   const optimizeLineup = () => {
     const availableCards = [...cards];
     const newLineup = {};
-    const slotsInfo = FORMATIONS[currentFormation];
+    const unassignedSlots = [...FORMATIONS[currentFormation]];
+    const usedPlayerNames = new Set();
 
-    slotsInfo.forEach(slot => {
-      let bestCardIndex = -1;
-      let highestEffOvr = -1;
+    while (unassignedSlots.length > 0) {
+      let bestMatch = null;
 
-      availableCards.forEach((c, index) => {
-        if (!c) return;
-        const currentEffOvr = calculateEffectiveOvr(c, slot.pos);
-        if (currentEffOvr > highestEffOvr || (currentEffOvr === highestEffOvr && c.upgradeLevel > (availableCards[bestCardIndex]?.upgradeLevel || 0))) {
-          highestEffOvr = currentEffOvr;
-          bestCardIndex = index;
-        }
+      // Global Greedy Search: Find the best card for any available slot
+      unassignedSlots.forEach(slot => {
+        availableCards.forEach(card => {
+          if (!card || usedPlayerNames.has(card.template.name)) return;
+
+          const effOvr = calculateEffectiveOvr(card, slot.pos);
+          const isNatural = card.template.position === slot.pos;
+
+          // Selection logic:
+          // 1. Highest Effective OVR
+          // 2. Natural Position (tie-breaker)
+          // 3. Upgrade Level (tie-breaker)
+          if (!bestMatch || 
+              effOvr > bestMatch.effOvr || 
+              (effOvr === bestMatch.effOvr && isNatural && !bestMatch.isNatural) ||
+              (effOvr === bestMatch.effOvr && isNatural === bestMatch.isNatural && card.upgradeLevel > bestMatch.card.upgradeLevel)) {
+            bestMatch = { slot, card, effOvr, isNatural };
+          }
+        });
       });
 
-      if (bestCardIndex !== -1) {
-        newLineup[slot.slot] = availableCards[bestCardIndex].id;
-        availableCards[bestCardIndex] = null; // mark as used
+      if (bestMatch) {
+        newLineup[bestMatch.slot.slot] = bestMatch.card.id;
+        usedPlayerNames.add(bestMatch.card.template.name);
+        
+        // Mark as used
+        const cIdx = availableCards.findIndex(c => c?.id === bestMatch.card.id);
+        if (cIdx !== -1) availableCards[cIdx] = null;
+        
+        const sIdx = unassignedSlots.findIndex(s => s.slot === bestMatch.slot.slot);
+        if (sIdx !== -1) unassignedSlots.splice(sIdx, 1);
+      } else {
+        break; // No more matches possible
       }
-    });
+    }
 
     setLineup(newLineup);
-    toast.success("Squad Optimized!");
+    toast.success("Squad Optimized (Global Strategy)!");
   };
 
   return (
-    <div className="page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
+    <div className="page squad-page">
+      <div className="squad-header" style={{ position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
         <div>
           {editingClub ? (
             <input
@@ -450,8 +508,8 @@ const Squad = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
+      <div className="squad-content" style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+        <div className="pitch-wrapper" style={{ flex: 1 }}>
           <div className="pitch-container">
             <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.15, pointerEvents: 'none' }} viewBox="0 0 400 580">
               <rect x="20" y="20" width="360" height="540" fill="none" stroke="white" strokeWidth="2" />
@@ -479,14 +537,61 @@ const Squad = () => {
         </div>
 
         <div className="glass-dark" style={{ width: 340, maxHeight: 580, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
-            ALL CARDS <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>({cards.length})</span>
-          </h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
+              ALL CARDS <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>({cards.length})</span>
+            </h2>
+          </div>
+          
+          <div className="search-box">
+            <input 
+              type="text" 
+              placeholder="Search players..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="bench-search-input"
+            />
+          </div>
+
+          <div className="bench-sort-controls">
+            <span className="sort-label">SORT BY</span>
+            <div className="sort-tabs">
+              <button 
+                className={`sort-tab ${sortType === 'ovr' ? 'active' : ''}`}
+                onClick={() => setSortType('ovr')}
+              >
+                OVR
+              </button>
+              <button 
+                className={`sort-tab ${sortType === 'name' ? 'active' : ''}`}
+                onClick={() => setSortType('name')}
+              >
+                NAME
+              </button>
+            </div>
+          </div>
+
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
           ) : (
             <>
-              {cards.filter(c => !Object.values(lineup).includes(c.id))
+              {cards
+                .filter(c => {
+                  const alreadyInLineup = Object.values(lineup).includes(c.id);
+                  const matchesSearch = c.template.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                     c.template.position.toLowerCase().includes(searchTerm.toLowerCase());
+                  return !alreadyInLineup && matchesSearch;
+                })
+                .sort((a, b) => {
+                  if (sortType === 'ovr') {
+                    const ovrA = a.effectiveOvr || a.template.ovr;
+                    const ovrB = b.effectiveOvr || b.template.ovr;
+                    if (ovrB !== ovrA) return ovrB - ovrA;
+                    return a.template.name.localeCompare(b.template.name);
+                  } else {
+                    return a.template.name.localeCompare(b.template.name);
+                  }
+                })
                 .slice(0, benchVisibleCount)
                 .map(card => {
                   const p = card.template;

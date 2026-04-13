@@ -17,18 +17,18 @@ public class Tournament {
     private Long id;
 
     @Column(nullable = false)
-    private String name; // e.g. "Elite Premier League"
+    private String name;
 
     @Column(nullable = false)
-    private String type; // "LEAGUE", "CUP", "SUPER_CUP", "CONTINENTAL"
+    private String type;
 
     @Column(nullable = false)
     private Integer seasonIndex;
 
     @Column(nullable = false)
     @Builder.Default
-    private Integer tier = 1; // 1, 2, 3 for Leagues; 0 for Cups
-
+    private Integer tier = 1;
+    
     @Column(nullable = false)
     @Builder.Default
     private Boolean isCompleted = false;
@@ -40,5 +40,5 @@ public class Tournament {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @com.fasterxml.jackson.annotation.JsonIgnore
-    private Users user; // Which user does this instance belong to?
+    private Users user; 
 }

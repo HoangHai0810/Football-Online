@@ -21,14 +21,14 @@ public class TournamentStanding {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private Tournament tournament;
 
-    @ManyToOne(fetch = FetchType.EAGER) // Eager to avoid lazy load issues on BXH response
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ai_club_id")
     private AiClub aiClub;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @com.fasterxml.jackson.annotation.JsonIgnore
-    private Users user; // If the row belongs to the user's club
+    private Users user;
 
     @com.fasterxml.jackson.annotation.JsonProperty("isUserTeam")
     private boolean isUserTeam;

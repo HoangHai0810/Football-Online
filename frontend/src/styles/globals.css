@@ -1412,6 +1412,99 @@ img {
     font-size: 40px;
     margin: 0;
   }
+
+  .squad-header {
+    position: relative;
+    z-index: 50; /* Ensure dropdowns are above the pitch */
+  }
+  /* Squad Mobile Fix */
+  .squad-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 20px;
+    margin-bottom: 24px !important;
+  }
+  .squad-content {
+    flex-direction: column;
+    gap: 32px !important;
+  }
+  .pitch-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 12px;
+  }
+  .pitch-container {
+    min-width: 360px; /* Ensure pitch doesn't get too slim */
+    min-height: 520px !important;
+  }
+  .glass-dark {
+    width: 100% !important;
+    max-height: none !important;
+  }
+}
+
+.bench-search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: white;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  transition: var(--transition);
+  margin-bottom: 8px;
+}
+
+.bench-search-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(240, 195, 45, 0.2);
+}
+
+.search-box {
+    margin-bottom: 4px;
+}
+
+.bench-sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sort-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.sort-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sort-tab {
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.sort-tab:hover {
+  color: white;
+}
+
+.sort-tab.active {
+  background: var(--gold);
+  color: #000;
 }
 
 /* Tournament Stats & Leaders */

@@ -21,7 +21,7 @@ public class TournamentPlayerStat {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private Tournament tournament;
 
-    private Long playerCardId; // For user players, link to their card
+    private Long playerCardId; 
     private String playerName;
     private String clubName;
     private String playerPosition;
