@@ -8,10 +8,9 @@ from langchain_core.messages import HumanMessage
 
 app = FastAPI(title="Football Chatbot API")
 
-# Enable CORS for the React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, set this to your frontend URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,13 +33,20 @@ async def chat(request: ChatRequest, authorization: Optional[str] = Header(None)
         "messages": [HumanMessage(content=request.message)],
     }
     
-    # Run the LangGraph
     try:
         result = graph.invoke(initial_state)
-        # The last message should be the AI's response
-        response_message = result["messages"][-1]
+        last_message = result["messages"][-1]
+        
+        if hasattr(last_message, 'content'):
+            content = last_message.content
+        else:
+            content = last_message.get("content", "")
+
+        if isinstance(content, list):
+            content = " ".join([block.get("text", "") if isinstance(block, dict) else str(block) for block in content])
+        
         return {
-            "response": response_message.content,
+            "response": content,
             "status": "success"
         }
     except Exception as e:

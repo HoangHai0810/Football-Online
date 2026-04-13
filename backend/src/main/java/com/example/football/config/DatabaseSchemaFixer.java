@@ -54,6 +54,9 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
         String[] matchFixtureCols = {
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS is_knockout BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS extra_time_used BOOLEAN DEFAULT false",
+            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS played BOOLEAN DEFAULT false",
+            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS home_is_user BOOLEAN DEFAULT false",
+            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS away_is_user BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS home_penalty_score INTEGER DEFAULT 0",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS away_penalty_score INTEGER DEFAULT 0"
         };
@@ -65,6 +68,13 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
             } catch (Exception e) {
                 log.warn("Could not execute schema fix: {} - Error: {}", sql, e.getMessage());
             }
+        }
+
+        try {
+            log.info("Attempting to migrate 'is_played' data to 'played' if column exists");
+            jdbcTemplate.execute("UPDATE match_fixtures SET played = is_played WHERE played IS FALSE AND is_played IS NOT NULL");
+        } catch (Exception e) {
+            log.info("Migration of 'is_played' skipped (column probably doesn't exist).");
         }
         
         log.info("Schema fix process completed.");

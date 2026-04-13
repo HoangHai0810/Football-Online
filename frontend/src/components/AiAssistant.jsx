@@ -48,6 +48,21 @@ const AiAssistant = () => {
     }
   };
 
+  const renderMessageContent = (content) => {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content.map((item, idx) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object' && item.text) return item.text;
+        return '';
+      }).join(' ');
+    }
+    if (content && typeof content === 'object' && content.text) {
+      return content.text;
+    }
+    return 'Invalid message format';
+  };
+
   return (
     <div className="ai-assistant-container">
       <AnimatePresence>
@@ -79,7 +94,7 @@ const AiAssistant = () => {
                    {msg.role === 'ai' ? <Sparkles size={18} /> : <User size={18} />}
                   </div>
                   <div className="ai-message-content">
-                    {msg.content}
+                    {renderMessageContent(msg.content)}
                   </div>
                 </div>
               ))}
