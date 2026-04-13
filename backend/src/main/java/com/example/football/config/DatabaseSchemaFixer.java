@@ -50,16 +50,7 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
         }
 
 
-        try {
-            log.info("Attempting to rename column: is_played -> played");
-            jdbcTemplate.execute("ALTER TABLE match_fixtures RENAME COLUMN is_played TO played");
-            log.info("Successfully renamed is_played to played");
-        } catch (Exception e) {
-            log.info("Could not rename is_played to played (may already be named correctly or column doesn't exist): {}", e.getMessage());
-        }
-
         String[] matchFixtureCols = {
-            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS played BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS is_knockout BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS extra_time_used BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS home_is_user BOOLEAN DEFAULT false",
