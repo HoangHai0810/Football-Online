@@ -33,8 +33,6 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
                 log.warn("Could not drop constraint: {} - it might not exist or table might not be ready yet.", constraint);
             }
         }
-
-        // Add missing columns to tournaments table with defaults
         String[] tournamentCols = {
             "ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS tier INTEGER DEFAULT 1",
             "ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS season_index INTEGER DEFAULT 1",
@@ -51,10 +49,19 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
             }
         }
 
+
+        try {
+            log.info("Attempting to rename column: is_played -> played");
+            jdbcTemplate.execute("ALTER TABLE match_fixtures RENAME COLUMN is_played TO played");
+            log.info("Successfully renamed is_played to played");
+        } catch (Exception e) {
+            log.info("Could not rename is_played to played (may already be named correctly or column doesn't exist): {}", e.getMessage());
+        }
+
         String[] matchFixtureCols = {
+            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS played BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS is_knockout BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS extra_time_used BOOLEAN DEFAULT false",
-            "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS played BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS home_is_user BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS away_is_user BOOLEAN DEFAULT false",
             "ALTER TABLE match_fixtures ADD COLUMN IF NOT EXISTS home_penalty_score INTEGER DEFAULT 0",
@@ -68,13 +75,6 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
             } catch (Exception e) {
                 log.warn("Could not execute schema fix: {} - Error: {}", sql, e.getMessage());
             }
-        }
-
-        try {
-            log.info("Attempting to migrate 'is_played' data to 'played' if column exists");
-            jdbcTemplate.execute("UPDATE match_fixtures SET played = is_played WHERE played IS FALSE AND is_played IS NOT NULL");
-        } catch (Exception e) {
-            log.info("Migration of 'is_played' skipped (column probably doesn't exist).");
         }
         
         log.info("Schema fix process completed.");
