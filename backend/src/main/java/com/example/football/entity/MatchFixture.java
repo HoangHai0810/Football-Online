@@ -47,7 +47,7 @@ public class MatchFixture {
     @Builder.Default
     private boolean awayIsUser = false;
 
-    @Column(name = "is_played", nullable = false)
+    @Column(nullable = false)
     @Builder.Default
     private boolean played = false;
 
