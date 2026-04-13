@@ -30,6 +30,7 @@ public class TournamentStanding {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private Users user; // If the row belongs to the user's club
 
+    @com.fasterxml.jackson.annotation.JsonProperty("isUserTeam")
     private boolean isUserTeam;
 
     @Column(nullable = false)

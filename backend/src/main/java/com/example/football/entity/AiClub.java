@@ -25,4 +25,7 @@ public class AiClub {
 
     @Column(nullable = false)
     private Integer baseOvr; // Used to simulate matches
+
+    @Column(columnDefinition = "TEXT")
+    private String starPlayers; // Comma-separated names
 }

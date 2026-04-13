@@ -25,6 +25,7 @@ public class MatchSimulationEngine {
     private final Random random = new Random();
     private final SquadFormationRepository squadFormationRepository;
     private final PlayerCardRepository playerCardRepository;
+    private final com.example.football.repository.TournamentPlayerStatRepository playerStatRepository;
     private final ObjectMapper objectMapper;
 
     public void simulateMatch(MatchFixture fixture) {
@@ -59,6 +60,10 @@ public class MatchSimulationEngine {
 
         fixture.setHomeScore(homeScore);
         fixture.setAwayScore(awayScore);
+        fixture.setPlayed(true);
+
+        // Attribute stats
+        attributeStats(fixture, homeScore, awayScore);
 
         // Knockout Logic: Extra Time & Penalties if draw
         if (fixture.isKnockout() && homeScore == awayScore) {
@@ -86,6 +91,26 @@ public class MatchSimulationEngine {
         fixture.setPlayed(true);
 
         // Check if user was eliminated (Knockout only)
+        checkUserElimination(fixture);
+    }
+
+    public void applyUserInteractiveResult(MatchFixture fixture, int homeScore, int awayScore, Integer homePen, Integer awayPen) {
+        fixture.setHomeScore(homeScore);
+        fixture.setAwayScore(awayScore);
+        if (homePen != null && awayPen != null) {
+            fixture.setHomePenaltyScore(homePen);
+            fixture.setAwayPenaltyScore(awayPen);
+            fixture.setExtraTimeUsed(true);
+        }
+        fixture.setPlayed(true);
+        
+        // Attribute stats (Interactive matches also need to record who scored)
+        attributeStats(fixture, homeScore, awayScore);
+        
+        checkUserElimination(fixture);
+    }
+
+    private void checkUserElimination(MatchFixture fixture) {
         if (fixture.isKnockout()) {
             boolean userLost = false;
             if (fixture.isHomeIsUser()) {
@@ -133,18 +158,139 @@ public class MatchSimulationEngine {
                 }
 
                 List<PlayerCard> activeCards = playerCardRepository.findAllById(lineup.values());
-                if (activeCards.size() == 11) {
-                    double averageOvr = activeCards.stream()
-                            .mapToInt(c -> c.getTemplate().getOvr() + c.getUpgradeLevel())
-                            .average()
-                            .orElse(0.0);
-                    return (int) Math.round(averageOvr);
+                String formation = squadOpt.get().getFormation() != null ? squadOpt.get().getFormation() : "4-3-3";
+                String[] slotPositions = getPositionsForFormation(formation);
+                
+                double totalEffOvr = 0;
+                for (Map.Entry<String, Long> entry : lineup.entrySet()) {
+                    int slotIdx = Integer.parseInt(entry.getKey());
+                    if (slotIdx >= 0 && slotIdx < 11) {
+                        Long cardId = entry.getValue();
+                        Optional<PlayerCard> cardOpt = playerCardRepository.findById(cardId);
+                        if (cardOpt.isPresent()) {
+                            PlayerCard card = cardOpt.get();
+                            String slotPos = slotPositions[slotIdx];
+                            totalEffOvr += calculateEffectiveOvr(card, slotPos);
+                        }
+                    }
                 }
+                return (int) Math.round(totalEffOvr / 11.0);
             } catch (Exception e) {
                 // Ignore and return 0
             }
         }
 
         return 0; // Squad not found or incomplete
+    }
+
+    private void attributeStats(MatchFixture fixture, int homeGoals, int awayGoals) {
+        if (homeGoals > 0) recordGoalsForSide(fixture, true, homeGoals);
+        if (awayGoals > 0) recordGoalsForSide(fixture, false, awayGoals);
+    }
+
+    private void recordGoalsForSide(MatchFixture fixture, boolean isHome, int count) {
+        String clubName = "Unknown";
+        if (isHome) {
+            if (fixture.isHomeIsUser() && fixture.getHomeUser() != null) clubName = fixture.getHomeUser().getClubName();
+            else if (fixture.getHomeAiClub() != null) clubName = fixture.getHomeAiClub().getName();
+        } else {
+            if (fixture.isAwayIsUser() && fixture.getAwayUser() != null) clubName = fixture.getAwayUser().getClubName();
+            else if (fixture.getAwayAiClub() != null) clubName = fixture.getAwayAiClub().getName();
+        }
+        
+        boolean isUser = isHome ? fixture.isHomeIsUser() : fixture.isAwayIsUser();
+        Users user = isHome ? fixture.getHomeUser() : fixture.getAwayUser();
+        
+        for (int i = 0; i < count; i++) {
+            if (isUser && user != null) {
+                // Pick a player from user lineup
+                recordUserGoal(fixture, user);
+            } else {
+                // Pick an AI star
+                recordAiGoal(fixture, isHome, clubName);
+            }
+        }
+    }
+
+    private void recordUserGoal(MatchFixture fixture, Users user) {
+        try {
+            Optional<SquadFormation> squadOpt = squadFormationRepository.findByUser(user);
+            if (squadOpt.isPresent()) {
+                Map<String, Long> lineup = objectMapper.readValue(squadOpt.get().getLineupJson(), new TypeReference<Map<String, Long>>() {});
+                // Bias towards forwards/mids for goals
+                List<Long> possibleIds = List.copyOf(lineup.values());
+                if (possibleIds.isEmpty()) return;
+                
+                Long cardId = possibleIds.get(random.nextInt(possibleIds.size())); // Simple random for now
+                PlayerCard card = playerCardRepository.findById(cardId).orElse(null);
+                if (card != null) {
+                    com.example.football.entity.TournamentPlayerStat stat = playerStatRepository.findByTournamentAndPlayerCardId(fixture.getTournament(), card.getId())
+                        .orElse(com.example.football.entity.TournamentPlayerStat.builder()
+                            .tournament(fixture.getTournament())
+                            .playerCardId(card.getId())
+                            .playerName(card.getTemplate().getName())
+                            .clubName(user.getClubName())
+                            .build());
+                    stat.setGoals(stat.getGoals() + 1);
+                    playerStatRepository.save(stat);
+                }
+            }
+        } catch (Exception e) {}
+    }
+
+    private void recordAiGoal(MatchFixture fixture, boolean isHome, String clubName) {
+        String[] stars = {"Striker", "Winger", "Midfielder"}; // Default fallback
+        
+        AiClub club = isHome ? fixture.getHomeAiClub() : fixture.getAwayAiClub();
+        if (club != null && club.getStarPlayers() != null && !club.getStarPlayers().isBlank()) {
+            stars = club.getStarPlayers().split(",\\s*");
+        }
+        
+        String name = stars[random.nextInt(stars.length)];
+        
+        com.example.football.entity.TournamentPlayerStat stat = playerStatRepository.findByTournamentAndPlayerNameAndClubName(fixture.getTournament(), name, clubName)
+            .orElse(com.example.football.entity.TournamentPlayerStat.builder()
+                .tournament(fixture.getTournament())
+                .playerName(name)
+                .clubName(clubName)
+                .build());
+        stat.setGoals(stat.getGoals() + 1);
+        playerStatRepository.save(stat);
+    }
+
+    private String[] getPositionsForFormation(String formation) {
+        switch (formation) {
+            case "4-4-2": return new String[]{"GK", "LB", "CB", "CB", "RB", "LM", "CM", "CM", "RM", "ST", "ST"};
+            case "4-2-3-1": return new String[]{"GK", "LB", "CB", "CB", "RB", "CDM", "CDM", "CAM", "LM", "RM", "ST"};
+            case "3-5-2": return new String[]{"GK", "CB", "CB", "CB", "LWB", "CDM", "CDM", "RWB", "CAM", "ST", "ST"};
+            case "4-1-2-1-2": return new String[]{"GK", "LB", "CB", "CB", "RB", "CDM", "LM", "RM", "CAM", "ST", "ST"};
+            case "4-3-2-1": return new String[]{"GK", "LB", "CB", "CB", "RB", "CM", "CM", "CM", "CAM", "CAM", "ST"};
+            case "5-3-2": return new String[]{"GK", "LWB", "CB", "CB", "CB", "RWB", "CM", "CDM", "CM", "ST", "ST"};
+            case "3-4-3": return new String[]{"GK", "CB", "CB", "CB", "LM", "CM", "CM", "RM", "LW", "ST", "RW"};
+            case "4-5-1": return new String[]{"GK", "LB", "CB", "CB", "RB", "LM", "CM", "CM", "CM", "RM", "ST"};
+            case "4-3-3":
+            default: return new String[]{"GK", "LB", "CB", "CB", "RB", "CM", "CDM", "CM", "LW", "ST", "RW"};
+        }
+    }
+
+    private int calculateEffectiveOvr(PlayerCard card, String slotPos) {
+        int baseOvr = card.getEffectiveOvr();
+        String natPos = card.getTemplate().getPosition().name();
+        
+        if (natPos.equals(slotPos)) return baseOvr;
+        
+        String natGroup = getPosGroup(natPos);
+        String slotGroup = getPosGroup(slotPos);
+        
+        if (natGroup.equals(slotGroup)) return Math.max(1, baseOvr - 3);
+        if (natGroup.equals("GK") || slotGroup.equals("GK")) return Math.max(1, baseOvr - 20);
+        return Math.max(1, baseOvr - 8);
+    }
+
+    private String getPosGroup(String pos) {
+        if (pos.equals("GK")) return "GK";
+        if (List.of("CB", "LB", "RB", "LWB", "RWB").contains(pos)) return "DEF";
+        if (List.of("CDM", "CM", "CAM", "LM", "RM").contains(pos)) return "MID";
+        return "FWD";
     }
 }

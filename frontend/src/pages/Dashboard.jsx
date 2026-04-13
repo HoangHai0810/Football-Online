@@ -1,8 +1,12 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Users, Package, ShoppingCart, Trophy, TrendingUp, Star, Zap, Award, Coins } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Users, Package, ShoppingCart, Trophy, TrendingUp, Star, Zap, Award, Coins, ChevronRight, Play, Clock } from 'lucide-react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import InteractiveMatch from '../components/InteractiveMatch';
+import SeasonSummaryModal from '../components/SeasonSummaryModal';
+import toast from 'react-hot-toast';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -84,28 +88,83 @@ const QuickCard = ({ to, icon: Icon, title, desc, color, i }) => (
   </motion.div>
 );
 
-import { useAuth } from '../context/AuthContext';
-
 const Dashboard = () => {
-  const { isAuthenticated, user, loading } = useAuth();
-  const [statsData, setStatsData] = React.useState(null);
-  const [statsLoading, setStatsLoading] = React.useState(true);
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const [statsData, setStatsData] = useState(null);
+  const [nextFixture, setNextFixture] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Match related
+  const [showMatch, setShowMatch] = useState(false);
+  const [isQuickSim, setIsQuickSim] = useState(false);
+  const [userOvr, setUserOvr] = useState(85);
+  const [squadCards, setSquadCards] = useState([]);
+  const [career, setCareer] = useState(null);
 
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      api.get('/users/stats')
-        .then(res => {
-          setStatsData(res.data);
-          setStatsLoading(false);
-        })
-        .catch(err => {
-          console.error("Failed to fetch stats", err);
-          setStatsLoading(false);
-        });
+  // Season End
+  const [showSeasonSummary, setShowSeasonSummary] = useState(false);
+  const [seasonSummaryData, setSeasonSummaryData] = useState(null);
+
+  const fetchData = async () => {
+    if (!isAuthenticated || !user) return;
+    try {
+      setLoading(true);
+      const [statsRes, fixtureRes, careerRes, cardsRes, squadRes] = await Promise.all([
+        api.get('/users/stats'),
+        api.get(`/career/next-fixture?userId=${user.id}`),
+        api.get(`/career/state?userId=${user.id}`),
+        api.get(`/cards/user/${user.id}`),
+        api.get('/squad')
+      ]);
+
+      setStatsData(statsRes.data);
+      setNextFixture(fixtureRes.data);
+      setCareer(careerRes.data);
+      setUserOvr(statsRes.data.teamOvr || 85);
+
+      // Squad data
+      let lineup = {};
+      if (squadRes.data && squadRes.data.lineupJson) {
+        try { lineup = JSON.parse(squadRes.data.lineupJson); } catch (e) {
+          console.error("JSON parse error for lineup", e);
+        }
+      }
+      const activeCards = Object.values(lineup).map(id => cardsRes.data.find(c => c.id === id)).filter(Boolean);
+      setSquadCards(activeCards);
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch dashboard data", err);
+      setLoading(false);
     }
-  }, [isAuthenticated]);
+  };
 
-  if (loading || (isAuthenticated && statsLoading)) {
+  useEffect(() => {
+    fetchData();
+  }, [isAuthenticated, user]);
+
+  const handleFinishMatch = async (homeScore, awayScore, homePen, awayPen) => {
+    setShowMatch(false);
+    try {
+      let url = `/career/advance?userId=${user.id}&userHomeScore=${homeScore}&userAwayScore=${awayScore}&fixtureId=${nextFixture.id}`;
+      if (homePen !== undefined) url += `&homePen=${homePen}&awayPen=${awayPen}`;
+      
+      const res = await api.post(url);
+      
+      if (res.data.seasonSummary && res.data.seasonSummary.results) {
+          setSeasonSummaryData(res.data.seasonSummary);
+          setShowSeasonSummary(true);
+      } else {
+          toast.success("Match results recorded!");
+          fetchData();
+      }
+    } catch (err) {
+      toast.error("Failed to advance career.");
+    }
+  };
+
+  if (authLoading || (isAuthenticated && loading)) {
     return (
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-spin" style={{ width: 40, height: 40, border: '4px solid var(--gold)', borderTopColor: 'transparent', borderRadius: '50%' }} />
@@ -124,7 +183,7 @@ const Dashboard = () => {
   }
 
   const stats = [
-    { label: 'Current Balance', value: statsData?.coins?.toLocaleString() || '0', change: 'Live Update', colorClass: 'gold-card', icon: TrendingUp },
+    { label: 'Current Balance', value: statsData?.coins?.toLocaleString() || (user?.coins?.toLocaleString() || '0'), change: 'Live Update', colorClass: 'gold-card', icon: TrendingUp },
     { label: 'Squad OVR', value: statsData?.teamOvr || '0', change: 'Top 11 Players', colorClass: 'blue-card', icon: Star },
     { label: 'Cards Owned', value: statsData?.totalCards || '0', change: 'Collection', colorClass: 'green-card', icon: Zap },
     { label: 'Season Rank', value: statsData?.rank || '#--', colorClass: 'purple-card', icon: Award },
@@ -145,79 +204,155 @@ const Dashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         style={{
-          textAlign: 'center',
-          padding: '48px 0 56px',
+          textAlign: 'left',
+          padding: '12px 0 20px',
           position: 'relative',
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 16,
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          marginBottom: 24
         }}
       >
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(ellipse 60% 80% at 50% 50%, rgba(240,195,45,0.06) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse 40% 100% at 0% 50%, rgba(240,195,45,0.08) 0%, transparent 70%)',
             pointerEvents: 'none',
           }}
         />
-        <p style={{ fontSize: 13, letterSpacing: 4, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 16, fontWeight: 600 }}>
-          Welcome Back, Manager
-        </p>
-        <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 80, letterSpacing: 4, lineHeight: 1, marginBottom: 20 }}>
-          YOUR <span style={{ color: 'var(--gold)', textShadow: '0 0 40px rgba(240,195,45,0.4)' }}>ARENA</span>
+        <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 42, letterSpacing: 2, lineHeight: 1, margin: 0 }}>
+          YOUR <span style={{ color: 'var(--gold)', textShadow: '0 0 40px rgba(240,195,45,0.4)' }}>MANAGER</span> HUB
         </h1>
-        <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.7 }}>
-          Build the ultimate squad, open legendary packs, and dominate
-          the transfer market in the most premium football experience.
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, margin: 0, opacity: 0.7 }}>
+          Ultimate Squad Operations — Season {career?.currentSeason} • Rank {statsData?.rank || '--'}
         </p>
       </motion.div>
 
-      {/* Stats Row */}
-      <div className="stats-row" style={{ marginBottom: 32 }}>
-        {stats.map((s, i) => (
-          <StatCard key={s.label} {...s} i={i} />
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 380px)', gap: 32, marginBottom: 32 }}>
+        {/* Left Column: Stats & Balance */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+            <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+                {stats.map((s, i) => (
+                <StatCard key={s.label} {...s} i={i} />
+                ))}
+            </div>
+
+            <motion.div
+                custom={8} initial="hidden" animate="visible" variants={fadeUp}
+                style={{
+                padding: '32px 40px',
+                background: 'linear-gradient(135deg, rgba(240,195,45,0.1) 0%, rgba(10,18,40,0.3) 100%)',
+                border: '1px solid rgba(240, 195, 45, 0.2)',
+                borderRadius: 20,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24,
+                }}
+            >
+                <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>Account Balance</div>
+                    <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 42, color: 'var(--gold)' }}>
+                        {statsData?.coins?.toLocaleString() || '0'} <Coins size={20} style={{ opacity: 0.7, verticalAlign: 'text-bottom' }} />
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                    <Link to="/quests" className="btn btn-glass" style={{ padding: '10px 20px' }}>QUESTS</Link>
+                    <Link to="/packs" className="btn btn-gold" style={{ padding: '10px 20px' }}>PACKS</Link>
+                </div>
+            </motion.div>
+        </div>
+
+        {/* Right Column: Match Center */}
+        <motion.div custom={6} initial="hidden" animate="visible" variants={fadeUp} className="glass" style={{ borderRadius: 24, padding: 32, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ fontSize: 12, letterSpacing: 2, fontWeight: 800, color: 'var(--gold)', marginBottom: 24, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Clock size={16} /> NEXT FIXTURE
+            </div>
+            
+            {nextFixture ? (
+                <>
+                    <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 24, letterSpacing: 1, fontWeight: 800 }}>WEEK {nextFixture.matchWeek} • {nextFixture.tournamentName}</div>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 12 }}>
+                            <div className="team-badge-premium" style={{ width: 110 }}>
+                                <div className={`team-badge-circle ${nextFixture.homeIsUser ? 'user-team' : ''}`} style={{ width: 56, height: 56, fontSize: 24 }}>
+                                    {(nextFixture.homeIsUser ? user.clubName : nextFixture.homeAiClub.name)[0]}
+                                </div>
+                                <div className="team-badge-name" style={{ fontSize: 12, marginTop: 8 }}>{nextFixture.homeIsUser ? (user.clubName || "YOUR CLUB") : nextFixture.homeAiClub.name}</div>
+                            </div>
+                            
+                            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, opacity: 0.3, marginTop: 14 }}>VS</div>
+                            
+                            <div className="team-badge-premium" style={{ width: 110 }}>
+                                <div className={`team-badge-circle ${nextFixture.awayIsUser ? 'user-team' : ''}`} style={{ width: 56, height: 56, fontSize: 24 }}>
+                                    {(nextFixture.awayIsUser ? user.clubName : nextFixture.awayAiClub.name)[0]}
+                                </div>
+                                <div className="team-badge-name" style={{ fontSize: 12, marginTop: 8 }}>{nextFixture.awayIsUser ? (user.clubName || "YOUR CLUB") : nextFixture.awayAiClub.name}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <button className="btn btn-gold" onClick={() => { setIsQuickSim(false); setShowMatch(true); }} style={{ width: '100%', height: 50 }}>
+                            <Play size={18} fill="currentColor" /> PLAY MATCH
+                        </button>
+                        <button className="btn btn-glass" onClick={() => { setIsQuickSim(true); setShowMatch(true); }} style={{ width: '100%', height: 50 }}>
+                            QUICK SIM
+                        </button>
+                    </div>
+
+                    <Link to={`/tournaments/${nextFixture.tournamentId}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20, fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>
+                        View Tournament <ChevronRight size={14} />
+                    </Link>
+                </>
+            ) : (
+                <div style={{ textAlign: 'center', padding: '60px 0', opacity: 0.5 }}>
+                    <div style={{ 
+                        width: 80, height: 80, borderRadius: '50%', 
+                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px'
+                    }}>
+                        <Trophy size={40} />
+                    </div>
+                    <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 1, marginBottom: 8 }}>No Matches Scheduled</div>
+                    <div style={{ fontSize: 13, maxWidth: 200, margin: '0 auto' }}>Check tournaments to see your full season calendar.</div>
+                </div>
+            )}
+        </motion.div>
       </div>
 
-      {/* Quick Navigation */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
         {quickLinks.map((q, i) => (
-          <QuickCard key={q.title} {...q} i={i + 4} />
+          <QuickCard key={q.title} {...q} i={i + 10} />
         ))}
       </div>
 
-      {/* Balance Banner */}
-      <motion.div
-        custom={8}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUp}
-        style={{
-          marginTop: 32,
-          padding: '32px 40px',
-          background: 'linear-gradient(135deg, rgba(240,195,45,0.12) 0%, rgba(240,195,45,0.03) 50%, rgba(10,18,40,0.3) 100%)',
-          border: '1px solid rgba(240,195,45,0.25)',
-          borderRadius: 20,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 24,
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>
-            Account Balance
-          </div>
-          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, letterSpacing: 2, lineHeight: 1, color: 'var(--gold)' }}>
-            {statsData?.coins?.toLocaleString() || '0'} <Coins size={20} style={{ opacity: 0.7, verticalAlign: 'text-bottom' }} />
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
-            Complete <strong style={{ color: 'var(--gold)' }}>Quests</strong> to earn more coins!
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Link to="/quests" className="btn btn-glass">VIEW QUESTS</Link>
-          <Link to="/packs" className="btn btn-gold">OPEN PACKS</Link>
-        </div>
-      </motion.div>
+      {/* Match Overlay */}
+      <AnimatePresence>
+        {showMatch && nextFixture && (
+           <div style={{ position: 'fixed', inset: 0, zIndex: 99999 }}>
+              <InteractiveMatch
+                fixture={nextFixture}
+                userClubName={user.clubName || "YOUR CLUB"}
+                userOvr={userOvr}
+                opponentOvr={nextFixture.homeIsUser ? nextFixture.awayAiClub.baseOvr : nextFixture.homeAiClub.baseOvr}
+                opponentName={nextFixture.homeIsUser ? nextFixture.awayAiClub.name : nextFixture.homeAiClub.name}
+                squadCards={squadCards}
+                isQuickSim={isQuickSim}
+                onFinish={handleFinishMatch}
+                onCancel={() => setShowMatch(false)}
+              />
+           </div>
+        )}
+      </AnimatePresence>
+
+      <SeasonSummaryModal 
+        isOpen={showSeasonSummary} 
+        summary={seasonSummaryData} 
+        onConfirm={() => {
+            setShowSeasonSummary(false);
+            fetchData();
+        }} 
+      />
     </div>
   );
 };

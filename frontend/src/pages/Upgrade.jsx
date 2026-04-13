@@ -213,9 +213,9 @@ const Upgrade = () => {
   const calculateSuccessRate = () => {
     if (!targetCard || materialCards.length === 0) return 0;
     let totalChance = 0;
-    const targetOvr = targetCard.template?.ovr || 0;
+    const targetOvr = (targetCard.template?.ovr || 0) + getStatBonus(targetCard.upgradeLevel);
     materialCards.forEach(m => {
-      const materialOvr = m.template?.ovr || 0;
+      const materialOvr = (m.template?.ovr || 0) + getStatBonus(m.upgradeLevel);
       const diff = materialOvr - targetOvr;
       totalChance += 0.2 * Math.pow(1.5, diff);
     });

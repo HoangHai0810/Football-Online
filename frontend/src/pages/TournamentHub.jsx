@@ -1,29 +1,75 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Shield, Zap, ChevronRight, Lock, Loader2 } from 'lucide-react';
+import { Trophy, Shield, Zap, Play, ChevronRight, Lock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import InteractiveMatch from '../components/InteractiveMatch';
+import toast from 'react-hot-toast';
 
 const TournamentHub = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [tournaments, setTournaments] = useState([]);
+    const [nextFixture, setNextFixture] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showInteractiveMatch, setShowInteractiveMatch] = useState(false);
+    const [isQuickSimMode, setIsQuickSimMode] = useState(false);
+    const [userOvr, setUserOvr] = useState(85);
+    const [squadCards, setSquadCards] = useState([]);
+
+    const fetchData = React.useCallback(async () => {
+        try {
+            const [tourRes, nextFixRes, statsRes, cardsRes, squadRes] = await Promise.all([
+                api.get(`/career/tournaments?userId=${user.id}`),
+                api.get(`/career/next-fixture?userId=${user.id}`),
+                api.get('/users/stats'),
+                api.get(`/cards/user/${user.id}`),
+                api.get('/squad')
+            ]);
+            
+            setTournaments(tourRes.data);
+            setNextFixture(nextFixRes.data);
+            setUserOvr(statsRes.data.teamOvr);
+            
+            let lineup = {};
+            try { lineup = JSON.parse(squadRes.data.lineupJson); } catch (e) {}
+            const activeCards = Object.values(lineup).map(id => cardsRes.data.find(c => c.id === id)).filter(Boolean);
+            setSquadCards(activeCards);
+            
+            setLoading(false);
+        } catch (err) {
+            console.error(err);
+            setLoading(false);
+        }
+    }, [user]);
 
     useEffect(() => {
-        const fetchTournaments = async () => {
-             try {
-                 const res = await api.get(`/career/tournaments?userId=${user.id}`);
-                 setTournaments(res.data);
-                 setLoading(false);
-             } catch (err) {
-                 console.error(err);
-                 setLoading(false);
-             }
-        };
-        if (user) fetchTournaments();
-    }, [user]);
+        if (user) fetchData();
+    }, [user, fetchData]);
+
+    const handleAdvance = async (userHomeScore = null, userAwayScore = null, homePen = null, awayPen = null) => {
+        try {
+            let url = `/career/advance?userId=${user.id}&fixtureId=${nextFixture?.id}`;
+            if (userHomeScore !== null && userAwayScore !== null) {
+                url += `&userHomeScore=${userHomeScore}&userAwayScore=${userAwayScore}`;
+                if (homePen !== null && awayPen !== null) url += `&homePen=${homePen}&awayPen=${awayPen}`;
+            }
+            await api.post(url);
+            toast.success("Match completed!");
+            fetchData();
+            setShowInteractiveMatch(false);
+        } catch (err) {
+            toast.error("Failed to simulate match.");
+        }
+    };
+
+    const getInitials = (nick = "") => {
+        if (!nick) return "?";
+        const parts = nick.split(" ");
+        if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return (nick[0] || "?").toUpperCase();
+    };
 
     if (loading) {
         return (
@@ -43,13 +89,66 @@ const TournamentHub = () => {
 
     return (
         <div className="page">
-            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ textAlign: 'center', marginBottom: 40 }}>
                 <p className="section-tag">Career Mode</p>
-                <h1 className="page-title">TOURNAMENT <span>HUB</span></h1>
+                <h1 className="page-title" style={{ marginBottom: 0 }}>TOURNAMENT <span>HUB</span></h1>
                 <p className="page-subtitle">Manage your active competitions and climb to glory.</p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+            {/* Next Match Hero Section */}
+            {nextFixture && (
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="match-hero hover-lift"
+                >
+                    <div className="match-hero-bg-icon">
+                        <Trophy size={200} color="var(--gold)" />
+                    </div>
+
+                    <div className="match-hero-main">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div className="badge badge-gold">NEXT MATCH</div>
+                            <div style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>
+                                {nextFixture.tournamentName} • WEEK {nextFixture.matchWeek}
+                            </div>
+                        </div>
+
+                        <div className="match-hero-teams">
+                            <div className="team-badge-premium">
+                                <div className={`team-badge-circle ${nextFixture.homeIsUser ? 'user-team' : ''}`}>
+                                    {getInitials(nextFixture.homeIsUser ? user.clubName : nextFixture.homeAiClub?.name)}
+                                </div>
+                                <div className="team-badge-name">
+                                    {nextFixture.homeIsUser ? user.clubName : nextFixture.homeAiClub?.name || 'TBA'}
+                                </div>
+                            </div>
+
+                            <div className="match-hero-vs">VS</div>
+
+                            <div className="team-badge-premium">
+                                <div className={`team-badge-circle ${nextFixture.awayIsUser ? 'user-team' : ''}`}>
+                                    {getInitials(nextFixture.awayIsUser ? user.clubName : nextFixture.awayAiClub?.name)}
+                                </div>
+                                <div className="team-badge-name">
+                                    {nextFixture.awayIsUser ? user.clubName : nextFixture.awayAiClub?.name || 'TBA'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="match-hero-actions">
+                        <button className="btn btn-gold" style={{ height: 54, fontSize: 16 }} onClick={() => { setIsQuickSimMode(false); setShowInteractiveMatch(true); }}>
+                            <Play size={20} fill="currentColor" /> PLAY MATCH
+                        </button>
+                        <button className="btn btn-glass" style={{ height: 54, fontSize: 16 }} onClick={() => { setIsQuickSimMode(true); setShowInteractiveMatch(true); }}>
+                            <Zap size={20} fill="currentColor" /> QUICK SIM
+                        </button>
+                    </div>
+                </motion.div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
                 {tournaments.map((tournament, i) => {
                     const config = TOURNAMENT_CONFIG[tournament.type] || TOURNAMENT_CONFIG['LEAGUE'];
                     const Icon = config.icon;
@@ -72,7 +171,7 @@ const TournamentHub = () => {
                                 position: 'relative',
                                 overflow: 'hidden'
                             }}
-                            onClick={() => navigate(`/career/${tournament.id}`)}
+                            onClick={() => navigate(`/tournaments/${tournament.id}`)}
                         >
                             <div style={{ position: 'absolute', top: -20, right: -20, opacity: 0.1 }}>
                                 <Icon size={120} color={config.color} />
@@ -89,7 +188,7 @@ const TournamentHub = () => {
                                     <Icon size={32} color={config.color} />
                                 </div>
                                 {tournament.isEliminated ? (
-                                    <div className="badge" style={{ background: 'rgba(255, 79, 79, 0.15)', color: '#ff4f4f', border: '1px solid rgba(255, 79, 79, 0.3)' }}>ELIMINATED</div>
+                                    <div className="badge badge-red">ELIMINATED</div>
                                 ) : (
                                     <div className="badge badge-gold">ACTIVE</div>
                                 )}
@@ -108,12 +207,26 @@ const TournamentHub = () => {
                             </div>
 
                             <button className="btn btn-glass" style={{ width: '100%', borderColor: `${config.color}33`, marginTop: 'auto' }}>
-                                ENTER TOURNAMENT <ChevronRight size={16} />
+                                VIEW DETAIL <ChevronRight size={16} />
                             </button>
                         </motion.div>
                     );
                 })}
             </div>
+
+            {showInteractiveMatch && nextFixture && (
+                <InteractiveMatch
+                    fixture={nextFixture}
+                    userClubName={user.clubName || 'MY SQUAD'}
+                    userOvr={userOvr}
+                    squadCards={squadCards}
+                    isQuickSim={isQuickSimMode}
+                    opponentOvr={nextFixture.homeIsUser ? nextFixture.awayAiClub.baseOvr : nextFixture.homeAiClub.baseOvr}
+                    opponentName={nextFixture.homeIsUser ? nextFixture.awayAiClub.name : nextFixture.homeAiClub.name}
+                    onFinish={(hs, as, hp, ap) => handleAdvance(hs, as, hp, ap)}
+                    onCancel={() => setShowInteractiveMatch(false)}
+                />
+            )}
         </div>
     );
 };

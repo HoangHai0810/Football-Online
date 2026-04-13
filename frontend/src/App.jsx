@@ -104,7 +104,7 @@ const App = () => {
             <Route path="/packs" element={<PrivateRoute><Packs /></PrivateRoute>} />
             <Route path="/quests" element={<PrivateRoute><Quests /></PrivateRoute>} />
             <Route path="/tournaments" element={<PrivateRoute><TournamentHub /></PrivateRoute>} />
-            <Route path="/career/:id" element={<PrivateRoute><Tournaments /></PrivateRoute>} />
+            <Route path="/tournaments/:id" element={<PrivateRoute><Tournaments /></PrivateRoute>} />
             <Route path="/trophies" element={<PrivateRoute><Trophies /></PrivateRoute>} />
             <Route path="/upgrade" element={<PrivateRoute><Upgrade /></PrivateRoute>} />
           </Routes>

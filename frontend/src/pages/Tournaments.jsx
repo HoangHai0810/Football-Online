@@ -5,7 +5,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import StandingsTable from '../components/StandingsTable';
+import TournamentLeaders from '../components/TournamentLeaders';
 import MatchSimulationModal from '../components/MatchSimulationModal';
+import InteractiveMatch from '../components/InteractiveMatch';
+import SeasonSummaryModal from '../components/SeasonSummaryModal';
 import toast from 'react-hot-toast';
 
 const Tournaments = () => {
@@ -18,8 +21,13 @@ const Tournaments = () => {
     const [nextFixture, setNextFixture] = useState(null);
     const [allFixtures, setAllFixtures] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showMatchModal, setShowMatchModal] = useState(false);
+    const [isQuickSimMode, setIsQuickSimMode] = useState(false);
     const [userOvr, setUserOvr] = useState(85);
+    const [squadCards, setSquadCards] = useState([]);
+
+    // Season End
+    const [showSeasonSummary, setShowSeasonSummary] = useState(false);
+    const [seasonSummaryData, setSeasonSummaryData] = useState(null);
 
     const fetchData = async () => {
         try {
@@ -42,17 +50,19 @@ const Tournaments = () => {
             const allFixturesRes = await api.get(`/career/fixtures/${id}`);
             setAllFixtures(allFixturesRes.data);
 
-            // Find next user fixture (Look ahead if current week has none)
-            let currentWeekFixtures = allFixturesRes.data.filter(f => f.matchWeek === state.currentWeek);
-            let userFixture = currentWeekFixtures.find(f => f.homeIsUser || f.awayIsUser);
-            
-            if (!userFixture) {
-                // Look for the soonest user match in the future
-                userFixture = allFixturesRes.data
-                    .filter(f => (f.homeIsUser || f.awayIsUser) && f.matchWeek > state.currentWeek)
-                    .sort((a,b) => a.matchWeek - b.matchWeek)[0];
-            }
-            setNextFixture(userFixture);
+            // Find next user fixture
+            const nextFixRes = await api.get(`/career/next-fixture?userId=${user.id}`);
+            setNextFixture(nextFixRes.data);
+
+            // Fetch Cards & Squad
+            const [cardsRes, squadRes] = await Promise.all([
+                api.get(`/cards/user/${user.id}`),
+                api.get('/squad')
+            ]);
+            let lineup = {};
+            try { lineup = JSON.parse(squadRes.data.lineupJson); } catch (e) {}
+            const activeCards = Object.values(lineup).map(id => cardsRes.data.find(c => c.id === id)).filter(Boolean);
+            setSquadCards(activeCards);
             
             setLoading(false);
         } catch (err) {
@@ -69,21 +79,29 @@ const Tournaments = () => {
         }
     }, [user, id]);
 
-    const handleAdvance = async () => {
+    const handleAdvance = async (userHomeScore = null, userAwayScore = null, homePen = null, awayPen = null) => {
         try {
-            const result = await api.post(`/career/advance?userId=${user.id}`);
-            const { career: newCareer } = result.data;
+            let url = `/career/advance?userId=${user.id}&fixtureId=${nextFixture?.id}`;
+            if (userHomeScore !== null && userAwayScore !== null) {
+                url += `&userHomeScore=${userHomeScore}&userAwayScore=${userAwayScore}`;
+                if (homePen !== null && awayPen !== null) {
+                    url += `&homePen=${homePen}&awayPen=${awayPen}`;
+                }
+            }
+            const result = await api.post(url);
             
-            // Check if season ended
-            if (newCareer.currentSeason > career.currentSeason) {
-                toast.success("SEASON COMPLETED! Rewards have been issued to your account.", { duration: 5000 });
+            if (result.data.seasonSummary && result.data.seasonSummary.results) {
+                setSeasonSummaryData(result.data.seasonSummary);
+                setShowSeasonSummary(true);
+            } else {
+                toast.success("Match completed!");
+                fetchData();
             }
 
             fetchData();
-            return result.data.fixtures.find(f => f.homeIsUser || f.awayIsUser);
+            setIsQuickSimMode(false);
         } catch (err) {
-            toast.error("Failed to simulate matches.");
-            throw err;
+            toast.error("Failed to simulate match.");
         }
     };
 
@@ -94,8 +112,6 @@ const Tournaments = () => {
             </div>
         );
     }
-
-    const opponent = nextFixture?.homeIsUser ? nextFixture.awayAiClub : nextFixture?.homeAiClub;
 
     const getMainTitle = () => {
         const parts = tournament.name.split(' ');
@@ -128,22 +144,22 @@ const Tournaments = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                        <div className="badge badge-gold" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                        <div className="badge badge-gold" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px' }}>
                             <Trophy size={14} /> SEASON {career.currentSeason}
                         </div>
-                        <div className="badge badge-silver" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div className="badge badge-silver" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px' }}>
                             <Calendar size={14} /> WEEK {career.currentWeek}
                         </div>
-                        <div className="badge badge-blue">
+                        <div className="badge badge-blue" style={{ padding: '4px 12px' }}>
                              {tournament.type} {tournament.tier > 0 ? `TIER ${tournament.tier}` : ''}
                         </div>
                     </div>
-                    <h1 className="page-title" style={{ marginBottom: 0 }}>{getMainTitle()}</h1>
-                    <p className="page-subtitle">Your journey to football dominance continues here.</p>
+                    <h1 className="page-title" style={{ marginBottom: 4, fontSize: 48 }}>{getMainTitle()}</h1>
+                    <p className="page-subtitle" style={{ fontSize: 16, opacity: 0.8 }}>Your journey to football dominance continues here.</p>
                 </div>
 
-                {isEliminated ? (
+                {isEliminated && (
                     <div style={{ 
                         padding: '12px 24px', 
                         background: 'rgba(255, 79, 79, 0.1)', 
@@ -158,105 +174,60 @@ const Tournaments = () => {
                     }}>
                         <Info size={18} /> ELIMINATED FROM TOURNAMENT
                     </div>
-                ) : (
-                    <button 
-                        className={`btn ${!nextFixture ? 'btn-disabled' : 'btn-gold'}`}
-                        style={{ height: 50, padding: '0 32px', fontSize: 16 }}
-                        onClick={() => nextFixture && setShowMatchModal(true)}
-                        disabled={!nextFixture}
-                    >
-                        <Play size={20} fill="currentColor" />
-                        {nextFixture ? 'PLAY NEXT MATCH' : 'NO MATCH SCHEDULED'}
-                    </button>
                 )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 32 }}>
-                {/* Left Column: Standings or Fixtures */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: 18, textTransform: 'uppercase', letterSpacing: 2 }}>
-                            {isKnockoutOnly ? 'Knockout Stages' : 'Tournament Table'}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 32 }}>
+                <div style={{ flex: 1 }}>
+                    <div className="glass" style={{ padding: 32, borderRadius: 24 }}>
+                        <h2 style={{ fontSize: 18, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <Trophy size={20} className="highlight-gold" /> {isKnockoutOnly ? 'Knockout Stages' : 'Tournament Table'}
                         </h2>
+                        {isKnockoutOnly ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {allFixtures.length === 0 && <div className="empty-state">No fixtures generated yet.</div>}
+                                {allFixtures.sort((a,b) => a.matchWeek - b.matchWeek).map(f => {
+                                    const isMyMatch = f.homeIsUser || f.awayIsUser;
+                                    return (
+                                        <div key={f.id} className={`knockout-match-row ${isMyMatch ? 'my-match' : ''}`}>
+                                            <div className="knockout-team home">
+                                                <span className="team-name">{f.homeIsUser ? user.clubName : (f.homeAiClub?.name || 'TBD')}</span>
+                                                <div className="team-badge-circle sm">
+                                                    {f.homeIsUser ? (user.clubName?.charAt(0)) : (f.homeAiClub?.name?.charAt(0))}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="knockout-score">
+                                                {f.played ? (
+                                                    <div className="score-box">
+                                                        <span>{f.homeScore}</span>
+                                                        <span className="divider">-</span>
+                                                        <span>{f.awayScore}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="vs-badge">VS</div>
+                                                )}
+                                            </div>
+
+                                            <div className="knockout-team away">
+                                                <div className="team-badge-circle sm">
+                                                    {f.awayIsUser ? (user.clubName?.charAt(0)) : (f.awayAiClub?.name?.charAt(0))}
+                                                </div>
+                                                <span className="team-name">{f.awayIsUser ? user.clubName : (f.awayAiClub?.name || 'TBD')}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <StandingsTable standings={standings} userTeamName={user.clubName} />
+                        )}
                     </div>
-                    
-                    {isKnockoutOnly ? (
-                        <div className="glass" style={{ padding: 24, borderRadius: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {allFixtures.length === 0 && <p className="text-muted">No fixtures generated yet.</p>}
-                            {allFixtures
-                                .sort((a,b) => a.matchWeek - b.matchWeek)
-                                .map(f => (
-                                <div key={f.id} style={{ 
-                                    padding: '16px 20px', 
-                                    background: 'rgba(255,255,255,0.03)', 
-                                    borderRadius: 16,
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    border: (f.homeIsUser || f.awayIsUser) ? '1px solid rgba(240,195,45,0.3)' : '1px solid transparent',
-                                    opacity: f.played ? 0.6 : 1
-                                }}>
-                                    <div style={{ fontSize: 12, color: 'var(--text-muted)', width: 60 }}>WK {f.matchWeek}</div>
-                                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12 }}>
-                                        <span style={{ fontWeight: f.homeIsUser ? 700 : 400 }}>{f.homeIsUser ? user.clubName : f.homeAiClub?.name}</span>
-                                        <div style={{ width: 24, height: 24, borderRadius: 4, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>
-                                            {(f.homeIsUser ? user.clubName : f.homeAiClub?.name)[0]}
-                                        </div>
-                                    </div>
-                                    <div style={{ width: 80, textAlign: 'center', fontFamily: "'Bebas Neue', sans-serif", fontSize: 20 }}>
-                                        {f.played ? `${f.homeScore} - ${f.awayScore}` : 'VS'}
-                                        {f.extraTimeUsed && <div style={{ fontSize: 10, color: 'var(--gold)' }}>ET {f.homePenaltyScore != null ? `(${f.homePenaltyScore}-${f.awayPenaltyScore} P)` : ''}</div>}
-                                    </div>
-                                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 12 }}>
-                                        <div style={{ width: 24, height: 24, borderRadius: 4, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>
-                                            {(f.awayIsUser ? user.clubName : f.awayAiClub?.name)[0]}
-                                        </div>
-                                        <span style={{ fontWeight: f.awayIsUser ? 700 : 400 }}>{f.awayIsUser ? user.clubName : f.awayAiClub?.name}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <StandingsTable standings={standings} userTeamName={user.clubName} />
-                    )}
                 </div>
 
-                {/* Right Column: Next Match & Info */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    {!isEliminated && (
-                        <div className="glass" style={{ padding: 32, borderRadius: 24, border: '1px solid rgba(240,195,45,0.2)', textAlign: 'center' }}>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 24 }}>Next Fixture</div>
-                            
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, marginBottom: 32 }}>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ width: 64, height: 64, borderRadius: 16, background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700 }}>
-                                        {user.clubName[0]}
-                                    </div>
-                                    <div style={{ fontSize: 14, fontWeight: 700 }}>{user.clubName}</div>
-                                </div>
-
-                                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--gold)', opacity: 0.5 }}>VS</div>
-
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700 }}>
-                                        {opponent?.name?.[0] || '?'}
-                                    </div>
-                                    <div style={{ fontSize: 14, fontWeight: 700 }}>{opponent?.name || 'TBA'}</div>
-                                </div>
-                            </div>
-
-                            <div style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: 16, display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
-                                <Zap size={20} color="var(--gold)" />
-                                <div>
-                                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>PREDICTED DIFFICULTY</div>
-                                    <div style={{ fontSize: 14, fontWeight: 700 }}>
-                                        {tournament.tier === 1 ? 'LEGENDARY' : 'NORMAL'} {opponent?.baseOvr ? `(${opponent.baseOvr} OVR)` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
+                    <TournamentLeaders tournamentId={tournament.id} />
+                    
                     <div className="glass" style={{ padding: 24, borderRadius: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <Info size={18} color="var(--blue)" />
@@ -283,14 +254,17 @@ const Tournaments = () => {
                 </div>
             </div>
 
-            {showMatchModal && nextFixture && (
-                <MatchSimulationModal
-                    fixture={nextFixture}
-                    userOvr={userOvr}
-                    onClose={() => setShowMatchModal(false)}
-                    onSimulateMatch={handleAdvance}
-                />
-            )}
+            {/* InteractiveMatch removed from here */}
+
+            <SeasonSummaryModal 
+                isOpen={showSeasonSummary} 
+                summary={seasonSummaryData} 
+                onConfirm={() => {
+                    setShowSeasonSummary(false);
+                    fetchData();
+                    navigate('/tournaments');
+                }} 
+            />
         </div>
     );
 };

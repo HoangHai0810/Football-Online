@@ -2,6 +2,7 @@ package com.example.football.service;
 
 import com.example.football.entity.PlayerCard;
 import com.example.football.entity.PlayerTemplate;
+import com.example.football.entity.Season;
 import com.example.football.entity.Users;
 import com.example.football.repository.PlayerCardRepository;
 import com.example.football.repository.PlayerTemplateRepository;
@@ -41,6 +42,22 @@ public class PlayerCardService {
         return playerCardRepository.findByOwnerId(userId);
     }
 
+    private int getStatBonus(int level) {
+        return switch (level) {
+            case 2 -> 1;
+            case 3 -> 2;
+            case 4 -> 4;
+            case 5 -> 6;
+            case 6 -> 8;
+            case 7 -> 11;
+            case 8 -> 15;
+            case 9 -> 18;
+            case 10 -> 21;
+            default -> 0;
+        };
+    }
+
+    @Transactional
     public PlayerCard openRandomCardPack(Long userId, int cost, int minOvr, String seasonStr, int minLevel, int maxLevel) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -52,7 +69,9 @@ public class PlayerCardService {
         user.setCoins(user.getCoins() - cost);
         userRepository.save(user);
         
-        return generateRandomCardInternal(user, minOvr, seasonStr, minLevel, maxLevel);
+        List<PlayerTemplate> templates = fetchFilteredTemplates(minOvr, seasonStr);
+        PlayerCard card = generateRandomCardFromList(user, templates, minLevel, maxLevel);
+        return playerCardRepository.save(card);
     }
 
     @Transactional
@@ -72,24 +91,39 @@ public class PlayerCardService {
         user.setCoins(user.getCoins() - totalCost);
         userRepository.save(user);
 
+        List<PlayerTemplate> templates = fetchFilteredTemplates(minOvr, seasonStr);
+        
         List<PlayerCard> cards = new java.util.ArrayList<>();
         for (int i = 0; i < quantity; i++) {
-            cards.add(generateRandomCardInternal(user, minOvr, seasonStr, minLevel, maxLevel));
+            cards.add(generateRandomCardFromList(user, templates, minLevel, maxLevel));
         }
-        return cards;
+        return playerCardRepository.saveAll(cards);
     }
 
-    private PlayerCard generateRandomCardInternal(Users user, int minOvr, String seasonStr, int minLevel, int maxLevel) {
-        List<PlayerTemplate> templates = playerTemplateRepository.findAll()
-                .stream()
-                .filter(t -> t.getOvr() >= minOvr)
-                .filter(t -> seasonStr == null || seasonStr.isBlank() || t.getSeason().name().equalsIgnoreCase(seasonStr))
-                .toList();
+    private List<PlayerTemplate> fetchFilteredTemplates(int minOvr, String seasonStr) {
+        List<PlayerTemplate> templates;
+        if (seasonStr == null || seasonStr.isBlank()) {
+            templates = playerTemplateRepository.findByOvrGreaterThanEqual(minOvr);
+        } else {
+            try {
+                Season season = Season.valueOf(seasonStr.toUpperCase());
+                templates = playerTemplateRepository.findByOvrGreaterThanEqualAndSeason(minOvr, season);
+            } catch (IllegalArgumentException e) {
+                // Fallback to manual filter if enum doesn't match exactly, or just empty
+                templates = playerTemplateRepository.findByOvrGreaterThanEqual(minOvr)
+                        .stream()
+                        .filter(t -> t.getSeason().name().equalsIgnoreCase(seasonStr))
+                        .toList();
+            }
+        }
 
         if (templates.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No player templates available for this criteria");
         }
+        return templates;
+    }
 
+    private PlayerCard generateRandomCardFromList(Users user, List<PlayerTemplate> templates, int minLevel, int maxLevel) {
         double totalWeight = 0;
         for (PlayerTemplate t : templates) {
             totalWeight += 1.0 / Math.pow(t.getOvr(), 3);
@@ -124,13 +158,11 @@ public class PlayerCardService {
             }
         }
 
-        PlayerCard card = PlayerCard.builder()
+        return PlayerCard.builder()
                 .owner(user)
                 .template(selectedTemplate)
                 .upgradeLevel(targetLevel)
                 .build();
-
-        return playerCardRepository.save(card);
     }
 
     @Transactional
@@ -149,7 +181,7 @@ public class PlayerCardService {
         }
 
         double totalChance = 0;
-        int targetOvr = targetCard.getTemplate().getOvr();
+        int targetEffectiveOvr = targetCard.getTemplate().getOvr() + getStatBonus(targetCard.getUpgradeLevel());
         
         // Critical Success (Jump) calculation
         double criticalChance = 0;
@@ -158,8 +190,8 @@ public class PlayerCardService {
         int safetyLevelFloor = 1;
 
         for (PlayerCard material : materials) {
-            int materialOvr = material.getTemplate().getOvr();
-            double diffOvr = materialOvr - targetOvr;
+            int materialEffectiveOvr = material.getTemplate().getOvr() + getStatBonus(material.getUpgradeLevel());
+            double diffOvr = materialEffectiveOvr - targetEffectiveOvr;
 
             double contribution = 0.2 * Math.pow(1.5, diffOvr);
             totalChance += contribution;

@@ -62,6 +62,9 @@
   /* Transitions */
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Animation Timings */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* ---- Reset & Base ---- */
@@ -125,10 +128,16 @@ img {
 /* ---- Glassmorphism ---- */
 .glass {
   background: var(--glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: var(--border-r);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.glass:hover {
+  border-color: var(--glass-border-bright);
+  background: var(--glass-hover);
 }
 
 .glass-dark {
@@ -309,7 +318,7 @@ img {
 .page {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 48px 40px;
+  padding: 40px;
   min-height: calc(100vh - var(--nav-h));
 }
 
@@ -335,6 +344,8 @@ img {
   font-size: 15px;
   font-style: italic;
 }
+
+/* Redundant Match Hero styles removed and moved to the end of file for better organization */
 
 /* ---- Cards Grid ---- */
 .cards-grid {
@@ -1152,6 +1163,211 @@ img {
 .overflow-y-auto { overflow-y: auto; }
 .rounded-full { border-radius: 9999px; }
 
+/* ---- Match Hero Component (Tournament Hub) Updated ---- */
+.match-hero {
+  padding: 48px;
+  border-radius: 40px;
+  margin-bottom: 56px;
+  background: linear-gradient(-45deg, #0a1020, #141e3d, #0a1020, #0d1a3a);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  border: 1px solid rgba(240, 195, 45, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(240, 195, 45, 0.05);
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.match-hero-bg-icon {
+  position: absolute;
+  top: -40px;
+  left: -40px;
+  opacity: 0.08;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+.match-hero-main {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.match-hero-teams {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+  margin-top: 32px;
+}
+
+.team-badge-premium {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.team-badge-circle {
+  width: 88px;
+  height: 88px;
+  border-radius: 24px; /* Squircle style */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  color: #fff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.team-badge-circle.user-team {
+  border: 2.5px solid var(--gold);
+  background: linear-gradient(135deg, rgba(240, 195, 45, 0.2) 0%, rgba(240, 195, 45, 0.05) 100%);
+  box-shadow: 0 0 30px rgba(240, 195, 45, 0.2);
+  color: var(--gold);
+  transform: scale(1.05);
+}
+
+.team-badge-name {
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-align: center;
+  max-width: 140px;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.match-hero-vs {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 64px;
+  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.6;
+  margin-top: -30px;
+  filter: drop-shadow(0 0 10px rgba(240, 195, 45, 0.3));
+}
+
+.match-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 260px;
+  position: relative;
+  z-index: 2;
+}
+
+/* ---- Premium Table ---- */
+.premium-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.premium-table thead th {
+  padding: 16px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 2px solid rgba(255,255,255,0.05);
+  text-align: left;
+}
+
+.premium-table tbody td {
+  padding: 14px 20px;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  vertical-align: middle;
+}
+
+.premium-table tbody tr {
+  transition: var(--transition);
+}
+
+.premium-table tbody tr:hover {
+  background: rgba(255,255,255,0.03) !important;
+}
+
+.premium-table tbody tr.user-row {
+    background: rgba(240, 195, 45, 0.1) !important;
+    border-left: 4px solid var(--gold);
+}
+
+.premium-table tbody tr.user-row td {
+    border-bottom-color: rgba(240, 195, 45, 0.2);
+    color: var(--gold);
+    font-weight: 700;
+}
+
+/* ---- Knockout Match Row ---- */
+.knockout-match-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 16px;
+  transition: var(--transition);
+  gap: 16px;
+}
+
+.knockout-match-row:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.knockout-match-row.my-match {
+  border-color: var(--gold);
+  background: linear-gradient(90deg, rgba(240, 195, 45, 0.12) 0%, rgba(240, 195, 45, 0.04) 100%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(240, 195, 45, 0.05);
+}
+
+.knockout-match-row.my-match .team-name {
+  color: var(--gold);
+  font-weight: 800 !important;
+}
+
+.knockout-team {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.knockout-team.home { justify-content: flex-end; text-align: right; }
+.knockout-team.away { justify-content: flex-start; text-align: left; }
+
+.knockout-score {
+  width: 90px;
+  height: 40px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 1024px) {
   .page { padding: 32px 24px; }
@@ -1164,4 +1380,100 @@ img {
   .page-title { font-size: 40px; }
   .navbar-links { display: none; }
   .stats-row { grid-template-columns: repeat(2, 1fr); }
+  
+  /* Match Hero Mobile Fix */
+  .match-hero {
+    flex-direction: column;
+    gap: 32px;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .match-hero-teams {
+    gap: 24px;
+    justify-content: center;
+  }
+  .match-hero-main {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+  }
+  .match-hero-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .match-hero-actions button {
+    width: 100%;
+  }
+  .team-badge-premium {
+    width: 100px;
+  }
+  .match-hero-vs {
+    font-size: 40px;
+    margin: 0;
+  }
+}
+
+/* Tournament Stats & Leaders */
+.leader-card {
+    background: rgba(15, 20, 35, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 24px;
+    height: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.leader-card:hover {
+    border-color: rgba(255, 215, 0, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+.stat-item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.stat-item-row:last-child {
+    border-bottom: none;
+}
+
+.stat-rank {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    width: 24px;
+    color: var(--text-muted);
+}
+
+.stat-player-info {
+    flex: 1;
+}
+
+.stat-player-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+}
+
+.stat-player-club {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+
+.highlight-gold {
+    color: var(--gold) !important;
 }

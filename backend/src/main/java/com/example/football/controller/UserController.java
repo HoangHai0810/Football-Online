@@ -71,19 +71,31 @@ public class UserController {
                     int teamOvr = 0;
                     
                     Optional<SquadFormation> squadOpt = squadFormationRepository.findByUser(user);
-                    if (squadOpt.isPresent() && squadOpt.get().getLineupJson() != null && !squadOpt.get().getLineupJson().isBlank()) {
-                        try {
-                            Map<String, Long> lineup = objectMapper.readValue(squadOpt.get().getLineupJson(), new TypeReference<Map<String, Long>>() {});
-                            if (lineup.size() == 11) {
-                                List<PlayerCard> activeCards = playerCardRepository.findAllById(lineup.values());
-                                if (activeCards.size() == 11) {
-                                    double avg = activeCards.stream()
-                                            .mapToInt(c -> c.getTemplate().getOvr() + c.getUpgradeLevel())
-                                            .average().orElse(0);
-                                    teamOvr = (int) Math.round(avg);
+                    if (squadOpt.isPresent()) {
+                        SquadFormation squad = squadOpt.get();
+                        if (squad.getLineupJson() != null && !squad.getLineupJson().isBlank()) {
+                            try {
+                                Map<String, Long> lineup = objectMapper.readValue(squad.getLineupJson(), new TypeReference<Map<String, Long>>() {});
+                                String formation = squad.getFormation() != null ? squad.getFormation() : "4-3-3";
+                                String[] slotPositions = getPositionsForFormation(formation);
+                                
+                                double totalEffOvr = 0;
+                                for (Map.Entry<String, Long> entry : lineup.entrySet()) {
+                                    int slotIdx = Integer.parseInt(entry.getKey());
+                                    if (slotIdx >= 0 && slotIdx < 11) {
+                                        Optional<PlayerCard> cardOpt = playerCardRepository.findById(entry.getValue());
+                                        if (cardOpt.isPresent()) {
+                                            PlayerCard card = cardOpt.get();
+                                            String slotPos = slotPositions[slotIdx];
+                                            totalEffOvr += calculateEffectiveOvr(card, slotPos);
+                                        }
+                                    }
                                 }
+                                teamOvr = (int) Math.round(totalEffOvr / 11.0);
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                        } catch (Exception e) {}
+                        }
                     }
 
                     String rankStr = "#--";
@@ -109,5 +121,41 @@ public class UserController {
                             .build());
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    private String[] getPositionsForFormation(String formation) {
+        switch (formation) {
+            case "4-4-2": return new String[]{"GK", "LB", "CB", "CB", "RB", "LM", "CM", "CM", "RM", "ST", "ST"};
+            case "4-2-3-1": return new String[]{"GK", "LB", "CB", "CB", "RB", "CDM", "CDM", "CAM", "LM", "RM", "ST"};
+            case "3-5-2": return new String[]{"GK", "CB", "CB", "CB", "LWB", "CDM", "CDM", "RWB", "CAM", "ST", "ST"};
+            case "4-1-2-1-2": return new String[]{"GK", "LB", "CB", "CB", "RB", "CDM", "LM", "RM", "CAM", "ST", "ST"};
+            case "4-3-2-1": return new String[]{"GK", "LB", "CB", "CB", "RB", "CM", "CM", "CM", "CAM", "CAM", "ST"};
+            case "5-3-2": return new String[]{"GK", "LWB", "CB", "CB", "CB", "RWB", "CM", "CDM", "CM", "ST", "ST"};
+            case "3-4-3": return new String[]{"GK", "CB", "CB", "CB", "LM", "CM", "CM", "RM", "LW", "ST", "RW"};
+            case "4-5-1": return new String[]{"GK", "LB", "CB", "CB", "RB", "LM", "CM", "CM", "CM", "RM", "ST"};
+            case "4-3-3":
+            default: return new String[]{"GK", "LB", "CB", "CB", "RB", "CM", "CDM", "CM", "LW", "ST", "RW"};
+        }
+    }
+
+    private int calculateEffectiveOvr(PlayerCard card, String slotPos) {
+        int baseOvr = card.getEffectiveOvr();
+        String natPos = card.getTemplate().getPosition().name();
+        
+        if (natPos.equals(slotPos)) return baseOvr;
+        
+        String natGroup = getPosGroup(natPos);
+        String slotGroup = getPosGroup(slotPos);
+        
+        if (natGroup.equals(slotGroup)) return Math.max(1, baseOvr - 3);
+        if (natGroup.equals("GK") || slotGroup.equals("GK")) return Math.max(1, baseOvr - 20);
+        return Math.max(1, baseOvr - 8);
+    }
+
+    private String getPosGroup(String pos) {
+        if (pos.equals("GK")) return "GK";
+        if (List.of("CB", "LB", "RB", "LWB", "RWB").contains(pos)) return "DEF";
+        if (List.of("CDM", "CM", "CAM", "LM", "RM").contains(pos)) return "MID";
+        return "FWD";
     }
 }

@@ -25,6 +25,7 @@ public class CareerService {
     private final MatchSimulationEngine matchSimulationEngine;
     private final UserRepository userRepository;
     private final TrophyRepository trophyRepository;
+    private final TournamentPlayerStatRepository playerStatRepository;
 
     public UserCareer getCareerByUserId(Long userId) {
         Users user = userRepository.findById(userId)
@@ -65,54 +66,146 @@ public class CareerService {
         return fixtureRepository.findByTournament(tournament);
     }
 
+    public List<TournamentPlayerStat> getTopScorers(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
+        return playerStatRepository.findByTournamentOrderByGoalsDescAssistsDesc(tournament).stream().limit(10).collect(Collectors.toList());
+    }
+
+    public List<TournamentPlayerStat> getTopAssists(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
+        return playerStatRepository.findByTournamentOrderByAssistsDescGoalsDesc(tournament).stream().limit(10).collect(Collectors.toList());
+    }
+
     @Transactional
-    public Map<String, Object> advanceWeek(Long userId) {
+    public Map<String, Object> advanceWeek(Long userId, Integer userHomeScore, Integer userAwayScore, Integer homePen, Integer awayPen, Long fixtureId) {
         UserCareer career = getCareerByUserId(userId);
         List<Tournament> activeTournaments = tournamentRepository.findByUserAndSeasonIndex(career.getUser(), career.getCurrentSeason());
 
+        // Find the specific fixture being played
+        MatchFixture targetFixture = null;
+        if (fixtureId != null) {
+            targetFixture = fixtureRepository.findById(fixtureId).orElse(null);
+        } else {
+            // Fallback: find any unplayed user match in the current week
+            targetFixture = fixtureRepository.findByTournamentInAndMatchWeek(activeTournaments, career.getCurrentWeek())
+                    .stream()
+                    .filter(f -> (f.isHomeIsUser() || f.isAwayIsUser()) && !f.isPlayed())
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        if (targetFixture != null && !targetFixture.isPlayed()) {
+            if (userHomeScore != null && userAwayScore != null) {
+                matchSimulationEngine.applyUserInteractiveResult(targetFixture, userHomeScore, userAwayScore, homePen, awayPen);
+            } else {
+                matchSimulationEngine.simulateMatch(targetFixture);
+            }
+            if (!targetFixture.isKnockout()) {
+                updateStandings(targetFixture);
+            }
+            fixtureRepository.save(targetFixture);
+        }
+
+        // Simulate ALL AI matches for the current WEEK in ALL active tournaments
         List<MatchFixture> allCurrentFixtures = fixtureRepository.findByTournamentInAndMatchWeek(activeTournaments, career.getCurrentWeek());
-        
-        for (MatchFixture fixture : allCurrentFixtures) {
-            if (!fixture.isPlayed()) {
-                matchSimulationEngine.simulateMatch(fixture);
-                if (!fixture.isKnockout()) {
-                    updateStandings(fixture);
-                }
+        for (MatchFixture f : allCurrentFixtures) {
+            if (!f.isPlayed() && !f.isHomeIsUser() && !f.isAwayIsUser()) {
+                matchSimulationEngine.simulateMatch(f);
+                if (!f.isKnockout()) updateStandings(f);
+                fixtureRepository.save(f);
             }
         }
-        fixtureRepository.saveAll(allCurrentFixtures);
 
-        // Process Knockout Advancement
+        // Process Knockout Advancement if any round is finished
         for (Tournament t : activeTournaments) {
             if (t.getType().equals("CUP") || t.getType().equals("CONTINENTAL") || t.getType().equals("SUPER_CUP")) {
                 processKnockoutAdvancement(t, career.getCurrentWeek());
             }
         }
 
-        // Advance career week
-        career.setCurrentWeek(career.getCurrentWeek() + 1);
-        
-        if (career.getCurrentWeek() > 38) { // End of season
-            for (Tournament t : activeTournaments) {
-                awardTournamentRewards(t, career.getUser());
-                if (t.getType().equals("LEAGUE")) {
-                    handleLeaguePromotionAndRelegation(t, career);
-                }
-                t.setIsCompleted(true);
-            }
-            tournamentRepository.saveAll(activeTournaments);
+        // Logic check: Advance global week ONLY if user has no unplayed fixtures left in THIS week
+        boolean hasMoreUserMatchesThisWeek = fixtureRepository.findByTournamentInAndMatchWeek(activeTournaments, career.getCurrentWeek())
+                .stream().anyMatch(f -> (f.isHomeIsUser() || f.isAwayIsUser()) && !f.isPlayed());
 
-            career.setCurrentWeek(1);
-            career.setCurrentSeason(career.getCurrentSeason() + 1);
-            seasonGeneratorService.createNewSeason(career.getUser());
+        Map<String, Object> seasonSummary = null;
+
+        if (!hasMoreUserMatchesThisWeek) {
+            career.setCurrentWeek(career.getCurrentWeek() + 1);
+            
+            if (career.getCurrentWeek() > 38) { // End of season
+                seasonSummary = generateSeasonSummary(activeTournaments, career.getUser());
+                
+                for (Tournament t : activeTournaments) {
+                    awardTournamentRewards(t, career.getUser());
+                    if (t.getType().equals("LEAGUE")) {
+                        handleLeaguePromotionAndRelegation(t, career);
+                    }
+                    t.setIsCompleted(true);
+                }
+                tournamentRepository.saveAll(activeTournaments);
+
+                career.setCurrentWeek(1);
+                career.setCurrentSeason(career.getCurrentSeason() + 1);
+                seasonGeneratorService.createNewSeason(career.getUser());
+            }
+            userCareerRepository.save(career);
         }
-        userCareerRepository.save(career);
 
         return Map.of(
-            "weekSimulated", career.getCurrentWeek() - 1,
+            "weekSimulated", hasMoreUserMatchesThisWeek ? career.getCurrentWeek() : career.getCurrentWeek() - 1,
             "fixtures", allCurrentFixtures,
-            "career", career
+            "career", career,
+            "seasonSummary", seasonSummary != null ? seasonSummary : Map.of()
         );
+    }
+
+    private Map<String, Object> generateSeasonSummary(List<Tournament> tournaments, Users user) {
+        List<Map<String, Object>> tournamentResults = new ArrayList<>();
+        long totalCoinsAwarded = 0;
+        
+        for (Tournament t : tournaments) {
+            List<TournamentStanding> stds = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(t);
+            int rank = -1;
+            for (int i = 0; i < stds.size(); i++) {
+                if (stds.get(i).isUserTeam()) { rank = i + 1; break; }
+            }
+            
+            tournamentResults.add(Map.of(
+                "name", t.getName(),
+                "rank", rank,
+                "type", t.getType()
+            ));
+        }
+        
+        return Map.of(
+            "season", tournaments.get(0).getSeasonIndex(),
+            "results", tournamentResults
+        );
+    }
+
+    public MatchFixture getNextUserFixture(Long userId) {
+        UserCareer career = getCareerByUserId(userId);
+        List<Tournament> activeTournaments = tournamentRepository.findByUserAndSeasonIndex(career.getUser(), career.getCurrentSeason());
+        if (activeTournaments == null || activeTournaments.isEmpty()) {
+            return null;
+        }
+
+        // Strategy: First unplayed user fixture in current week or future weeks
+        return fixtureRepository.findByTournamentIn(activeTournaments).stream()
+                .filter(f -> (f.isHomeIsUser() || f.isAwayIsUser()) && !f.isPlayed())
+                .sorted((a, b) -> {
+                    if (a.getMatchWeek() == null || b.getMatchWeek() == null) return 0;
+                    if (!a.getMatchWeek().equals(b.getMatchWeek())) {
+                        return a.getMatchWeek() - b.getMatchWeek();
+                    }
+                    if (a.getTournament() == null || b.getTournament() == null) return 0;
+                    if (a.getTournament().getType() == null || b.getTournament().getType() == null) return 0;
+                    return a.getTournament().getType().compareTo(b.getTournament().getType());
+                })
+                .findFirst()
+                .orElse(null);
     }
 
     private void processKnockoutAdvancement(Tournament tournament, int currentWeek) {

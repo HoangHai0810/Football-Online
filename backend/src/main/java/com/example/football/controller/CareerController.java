@@ -49,8 +49,29 @@ public class CareerController {
         return careerService.getAllFixturesByTournament(tournamentId);
     }
 
+    @GetMapping("/stats/{tournamentId}/scorers")
+    public List<?> getTopScorers(@PathVariable Long tournamentId) {
+        return careerService.getTopScorers(tournamentId);
+    }
+
+    @GetMapping("/stats/{tournamentId}/assists")
+    public List<?> getTopAssists(@PathVariable Long tournamentId) {
+        return careerService.getTopAssists(tournamentId);
+    }
+
+    @GetMapping("/next-fixture")
+    public MatchFixture getNextUserFixture(@RequestParam Long userId) {
+        return careerService.getNextUserFixture(userId);
+    }
+
     @PostMapping("/advance")
-    public Map<String, Object> advanceWeek(@RequestParam Long userId) {
-        return careerService.advanceWeek(userId);
+    public Map<String, Object> advanceWeek(
+            @RequestParam Long userId,
+            @RequestParam(required = false) Integer userHomeScore,
+            @RequestParam(required = false) Integer userAwayScore,
+            @RequestParam(required = false) Integer homePen,
+            @RequestParam(required = false) Integer awayPen,
+            @RequestParam(required = false) Long fixtureId) {
+        return careerService.advanceWeek(userId, userHomeScore, userAwayScore, homePen, awayPen, fixtureId);
     }
 }

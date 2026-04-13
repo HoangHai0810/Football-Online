@@ -1,67 +1,66 @@
 import React from 'react';
 
-const StandingsTable = ({ standings, userTeamName = "FC ARENA" }) => {
-  return (
-    <div className="glass" style={{ borderRadius: 24, overflow: 'hidden' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-        <thead>
-          <tr style={{ background: 'rgba(255,255,255,0.05)', textTransform: 'uppercase', fontSize: 11, letterSpacing: 1 }}>
-            <th style={{ padding: '16px 20px' }}>Pos</th>
-            <th style={{ padding: '16px 20px' }}>Club</th>
-            <th style={{ padding: '16px 20px', textAlign: 'center' }}>P</th>
-            <th style={{ padding: '16px 20px', textAlign: 'center' }}>W</th>
-            <th style={{ padding: '16px 20px', textAlign: 'center' }}>D</th>
-            <th style={{ padding: '16px 20px', textAlign: 'center' }}>L</th>
-            <th style={{ padding: '16px 20px', textAlign: 'center' }}>GD</th>
-            <th style={{ padding: '16px 20px', textAlign: 'center' }}>Pts</th>
-          </tr>
-        </thead>
-        <tbody>
-          {standings.map((s, i) => {
-            const isUser = s.userTeam;
-            const clubName = isUser ? userTeamName : s.aiClub?.name;
-            const pos = i + 1;
-            
-            // Highlight zones
-            let rowStyle = { borderBottom: '1px solid rgba(255,255,255,0.05)' };
-            if (isUser) rowStyle.background = 'rgba(240,195,45,0.1)';
-            
-            let posColor = 'var(--text-secondary)';
-            if (pos <= 4) posColor = '#4fcaff'; // Champions League
-            if (pos > standings.length - 3) posColor = '#ff4f4f'; // Relegation
-            
-            return (
-              <tr key={s.id} style={rowStyle}>
-                <td style={{ padding: '14px 20px', fontWeight: 700, color: posColor }}>{pos}</td>
-                <td style={{ padding: '14px 20px', fontWeight: isUser ? 700 : 400 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ 
-                      width: 24, height: 24, borderRadius: 6, 
-                      background: isUser ? 'var(--gold)' : 'rgba(255,255,255,0.1)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10
-                    }}>
-                      {clubName[0]}
-                    </div>
-                    {clubName}
-                  </div>
-                </td>
-                <td style={{ padding: '14px 20px', textAlign: 'center' }}>{s.played}</td>
-                <td style={{ padding: '14px 20px', textAlign: 'center' }}>{s.won}</td>
-                <td style={{ padding: '14px 20px', textAlign: 'center' }}>{s.drawn}</td>
-                <td style={{ padding: '14px 20px', textAlign: 'center' }}>{s.lost}</td>
-                <td style={{ padding: '14px 20px', textAlign: 'center' }}>
-                    {s.goalsFor - s.goalsAgainst > 0 ? `+${s.goalsFor - s.goalsAgainst}` : s.goalsFor - s.goalsAgainst}
-                </td>
-                <td style={{ padding: '14px 20px', textAlign: 'center', fontWeight: 700, color: isUser ? 'var(--gold)' : 'white' }}>
-                  {s.points}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+const StandingsTable = ({ standings, userTeamName }) => {
+    return (
+        <div className="premium-table-container">
+            <table className="premium-table">
+                <thead>
+                    <tr>
+                        <th style={{ width: '40px' }}>#</th>
+                        <th style={{ textAlign: 'left' }}>CLUB</th>
+                        <th style={{ width: '60px' }}>P</th>
+                        <th style={{ width: '60px' }}>W</th>
+                        <th style={{ width: '60px' }}>D</th>
+                        <th style={{ width: '60px' }}>L</th>
+                        <th style={{ width: '60px' }}>GD</th>
+                        <th style={{ width: '60px' }}>PTS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {standings.map((team, index) => {
+                        const isUser = team.isUserTeam || team.userTeam;
+                        const clubName = isUser ? (userTeamName || team.user?.clubName || 'My Club') : (team.aiClub?.name || 'AI Club');
+                        const gd = team.goalsFor - team.goalsAgainst;
+                        
+                        return (
+                            <tr key={team.id || index} className={isUser ? 'user-row' : ''}>
+                                <td>{index + 1}</td>
+                                <td style={{ textAlign: 'left' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <div className={`team-badge-circle sm ${isUser ? 'user-team' : ''}`} style={{ width: 32, height: 32, fontSize: 13 }}>
+                                            {clubName[0]}
+                                        </div>
+                                        <span style={{ fontWeight: isUser ? 800 : 500, fontSize: 14 }}>
+                                            {clubName}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18 }}>{team.played}</td>
+                                <td style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18 }}>{team.won}</td>
+                                <td style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18 }}>{team.drawn}</td>
+                                <td style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18 }}>{team.lost}</td>
+                                <td style={{ 
+                                    fontFamily: "'Bebas Neue', sans-serif", 
+                                    fontSize: 18,
+                                    color: gd > 0 ? 'var(--success)' : gd < 0 ? 'var(--danger)' : 'white'
+                                }}>
+                                    {gd > 0 ? `+${gd}` : gd}
+                                </td>
+                                <td style={{ 
+                                    fontFamily: "'Bebas Neue', sans-serif", 
+                                    fontSize: 22, 
+                                    color: 'var(--gold)',
+                                    textShadow: isUser ? '0 0 10px rgba(255, 215, 0, 0.3)' : 'none'
+                                }}>
+                                    {team.points}
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
 };
 
 export default StandingsTable;

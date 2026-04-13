@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import PlayerCard from '../components/PlayerCard';
 
 const FORMATIONS = {
   '4-3-3': [
@@ -56,6 +57,71 @@ const FORMATIONS = {
     { slot: 8, pos: 'CAM', left: '50%', top: '40%' },
     { slot: 9, pos: 'ST',  left: '34%', top: '20%' },
     { slot: 10, pos: 'ST', left: '66%', top: '20%' },
+  ],
+  '4-1-2-1-2': [
+    { slot: 0, pos: 'GK',  left: '50%', top: '88%' },
+    { slot: 1, pos: 'LB',  left: '12%', top: '68%' },
+    { slot: 2, pos: 'CB',  left: '34%', top: '72%' },
+    { slot: 3, pos: 'CB',  left: '66%', top: '72%' },
+    { slot: 4, pos: 'RB',  left: '88%', top: '68%' },
+    { slot: 5, pos: 'CDM', left: '50%', top: '56%' },
+    { slot: 6, pos: 'LM',  left: '18%', top: '44%' },
+    { slot: 7, pos: 'RM',  left: '82%', top: '44%' },
+    { slot: 8, pos: 'CAM', left: '50%', top: '32%' },
+    { slot: 9, pos: 'ST',  left: '34%', top: '18%' },
+    { slot: 10, pos: 'ST', left: '66%', top: '18%' },
+  ],
+  '4-3-2-1': [
+    { slot: 0, pos: 'GK',  left: '50%', top: '88%' },
+    { slot: 1, pos: 'LB',  left: '12%', top: '68%' },
+    { slot: 2, pos: 'CB',  left: '34%', top: '72%' },
+    { slot: 3, pos: 'CB',  left: '66%', top: '72%' },
+    { slot: 4, pos: 'RB',  left: '88%', top: '68%' },
+    { slot: 5, pos: 'CM',  left: '22%', top: '50%' },
+    { slot: 6, pos: 'CM',  left: '50%', top: '53%' },
+    { slot: 7, pos: 'CM',  left: '78%', top: '50%' },
+    { slot: 8, pos: 'CAM', left: '32%', top: '32%' },
+    { slot: 9, pos: 'CAM', left: '68%', top: '32%' },
+    { slot: 10, pos: 'ST', left: '50%', top: '16%' },
+  ],
+  '5-3-2': [
+    { slot: 0, pos: 'GK',  left: '50%', top: '88%' },
+    { slot: 1, pos: 'LWB', left: '12%', top: '62%' },
+    { slot: 2, pos: 'CB',  left: '30%', top: '74%' },
+    { slot: 3, pos: 'CB',  left: '50%', top: '76%' },
+    { slot: 4, pos: 'CB',  left: '70%', top: '74%' },
+    { slot: 5, pos: 'RWB', left: '88%', top: '62%' },
+    { slot: 6, pos: 'CM',  left: '28%', top: '48%' },
+    { slot: 7, pos: 'CDM', left: '50%', top: '52%' },
+    { slot: 8, pos: 'CM',  left: '72%', top: '48%' },
+    { slot: 9, pos: 'ST',  left: '34%', top: '22%' },
+    { slot: 10, pos: 'ST', left: '66%', top: '22%' },
+  ],
+  '3-4-3': [
+    { slot: 0, pos: 'GK',  left: '50%', top: '88%' },
+    { slot: 1, pos: 'CB',  left: '22%', top: '70%' },
+    { slot: 2, pos: 'CB',  left: '50%', top: '73%' },
+    { slot: 3, pos: 'CB',  left: '78%', top: '70%' },
+    { slot: 4, pos: 'LM',  left: '12%', top: '45%' },
+    { slot: 5, pos: 'CM',  left: '34%', top: '50%' },
+    { slot: 6, pos: 'CM',  left: '66%', top: '50%' },
+    { slot: 7, pos: 'RM',  left: '88%', top: '45%' },
+    { slot: 8, pos: 'LW',  left: '18%', top: '24%' },
+    { slot: 9, pos: 'ST',  left: '50%', top: '18%' },
+    { slot: 10, pos: 'RW', left: '82%', top: '24%' },
+  ],
+  '4-5-1': [
+    { slot: 0, pos: 'GK',  left: '50%', top: '88%' },
+    { slot: 1, pos: 'LB',  left: '12%', top: '68%' },
+    { slot: 2, pos: 'CB',  left: '34%', top: '72%' },
+    { slot: 3, pos: 'CB',  left: '66%', top: '72%' },
+    { slot: 4, pos: 'RB',  left: '88%', top: '68%' },
+    { slot: 5, pos: 'LM',  left: '12%', top: '44%' },
+    { slot: 6, pos: 'CM',  left: '34%', top: '50%' },
+    { slot: 7, pos: 'CM',  left: '50%', top: '46%' },
+    { slot: 8, pos: 'CM',  left: '66%', top: '50%' },
+    { slot: 9, pos: 'RM',  left: '88%', top: '44%' },
+    { slot: 10, pos: 'ST', left: '50%', top: '20%' },
   ]
 };
 
@@ -98,10 +164,8 @@ const getUpgradeColor = (level) => {
 
 const PitchNode = ({ slotInfo, card, onDrop, onSelect, active, sourceSlot }) => {
   const player = card ? card.template : null;
-  const initials = player ? player.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase() : '+';
-  const bg = player ? (SEASON_COLOR[player.season] || SEASON_COLOR.BASE) : 'rgba(255,255,255,0.08)';
   const effOvr = calculateEffectiveOvr(card, slotInfo.pos);
-  const isPenalty = player && effOvr < (card.effectiveOvr || player.ovr);
+  const isPenalty = player && effOvr < (card.effectiveOvr || player.ovr || 0);
 
   return (
     <div
@@ -117,7 +181,7 @@ const PitchNode = ({ slotInfo, card, onDrop, onSelect, active, sourceSlot }) => 
         onDrop(draggedCardId, slotInfo.slot, sourceSlot ? Number(sourceSlot) : null);
       }}
     >
-      <motion.div
+      <div
         draggable={!!card}
         onDragStart={e => {
           if (card) {
@@ -125,43 +189,41 @@ const PitchNode = ({ slotInfo, card, onDrop, onSelect, active, sourceSlot }) => 
             e.dataTransfer.setData('sourceSlot', slotInfo.slot);
           }
         }}
-        whileHover={{ scale: 1.15 }}
-        style={{
-          width: 52, height: 52, borderRadius: '50%', background: bg,
-          border: player ? (isPenalty ? '2px solid rgba(255,50,50,0.8)' : '2px solid rgba(255,255,255,0.5)') : '2px dashed rgba(255,255,255,0.3)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: player ? 18 : 24, color: 'white', boxShadow: player ? '0 4px 16px rgba(0,0,0,0.5)' : 'none', position: 'relative', cursor: card ? 'grab' : 'default'
-        }}
+        style={{ cursor: card ? 'grab' : 'default', display: 'inline-block' }}
       >
-        {initials}
-        {player && (
-          <>
-            <div style={{
-              position: 'absolute', bottom: -3, right: -4, background: isPenalty ? '#ff4757' : 'var(--gold)',
-              color: isPenalty ? '#fff' : '#0a0f1e', fontSize: 10, fontWeight: 900, padding: '1px 5px', borderRadius: 4, fontFamily: 'Outfit, sans-serif',
-              zIndex: 3
-            }}>
-              {effOvr}
-            </div>
-            {card.upgradeLevel > 0 && (
-              <div style={{
-                position: 'absolute', top: -3, right: -12, background: getUpgradeColor(card.upgradeLevel),
-                color: card.upgradeLevel >= 5 ? '#fff' : '#000', fontSize: 9, fontWeight: 900, padding: '1px 4px', borderRadius: '0 4px 4px 0'
-              }}>
-                +{card.upgradeLevel}
-              </div>
-            )}
-          </>
+        {card ? (
+          <PlayerCard 
+            player={player} 
+            size="mini" 
+            upgradeLevel={card.upgradeLevel}
+            isPenalty={isPenalty}
+            effectiveOvrOverride={effOvr}
+          />
+        ) : (
+          <div style={{
+            width: 76, height: 106, borderRadius: 8, background: 'rgba(255,255,255,0.05)',
+            border: '2px dashed rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'rgba(255,255,255,0.3)', fontFamily: "'Bebas Neue', sans-serif", fontSize: 24
+          }}>
+             +
+          </div>
         )}
-      </motion.div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: isPenalty ? '#ff4757' : 'white', textShadow: '0 1px 4px rgba(0,0,0,0.9)', maxWidth: 64, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {player ? player.name.split(' ').pop() : slotInfo.pos}
-        </div>
-        <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.65)', textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
-          {slotInfo.pos} {player && player.position !== slotInfo.pos && <span style={{ color: 'var(--gold)', fontWeight: 700 }}>({player.position})</span>}
-        </div>
       </div>
+      
+      {!card && (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
+            {slotInfo.pos}
+          </div>
+        </div>
+      )}
+      {card && player.position !== slotInfo.pos && (
+        <div style={{ textAlign: 'center', marginTop: -4 }}>
+          <div style={{ fontSize: 9, color: '#ff4757', fontWeight: 800, background: 'rgba(0,0,0,0.6)', padding: '1px 6px', borderRadius: 4 }}>
+            {slotInfo.pos}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -176,6 +238,7 @@ const Squad = () => {
   const [clubName, setClubName] = useState('');
   const [editingClub, setEditingClub] = useState(false);
   const [benchVisibleCount, setBenchVisibleCount] = useState(20);
+  const [showFormationMenu, setShowFormationMenu] = useState(false);
 
   useEffect(() => {
     if (user?.clubName) setClubName(user.clubName);
@@ -270,6 +333,34 @@ const Squad = () => {
     return count > 0 ? Math.round(sum / 11) : 0; // Average of 11, penalized if missing players
   };
 
+  const optimizeLineup = () => {
+    const availableCards = [...cards];
+    const newLineup = {};
+    const slotsInfo = FORMATIONS[currentFormation];
+
+    slotsInfo.forEach(slot => {
+      let bestCardIndex = -1;
+      let highestEffOvr = -1;
+
+      availableCards.forEach((c, index) => {
+        if (!c) return;
+        const currentEffOvr = calculateEffectiveOvr(c, slot.pos);
+        if (currentEffOvr > highestEffOvr || (currentEffOvr === highestEffOvr && c.upgradeLevel > (availableCards[bestCardIndex]?.upgradeLevel || 0))) {
+          highestEffOvr = currentEffOvr;
+          bestCardIndex = index;
+        }
+      });
+
+      if (bestCardIndex !== -1) {
+        newLineup[slot.slot] = availableCards[bestCardIndex].id;
+        availableCards[bestCardIndex] = null; // mark as used
+      }
+    });
+
+    setLineup(newLineup);
+    toast.success("Squad Optimized!");
+  };
+
   return (
     <div className="page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
@@ -311,27 +402,48 @@ const Squad = () => {
               <div style={{ fontSize: 9, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 4 }}>TEAM OVR</div>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--gold)' }}>{calculateTeamOvr()}</div>
             </div>
-            <div style={{ padding: '12px 20px', textAlign: 'center' }}>
+            <div 
+              style={{ padding: '12px 20px', textAlign: 'center', position: 'relative', cursor: 'pointer' }}
+              onClick={() => setShowFormationMenu(!showFormationMenu)}
+            >
               <div style={{ fontSize: 9, letterSpacing: 2, color: 'var(--text-muted)', marginBottom: 4 }}>FORMATION</div>
-              <select 
-                value={currentFormation} 
-                onChange={e => setCurrentFormation(e.target.value)}
-                style={{ 
-                  background: 'transparent', 
-                  border: 'none', 
-                  color: 'white', 
-                  fontFamily: "'Bebas Neue', sans-serif", 
-                  fontSize: 28,
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                {Object.keys(FORMATIONS).map(f => (
-                  <option key={f} value={f} style={{ color: 'black' }}>{f}</option>
-                ))}
-              </select>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                {currentFormation}
+                <span style={{ fontSize: 16 }}>▾</span>
+              </div>
+              
+              {showFormationMenu && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: 8,
+                  background: 'rgba(15, 20, 35, 0.95)', backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
+                  width: 160, zIndex: 100, overflow: 'hidden',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.8)'
+                }}>
+                  {Object.keys(FORMATIONS).map(f => (
+                    <div 
+                      key={f}
+                      onClick={() => setCurrentFormation(f)}
+                      style={{
+                        padding: '12px 16px', fontFamily: "'Bebas Neue', sans-serif", fontSize: 20,
+                        color: f === currentFormation ? 'var(--gold)' : 'white',
+                        background: f === currentFormation ? 'rgba(255,215,0,0.1)' : 'transparent',
+                        textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={e => { if(f !== currentFormation) e.currentTarget.style.color = 'var(--gold)'; }}
+                      onMouseLeave={e => { if(f !== currentFormation) e.currentTarget.style.color = 'white'; }}
+                    >
+                      {f}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
+          <button className="btn btn-gold" onClick={optimizeLineup} style={{ marginRight: 8 }}>
+            ⚡ OPTIMIZE
+          </button>
           <button className="btn btn-gold" onClick={saveLineup} disabled={saving}>
             {saving ? 'SAVING...' : 'SAVE LINEUP'}
           </button>

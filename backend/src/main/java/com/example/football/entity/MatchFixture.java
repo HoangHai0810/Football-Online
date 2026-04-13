@@ -2,6 +2,8 @@ package com.example.football.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "match_fixtures")
@@ -18,8 +20,13 @@ public class MatchFixture {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tournament_id", nullable = false)
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     private Tournament tournament;
+
+    @JsonProperty("tournamentId")
+    public Long getTournamentId() {
+        return tournament != null ? tournament.getId() : null;
+    }
 
     @Column(nullable = false)
     private Integer matchWeek; // e.g. 1, 2, 3... 38
@@ -57,12 +64,12 @@ public class MatchFixture {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "home_user_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     private Users homeUser;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "away_user_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     private Users awayUser;
 
     private Integer homeScore;

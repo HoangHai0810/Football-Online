@@ -51,7 +51,9 @@ const PlayerCard = ({
   onClick, 
   upgradeLevel = 0,
   showPurpleAura = false,
-  isFlickeringPurple = false
+  isFlickeringPurple = false,
+  isPenalty = false,
+  effectiveOvrOverride = null
 }) => {
   const [hovered, setHovered] = useState(false);
   if (!player) return null;
@@ -96,18 +98,21 @@ const PlayerCard = ({
     ? { width: 260, height: 360 }
     : size === 'small'
     ? { width: 140, height: 196 }
+    : size === 'mini'
+    ? { width: 76, height: 106 }
     : { width: 200, height: 280 };
 
   const sizes = {
     large: { ovr: 52, pos: 15, season: 10, portrait: 130, initials: 64, name: 16, statsH: 80, statV: 16, statL: 8, badge: 14 },
     normal: { ovr: 42, pos: 13, season: 9, portrait: 100, initials: 52, name: 13, statsH: 64, statV: 13, statL: 7, badge: 12 },
     small: { ovr: 28, pos: 10, season: 8, portrait: 64, initials: 32, name: 11, statsH: 48, statV: 11, statL: 6, badge: 10 },
+    mini: { ovr: 16, pos: 7, season: 6, portrait: 36, initials: 20, name: 7, statsH: 26, statV: 7, statL: 4, badge: 8 },
   };
 
   const curr = sizes[size] || sizes.normal;
 
   const bonus = getStatBonus(upgradeLevel);
-  const effectiveOvr = (player.ovr || 0) + bonus;
+  const effectiveOvr = effectiveOvrOverride !== null ? effectiveOvrOverride : ((player.ovr || 0) + bonus);
 
   const stats = [
     { label: 'PAC', value: (player.pace || 70) + bonus },
@@ -184,12 +189,15 @@ const PlayerCard = ({
         className={`player-card ${seasonClass}`}
         style={{
           ...cardStyle,
-          boxShadow: hovered
-            ? `0 20px 60px ${seasonGlow}, 0 8px 32px rgba(0,0,0,0.5)`
-            : '0 8px 32px rgba(0,0,0,0.5)',
+          boxShadow: isPenalty 
+            ? '0 0 15px rgba(255, 50, 50, 0.8), inset 0 0 10px rgba(255, 0, 0, 0.4)'
+            : hovered
+              ? `0 20px 60px ${seasonGlow}, 0 8px 32px rgba(0,0,0,0.5)`
+              : '0 8px 32px rgba(0,0,0,0.5)',
+          border: isPenalty ? '1px solid rgba(255,50,50,0.8)' : '1px solid rgba(255,255,255,0.1)',
           cursor: onClick ? 'pointer' : 'default',
         }}
-        whileHover={{ y: -8, scale: 1.03 }}
+        whileHover={!isPenalty && size !== 'mini' ? { y: -8, scale: 1.03 } : {}}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         onHoverStart={() => setHovered(true)}
         onHoverEnd={() => setHovered(false)}
@@ -198,11 +206,18 @@ const PlayerCard = ({
         {/* Glossy shine overlay */}
         <div className="card-shine" />
 
+        {isPenalty && (
+          <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(255,0,0,0.15)', zIndex: 1, pointerEvents: 'none', borderRadius: 'inherit'
+          }} />
+        )}
+
         {/* OVR + Position */}
         <div className="card-top" style={{ 
           position: 'absolute', 
-          top: size === 'small' ? 8 : 12, 
-          left: size === 'small' ? 8 : 12,
+          top: size === 'mini' ? 4 : size === 'small' ? 8 : 12, 
+          left: size === 'mini' ? 4 : size === 'small' ? 8 : 12,
+          color: isPenalty ? '#ff4757' : 'inherit'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span className="card-ovr" style={{ fontSize: curr.ovr }}>
@@ -223,13 +238,13 @@ const PlayerCard = ({
         {upgradeLevel > 0 && (
           <div style={{
             position: 'absolute',
-            top: size === 'small' ? 32 : 40,
-            right: size === 'small' ? 8 : 10,
+            top: size === 'mini' ? 16 : size === 'small' ? 32 : 40,
+            right: size === 'mini' ? 4 : size === 'small' ? 8 : 10,
             background: getUpgradeColor(upgradeLevel),
             color: upgradeLevel >= 5 ? '#fff' : '#000',
             fontWeight: 800,
             fontSize: curr.badge,
-            padding: '1px 5px',
+            padding: size === 'mini' ? '0 3px' : '1px 5px',
             borderRadius: '4px',
             boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
             fontFamily: "'Bebas Neue', sans-serif",
@@ -241,7 +256,7 @@ const PlayerCard = ({
         )}
 
         {/* Player Portrait */}
-        <div className="card-portrait" style={{ bottom: curr.statsH + 4 }}>
+        <div className="card-portrait" style={{ bottom: size === 'mini' ? curr.statsH + 2 : curr.statsH + 4 }}>
           <div
             className="card-portrait-placeholder"
             style={{
@@ -255,12 +270,12 @@ const PlayerCard = ({
         </div>
 
         {/* Player Name */}
-        <div className="card-name" style={{ bottom: curr.statsH + 4 }}>
+        <div className="card-name" style={{ bottom: size === 'mini' ? curr.statsH : curr.statsH + 4 }}>
           <h3 style={{ fontSize: curr.name }}>{player.name}</h3>
         </div>
 
         {/* Stats Footer */}
-        <div className="card-stats" style={{ height: curr.statsH }}>
+        <div className="card-stats" style={{ height: curr.statsH, gap: size === 'mini' ? 0 : 4, paddingBottom: size === 'mini' ? 2 : 8 }}>
           {stats.map(s => (
             <div key={s.label} className="stat">
               <span className="stat-value" style={{ fontSize: curr.statV }}>
