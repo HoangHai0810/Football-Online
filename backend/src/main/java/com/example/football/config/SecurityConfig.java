@@ -1,6 +1,7 @@
 package com.example.football.config;
 
 import com.example.football.security.JwtAuthenticationFilter;
+import com.example.football.security.OAuth2LoginSuccessHandler;
 import com.example.football.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -39,6 +41,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 // Allow public access to templates and cards for demo/dev purposes
                 .requestMatchers("/api/templates/**").permitAll()
@@ -48,11 +51,20 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )
+            // JWT is stateless — OAuth2 redirect flow briefly uses a session,
+            // but once the token is issued, all API calls use Bearer JWT only.
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(oAuth2LoginSuccessHandler)
+            )
+            .logout(logout -> logout
+                .deleteCookies("JSESSIONID")
+                .invalidateHttpSession(true)
+            )
             .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();
@@ -62,7 +74,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-            "http://localhost:3000", 
+            "http://localhost:3000",
             "http://localhost:5173",
             "https://football-frontend-9asm.onrender.com"
         ));

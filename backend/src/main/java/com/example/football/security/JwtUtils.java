@@ -2,21 +2,37 @@ package com.example.football.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.function.Function;
 
+@Slf4j
 @Component
 public class JwtUtils {
 
-    private final SecretKey key = Jwts.SIG.HS256.key().build();
+    @Value("${jwt.secret}")
+    private String secret;
 
-    @Value("${app.jwtExpirationMs:86400000}")
+    @Value("${jwt.expiration:86400000}")
     private int jwtExpirationMs;
+
+    private SecretKey key;
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+        log.info("JWT Key initialized with length: {} bits", keyBytes.length * 8);
+    }
 
     public String generateToken(UserDetails userDetails) {
         return Jwts.builder()

@@ -5,6 +5,8 @@ import com.example.football.dto.UserStatsDTO;
 import com.example.football.entity.PlayerCard;
 import com.example.football.entity.Tournament;
 import com.example.football.entity.TournamentStanding;
+import com.example.football.entity.Users;
+import com.example.football.entity.SquadFormation;
 import com.example.football.repository.PlayerCardRepository;
 import com.example.football.repository.SquadFormationRepository;
 import com.example.football.repository.UserRepository;
@@ -12,16 +14,18 @@ import com.example.football.service.CareerService;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import com.example.football.entity.SquadFormation;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -34,18 +38,36 @@ public class UserController {
     private final ObjectMapper objectMapper;
 
     @GetMapping("/me")
-    public ResponseEntity<UserDTO> getMe() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByUsername(username)
-                .map(user -> ResponseEntity.ok(UserDTO.builder()
-                        .id(user.getId())
-                        .username(user.getUsername())
-                        .email(user.getEmail())
-                        .coins(user.getCoins())
-                        .role(user.getRole())
-                        .clubName(user.getClubName())
-                        .build()))
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<UserDTO> getMe(Authentication authentication) {
+        if (authentication == null) {
+            log.warn("getMe called with null authentication");
+            return ResponseEntity.status(401).build();
+        }
+
+        Object principal = authentication.getPrincipal();
+        log.info("getMe principal type: {}", principal.getClass().getName());
+
+        Users user = null;
+        if (principal instanceof Users) {
+            user = (Users) principal;
+        } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+            String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+            user = userRepository.findByUsername(username).orElse(null);
+        }
+
+        if (user == null) {
+            log.warn("getMe user not found for principal: {}", principal);
+            return ResponseEntity.status(401).build();
+        }
+        
+        return ResponseEntity.ok(UserDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .coins(user.getCoins())
+                .role(user.getRole())
+                .clubName(user.getClubName())
+                .build());
     }
 
     @PatchMapping("/club")

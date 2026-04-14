@@ -14,19 +14,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const fetchUser = async () => {
       if (token) {
+        setLoading(true);
         try {
-          // You might need a real endpoint like /users/me here
-          // For now, we'll store some basic info or fetch it if available
-          const res = await api.get('/users/me').catch(err => {
-            if (err.response?.status === 401) {
-              logout();
-            }
-            throw err;
-          });
+          const res = await api.get('/users/me');
           setUser(res.data);
         } catch (err) {
           console.error("Failed to fetch user:", err);
-          logout();
+          // Only logout automatically if we get a clear 401 Unauthorized
+          if (err.response?.status === 401) {
+            logout();
+          }
         }
       }
       setLoading(false);

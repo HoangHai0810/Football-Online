@@ -250,6 +250,55 @@ const Login = () => {
               </button>
             </form>
 
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: 1 }}>OR</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            </div>
+
+            {/* Google OAuth2 Button */}
+            <a
+              id="google-login-btn"
+              href={`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/oauth2/authorization/google`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                width: '100%',
+                padding: '11px 0',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: 0.5,
+                textDecoration: 'none',
+                fontFamily: 'Outfit, sans-serif',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+              }}
+            >
+              {/* Google Icon SVG */}
+              <svg width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M47.5 24.5C47.5 22.6 47.3 20.8 47 19H24V29.5H37.4C36.8 32.5 35 35 32.3 36.6V43.1H40.2C44.7 39 47.5 32.3 47.5 24.5Z" fill="#4285F4"/>
+                <path d="M24 48C30.6 48 36.1 45.9 40.2 43.1L32.3 36.6C30.2 38 27.4 38.9 24 38.9C17.6 38.9 12.1 34.7 10.2 29H2V35.7C6.1 43.8 14.4 48 24 48Z" fill="#34A853"/>
+                <path d="M10.2 29C9.7 27.6 9.5 26.1 9.5 24.5C9.5 22.9 9.8 21.4 10.2 20V13.3H2C0.7 16 0 19.2 0 22.5C0 25.8 0.7 29 2 31.7L10.2 29Z" fill="#FBBC04"/>
+                <path d="M24 9.5C27.7 9.5 31 10.8 33.6 13.3L40.4 6.5C36.1 2.5 30.6 0 24 0C14.4 0 6.1 4.2 2 12.3L10.2 19C12.1 13.3 17.6 9.5 24 9.5Z" fill="#EA4335"/>
+              </svg>
+              CONTINUE WITH GOOGLE
+            </a>
+
             <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-muted)' }}>
               {isRegister ? 'Already have an account? ' : "Don't have an account? "}
               <button

@@ -33,8 +33,11 @@ public class CareerService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         return userCareerRepository.findByUser(user)
                 .orElseGet(() -> {
-                    seasonGeneratorService.createNewSeason(user);
-                    return userCareerRepository.findByUser(user).orElseThrow();
+                    return userCareerRepository.findByUser(user)
+                            .orElseGet(() -> {
+                                seasonGeneratorService.createNewSeason(user);
+                                return userCareerRepository.findByUser(user).orElseThrow();
+                            });
                 });
     }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
+import LoginSuccess from './pages/LoginSuccess';
 import Dashboard from './pages/Dashboard';
 import Squad from './pages/Squad';
 import Market from './pages/Market';
@@ -100,6 +101,7 @@ const App = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/login-success" element={<LoginSuccess />} />
             <Route path="/squad" element={<PrivateRoute><Squad /></PrivateRoute>} />
             <Route path="/market" element={<PrivateRoute><Market /></PrivateRoute>} />
             <Route path="/packs" element={<PrivateRoute><Packs /></PrivateRoute>} />
