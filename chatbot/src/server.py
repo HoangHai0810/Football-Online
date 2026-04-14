@@ -1,4 +1,11 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+if os.getenv("LANGSMITH_TRACING") == "true":
+    print(f"DEBUG: LangSmith tracing enabled for project: {os.getenv('LANGSMITH_PROJECT')}")
+
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
