@@ -41,8 +41,9 @@ public class DataInitializer implements CommandLineRunner {
             // We no longer call seedPlayers() here to avoid duplicates and high OVRs
         }
         
-        if (missionRepository.count() == 0) {
-            System.out.println("DataInitializer: Initial seed for missions...");
+        if (missionRepository.count() < 100) {
+            System.out.println("DataInitializer: Seeding 100+ varied missions...");
+            missionRepository.deleteAll();
             seedMissions();
         }
 
@@ -181,30 +182,81 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedMissions() {
-        List<Mission> missions = Arrays.asList(
-            // --- Coins & Starter Missions ---
-            Mission.builder().description("Starter Pack Opening: Open 1 Pack").type(MissionType.OPEN_PACK).targetAmount(1).rewardCoins(3000L).build(),
-            Mission.builder().description("Building Squad: Collect 5 Players").type(MissionType.COLLECT_PLAYER).targetAmount(5).rewardCoins(12000L).build(),
-            Mission.builder().description("First Upgrade: Upgrade 1 Player").type(MissionType.UPGRADE_PLAYER).targetAmount(1).rewardCoins(3000L).build(),
-            Mission.builder().description("Daily Login Bonus").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(5000L).build(),
-            
-            // --- Lucky BP Rewards ---
-            Mission.builder().description("Pack Hunter: Open 3 Packs").type(MissionType.OPEN_PACK).targetAmount(3).rewardCoins(0L).rewardLuckyBp(true).build(),
-            Mission.builder().description("Match Winner: Win 3 Matches").type(MissionType.WIN_MATCH).targetAmount(3).rewardCoins(0L).rewardLuckyBp(true).build(),
-            Mission.builder().description("Upgrade Enthusiast: Upgrade 5 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(5).rewardCoins(0L).rewardLuckyBp(true).build(),
+        List<Mission> missions = new ArrayList<>();
+        
+        // 1. Daily Login (1 mission)
+        missions.add(Mission.builder().description("Daily Login Bonus").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(5000L).build());
+        
+        // 2. Open Pack Missions (25 levels)
+        for (int i = 1; i <= 25; i++) {
+            int target = i * 2;
+            long coins = i * 3000L;
+            String packId = (i % 5 == 0) ? "premium" : null;
+            if (i == 25) packId = "all_star";
+            boolean luckyBp = (i % 3 == 0);
+            missions.add(Mission.builder()
+                .description("Pack Opener Tier " + i + ": Open " + target + " Packs")
+                .type(MissionType.OPEN_PACK)
+                .targetAmount(target)
+                .rewardCoins(coins)
+                .rewardPackId(packId)
+                .rewardLuckyBp(luckyBp)
+                .build());
+        }
 
-            // --- Player Pack Rewards ---
-            Mission.builder().description("Pack Addict: Open 10 Packs").type(MissionType.OPEN_PACK).targetAmount(10).rewardCoins(10000L).rewardPackId("starter").build(),
-            Mission.builder().description("Match Veteran: Win 10 Matches").type(MissionType.WIN_MATCH).targetAmount(10).rewardCoins(20000L).rewardPackId("veteran").build(),
-            Mission.builder().description("Talent Scout: Collect 25 Players").type(MissionType.COLLECT_PLAYER).targetAmount(25).rewardCoins(25000L).rewardPackId("premium").build(),
-            Mission.builder().description("Upgrade Master: Upgrade 15 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(15).rewardCoins(30000L).rewardPackId("live_master").build(),
-            
-            // --- High Taper Missions ---
-            Mission.builder().description("Crazy Box: Open 50 Packs").type(MissionType.OPEN_PACK).targetAmount(50).rewardCoins(100000L).rewardPackId("all_star").build(),
-            Mission.builder().description("Legendary Manager: Win 50 Matches").type(MissionType.WIN_MATCH).targetAmount(50).rewardCoins(200000L).rewardPackId("icon").build()
-        );
+        // 3. Win Match Missions (25 levels)
+        for (int i = 1; i <= 25; i++) {
+            int target = i * 3;
+            long coins = i * 5000L;
+            String packId = (i % 5 == 0) ? "veteran" : null;
+            if (i == 25) packId = "icon";
+            boolean luckyBp = (i % 4 == 0);
+            missions.add(Mission.builder()
+                .description("Match Winner Tier " + i + ": Win " + target + " Matches")
+                .type(MissionType.WIN_MATCH)
+                .targetAmount(target)
+                .rewardCoins(coins)
+                .rewardPackId(packId)
+                .rewardLuckyBp(luckyBp)
+                .build());
+        }
+
+        // 4. Upgrade Player Missions (25 levels)
+        for (int i = 1; i <= 25; i++) {
+            int target = i * 2;
+            long coins = i * 4000L;
+            String packId = (i % 10 == 0) ? "live_master" : null;
+            if (i == 25) packId = "golden_ticket";
+            boolean luckyBp = (i % 2 == 0);
+            missions.add(Mission.builder()
+                .description("Upgrade Master Tier " + i + ": Upgrade " + target + " Players")
+                .type(MissionType.UPGRADE_PLAYER)
+                .targetAmount(target)
+                .rewardCoins(coins)
+                .rewardPackId(packId)
+                .rewardLuckyBp(luckyBp)
+                .build());
+        }
+
+        // 5. Collect Player Missions (25 levels)
+        for (int i = 1; i <= 25; i++) {
+            int target = i * 5;
+            long coins = i * 2000L;
+            String packId = (i % 5 == 0) ? "starter" : null;
+            if (i == 25) packId = "toty_upgrade";
+            boolean luckyBp = false;
+            missions.add(Mission.builder()
+                .description("Talent Scout Tier " + i + ": Collect " + target + " Players")
+                .type(MissionType.COLLECT_PLAYER)
+                .targetAmount(target)
+                .rewardCoins(coins)
+                .rewardPackId(packId)
+                .rewardLuckyBp(luckyBp)
+                .build());
+        }
+
         missionRepository.saveAll(missions);
-        System.out.println("Seeded database with " + missions.size() + " varied missions (BP, Packs, Lucky BP).");
+        System.out.println("Seeded database with " + missions.size() + " progressive missions (Total: 101).");
     }
 
     private void seedAiClubs() {

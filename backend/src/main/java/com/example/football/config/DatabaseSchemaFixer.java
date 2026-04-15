@@ -67,6 +67,18 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
                 log.warn("Could not execute schema fix: {} - Error: {}", sql, e.getMessage());
             }
         }
+        String[] missionCols = {
+            "ALTER TABLE missions ADD COLUMN IF NOT EXISTS reward_lucky_bp BOOLEAN DEFAULT false"
+        };
+
+        for (String sql : missionCols) {
+            try {
+                log.info("Executing schema fix: {}", sql);
+                jdbcTemplate.execute(sql);
+            } catch (Exception e) {
+                log.warn("Could not execute schema fix: {} - Error: {}", sql, e.getMessage());
+            }
+        }
         
         log.info("Schema fix process completed.");
     }

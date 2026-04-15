@@ -15,6 +15,37 @@ const MissionIcon = ({ type }) => {
   }
 };
 
+const CountdownTimer = ({ targetDate }) => {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    if (!targetDate) return;
+    
+    const updateTime = () => {
+      const now = new Date().getTime();
+      const target = new Date(targetDate).getTime();
+      const distance = target - now;
+
+      if (distance < 0) {
+        setTimeLeft('Resetting...');
+        return;
+      }
+
+      const h = String(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+      const m = String(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+      const s = String(Math.floor((distance % (1000 * 60)) / 1000)).padStart(2, '0');
+
+      setTimeLeft(`${h}:${m}:${s}`);
+    };
+
+    updateTime(); // initial call
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  return <span>{timeLeft || '24h 00m'}</span>; // fallback if no date
+};
+
 const Quests = () => {
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -151,19 +182,30 @@ const Quests = () => {
                   style={{
                     position: 'absolute',
                     top: 16, right: 16,
-                    padding: '4px 8px',
-                    fontSize: 11,
-                    display: 'flex', gap: 4, alignItems: 'center',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: 'var(--text-muted)',
-                    borderRadius: 12,
+                    padding: '6px 12px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    display: 'flex', gap: 6, alignItems: 'center',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: 'var(--text-secondary)',
+                    borderRadius: 20,
+                    transition: 'all 0.2s',
+                    zIndex: 10
                   }}
-                  onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                  onMouseEnter={e => {
+                      e.currentTarget.style.color = 'white';
+                      e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  }}
+                  onMouseLeave={e => {
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                      e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.background = 'rgba(0, 0, 0, 0.4)';
+                  }}
                 >
-                  <span style={{ fontSize: 10 }}>🔄</span>
-                  {rerolling === m.id ? '...' : <span>- <Coins size={9} style={{display: 'inline', verticalAlign: 'middle'}}/> 200</span>}
+                  <span style={{ fontSize: 12 }}>🔄</span>
+                  {rerolling === m.id ? '...' : <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>-200 <Coins size={12} color="var(--gold)"/></span>}
                 </button>
               )}
 
@@ -172,21 +214,22 @@ const Quests = () => {
                   width: 56, height: 56, 
                   borderRadius: 16, 
                   background: 'rgba(255,255,255,0.05)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0
                 }}>
                   <MissionIcon type={m.mission.type} />
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: 17, marginBottom: 8, color: m.claimed ? 'var(--text-muted)' : 'white', paddingRight: 56 }}>
+                  <h3 style={{ fontSize: 17, marginBottom: 8, color: m.claimed ? 'var(--text-muted)' : 'white', paddingRight: 90, lineHeight: 1.4 }}>
                     {m.mission.description}
                   </h3>
                   
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                     {/* Standard Coins or Lucky BP */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <Coins size={16} color="var(--gold)" />
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--gold)' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)' }}>
                         {m.mission.rewardLuckyBp ? (
                           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             LUCKY BP <Zap size={12} fill="var(--gold)" />
@@ -200,33 +243,44 @@ const Quests = () => {
                     {/* Player Pack Reward */}
                     {m.mission.rewardPackId && (
                       <div style={{ 
-                        display: 'flex', alignItems: 'center', gap: 6, 
+                        display: 'flex', alignItems: 'center', gap: 4, 
                         background: 'rgba(52, 152, 219, 0.15)', 
-                        padding: '2px 8px', borderRadius: 6,
+                        padding: '2px 6px', borderRadius: 4,
                         border: '1px solid rgba(52, 152, 219, 0.3)'
                       }}>
-                        <Package size={14} color="#3498db" />
-                        <span style={{ fontSize: 11, fontWeight: 800, color: '#3498db', textTransform: 'uppercase' }}>
-                          {m.mission.rewardPackId.replace('_', ' ')} PACK
+                        <Package size={12} color="#3498db" />
+                        <span style={{ fontSize: 10, fontWeight: 800, color: '#3498db', textTransform: 'uppercase' }}>
+                          {m.mission.rewardPackId.replace('_', ' ')}
                         </span>
                       </div>
                     )}
 
                     {!m.claimed && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 12, marginLeft: 'auto' }}>
                         <Clock size={12} />
-                        3h
+                        <CountdownTimer targetDate={m.nextResetAt} />
                       </div>
                     )}
                   </div>
 
                   {!m.claimed ? (
                     <>
-                      <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, marginBottom: 8, overflow: 'hidden' }}>
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${progress}%` }}
-                          style={{ height: '100%', background: isReady ? 'var(--gold)' : 'var(--blue)', borderRadius: 3 }}
+                      <div style={{ 
+                        height: 6, 
+                        background: 'rgba(255,255,255,0.1)', 
+                        borderRadius: 3, 
+                        marginBottom: 8, 
+                        overflow: 'hidden'
+                      }}>
+                        <div 
+                          style={{ 
+                            width: `${Math.min(Math.max(progress, 0), 100)}%`,
+                            height: '100%', 
+                            background: isReady ? 'var(--gold)' : 'linear-gradient(90deg, #3b82f6, #a855f7)', 
+                            borderRadius: 3,
+                            boxShadow: isReady ? '0 0 10px var(--gold)' : '0 0 10px rgba(168, 85, 247, 0.5)',
+                            transition: 'width 0.5s ease-out'
+                          }}
                         />
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-muted)' }}>
