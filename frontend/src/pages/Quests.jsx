@@ -21,9 +21,11 @@ const CountdownTimer = ({ targetDate }) => {
   useEffect(() => {
     if (!targetDate) return;
     
+    const utcDate = targetDate.endsWith('Z') ? targetDate : targetDate + 'Z';
+    
     const updateTime = () => {
       const now = new Date().getTime();
-      const target = new Date(targetDate).getTime();
+      const target = new Date(utcDate).getTime();
       const distance = target - now;
 
       if (distance < 0) {
