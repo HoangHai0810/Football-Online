@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import com.example.football.entity.AiClub;
 import com.example.football.repository.AiClubRepository;
+import com.example.football.repository.UserMissionRepository;
 
 @Configuration
 @RequiredArgsConstructor
@@ -31,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
     private final MissionRepository missionRepository;
     private final PlayerSeeder playerSeeder;
     private final AiClubRepository aiClubRepository;
+    private final UserMissionRepository userMissionRepository;
 
     @Override
     @Transactional
@@ -43,6 +45,7 @@ public class DataInitializer implements CommandLineRunner {
         
         if (missionRepository.count() < 100) {
             System.out.println("DataInitializer: Seeding 100+ varied missions...");
+            userMissionRepository.deleteAll(); // Fix FK constraint violation
             missionRepository.deleteAll();
             seedMissions();
         }
