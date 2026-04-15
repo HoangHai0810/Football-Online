@@ -31,42 +31,88 @@ const NavLink = ({ to, label }) => {
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
   const coins = user?.coins || 0;
 
+  const navItems = [
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/squad', label: 'Squad' },
+    { to: '/market', label: 'Market' },
+    { to: '/packs', label: 'Packs' },
+    { to: '/quests', label: 'Quests' },
+    { to: '/tournaments', label: 'Tournaments' },
+    { to: '/trophies', label: 'Trophies' },
+    { to: '/upgrade', label: 'Upgrade' },
+  ];
+
   return (
-    <nav className="navbar">
-      <Link to="/dashboard" className="navbar-brand">FC CHALLENGE</Link>
+    <>
+      <nav className="navbar">
+        <Link to="/dashboard" className="navbar-brand">FC CHALLENGE</Link>
 
-      <div className="navbar-links">
-        <NavLink to="/dashboard" label="Dashboard" />
-        {isAuthenticated && (
-          <>
-            <NavLink to="/squad" label="Squad" />
-            <NavLink to="/market" label="Market" />
-            <NavLink to="/packs" label="Packs" />
-            <NavLink to="/quests" label="Quests" />
-            <NavLink to="/tournaments" label="Tournaments" />
-            <NavLink to="/trophies" label="Trophies" />
-            <NavLink to="/upgrade" label="Upgrade" />
-          </>
-        )}
-      </div>
+        <div className="navbar-links">
+          <NavLink to="/dashboard" label="Dashboard" />
+          {isAuthenticated && (
+            <>
+              <NavLink to="/squad" label="Squad" />
+              <NavLink to="/market" label="Market" />
+              <NavLink to="/packs" label="Packs" />
+              <NavLink to="/quests" label="Quests" />
+              <NavLink to="/tournaments" label="Tournaments" />
+              <NavLink to="/trophies" label="Trophies" />
+              <NavLink to="/upgrade" label="Upgrade" />
+            </>
+          )}
+        </div>
 
-      <div className="navbar-right">
-        {isAuthenticated ? (
-          <>
-            <div className="coins-badge">
-              <span className="coin-icon">₡</span>
-              {coins.toLocaleString()}
+        <div className="navbar-right">
+          {isAuthenticated ? (
+            <>
+              <div className="coins-badge">
+                <span className="coin-icon">₡</span>
+                <span className="coins-value">{coins.toLocaleString()}</span>
+              </div>
+              <button onClick={logout} className="btn btn-glass btn-sm navbar-logout">LOGOUT</button>
+            </>
+          ) : (
+            <Link to="/login" className="btn btn-gold btn-sm">LOGIN</Link>
+          )}
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            <div className={`hamburger ${mobileOpen ? 'open' : ''}`}>
+              <span /><span /><span />
             </div>
-            <button onClick={logout} className="btn btn-glass btn-sm">LOGOUT</button>
-          </>
-        ) : (
-          <Link to="/login" className="btn btn-gold btn-sm">LOGIN</Link>
-        )}
+          </button>
+        </div>
+      </nav>
+
+      {mobileOpen && <div className="mobile-overlay" onClick={() => setMobileOpen(false)} />}
+      <div className={`mobile-drawer ${mobileOpen ? 'open' : ''}`}>
+        <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {(isAuthenticated ? navItems : [navItems[0]]).map(item => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`mobile-nav-link ${location.pathname === item.to ? 'active' : ''}`}
+              onClick={() => setMobileOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
+          {isAuthenticated && (
+            <button className="btn btn-glass btn-sm" style={{ marginTop: 16, width: '100%' }}
+              onClick={() => { logout(); setMobileOpen(false); }}>LOGOUT</button>
+          )}
+        </div>
       </div>
-    </nav>
+    </>
   );
 };
 

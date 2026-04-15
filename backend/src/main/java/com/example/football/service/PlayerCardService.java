@@ -126,7 +126,8 @@ public class PlayerCardService {
     private PlayerCard generateRandomCardFromList(Users user, List<PlayerTemplate> templates, int minLevel, int maxLevel) {
         double totalWeight = 0;
         for (PlayerTemplate t : templates) {
-            totalWeight += 1.0 / Math.pow(t.getOvr(), 3);
+            // INCREASED POWER: From 3 to 6 to make high OVR significantly rarer
+            totalWeight += 1.0 / Math.pow(t.getOvr(), 6);
         }
 
         double randomValue = random.nextDouble() * totalWeight;
@@ -134,7 +135,7 @@ public class PlayerCardService {
         PlayerTemplate selectedTemplate = templates.get(0);
 
         for (PlayerTemplate t : templates) {
-            currentWeightSum += 1.0 / Math.pow(t.getOvr(), 3);
+            currentWeightSum += 1.0 / Math.pow(t.getOvr(), 6);
             if (randomValue <= currentWeightSum) {
                 selectedTemplate = t;
                 break;
@@ -146,11 +147,12 @@ public class PlayerCardService {
             double r = random.nextDouble();
             double totalW = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
-                totalW += 1.0 / Math.pow(2, i - minLevel); 
+                // INCREASED POWER: From 2 to 6 to make high upgrade levels significantly rarer
+                totalW += 1.0 / Math.pow(6, i - minLevel); 
             }
             double threshold = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
-                threshold += (1.0 / Math.pow(2, i - minLevel)) / totalW;
+                threshold += (1.0 / Math.pow(6, i - minLevel)) / totalW;
                 if (r <= threshold) {
                     targetLevel = i;
                     break;
@@ -270,6 +272,29 @@ public class PlayerCardService {
                 .upgradeLevel(1)
                 .build();
 
+        return playerCardRepository.save(card);
+    }
+
+    @Transactional
+    public PlayerCard openPackById(Users user, String packId) {
+        int minOvr = 0;
+        String season = "";
+        int minLvl = 1;
+        int maxLvl = 1;
+
+        switch (packId) {
+            case "starter" -> { minOvr = 70; }
+            case "veteran" -> { minOvr = 80; minLvl = 3; maxLvl = 6; }
+            case "premium" -> { minOvr = 85; }
+            case "live_master" -> { season = "LIVE"; minLvl = 5; maxLvl = 8; }
+            case "all_star" -> { minOvr = 90; }
+            case "toty_upgrade" -> { season = "TOTY"; minLvl = 2; maxLvl = 5; }
+            case "golden_ticket" -> { minOvr = 85; minLvl = 8; maxLvl = 10; }
+            case "icon" -> { season = "ICON"; }
+        }
+
+        List<PlayerTemplate> templates = fetchFilteredTemplates(minOvr, season);
+        PlayerCard card = generateRandomCardFromList(user, templates, minLvl, maxLvl);
         return playerCardRepository.save(card);
     }
 }

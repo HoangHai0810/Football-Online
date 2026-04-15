@@ -22,6 +22,9 @@ public class MissionService {
     private final MissionRepository missionRepository;
     private final UserMissionRepository userMissionRepository;
     private final UserRepository userRepository;
+    private final PlayerCardService playerCardService;
+    private final InventoryService inventoryService;
+    private final java.util.Random random = new java.util.Random();
 
     @Transactional
     public List<UserMission> getActiveMissionsForUser(String username) {
@@ -48,7 +51,7 @@ public class MissionService {
         List<UserMission> oldMissions = userMissionRepository.findByUser(user);
         userMissionRepository.deleteAll(oldMissions);
 
-        // Get all active missions, shuffle and pick 6
+        // Get active missions, shuffle and pick 6
         List<Mission> allMissions = missionRepository.findByIsActiveTrue();
         Collections.shuffle(allMissions);
         List<Mission> selected = allMissions.stream().limit(6).collect(Collectors.toList());
@@ -67,6 +70,37 @@ public class MissionService {
                 .collect(Collectors.toList());
 
         return userMissionRepository.saveAll(newMissions);
+    }
+
+    private Mission generateNextTierMission(Mission oldMission) {
+        // Auto-generate a harder version of the claimed mission
+        int newTarget = (int) Math.ceil(oldMission.getTargetAmount() * 1.5);
+        long newCoins = (long) Math.ceil(oldMission.getRewardCoins() * 1.5);
+        if (oldMission.getRewardCoins() == 0) newCoins = 0; // Keep 0 if it was pure pack/lucky BP
+
+        // Upgrade pack randomly if it gets very hard
+        String newPack = oldMission.getRewardPackId();
+        if (newTarget > 10 && "starter".equals(newPack)) newPack = "veteran";
+        if (newTarget > 25 && "veteran".equals(newPack)) newPack = "premium";
+        if (newTarget > 50 && "premium".equals(newPack)) newPack = "all_star";
+
+        // Keep Lucky BP
+        boolean keepLucky = oldMission.isRewardLuckyBp();
+        if (newTarget > 10 && random.nextDouble() > 0.8) keepLucky = true;
+
+        String prefix = oldMission.getDescription().split(" -> ")[0].replaceAll("\\s\\(.*\\)", "");
+        String newDesc = prefix + " (" + newTarget + " " + oldMission.getType().name().replace("_", " ") + ")";
+
+        Mission nextM = Mission.builder()
+                .description(newDesc)
+                .type(oldMission.getType())
+                .targetAmount(newTarget)
+                .rewardCoins(newCoins)
+                .rewardPackId(newPack)
+                .rewardLuckyBp(keepLucky)
+                .isActive(true)
+                .build();
+        return missionRepository.save(nextM);
     }
 
     @Transactional
@@ -88,7 +122,7 @@ public class MissionService {
     }
 
     @Transactional
-    public Long claimReward(String username, Long userMissionId) {
+    public java.util.Map<String, Object> claimReward(String username, Long userMissionId) {
         Users user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -100,12 +134,50 @@ public class MissionService {
         if (um.isClaimed()) throw new RuntimeException("Already claimed");
 
         um.setClaimed(true);
-        user.setCoins(user.getCoins() + um.getMission().getRewardCoins());
-        
         userMissionRepository.save(um);
+
+        java.util.Map<String, Object> results = new java.util.HashMap<>();
+        
+        // 1. Regular Coins
+        long totalCoins = um.getMission().getRewardCoins();
+        
+        // 2. Lucky BP
+        if (um.getMission().isRewardLuckyBp()) {
+            // Range 10,000 to 100,000
+            long luckyAmount = 10000 + random.nextInt(90001);
+            totalCoins += luckyAmount;
+            results.put("luckyBp", luckyAmount);
+        }
+        
+        if (totalCoins > 0) {
+            user.setCoins(user.getCoins() + totalCoins);
+            results.put("rewardCoins", totalCoins);
+        }
+
+        // 3. Player Pack -> Add to INVENTORY instead of opening
+        if (um.getMission().getRewardPackId() != null && !um.getMission().getRewardPackId().isEmpty()) {
+            inventoryService.addPack(user, um.getMission().getRewardPackId(), 1);
+            results.put("rewardPackId", um.getMission().getRewardPackId());
+            // We no longer return rewardCard strictly here since it goes to inventory.
+        }
+        
         userRepository.save(user);
 
-        return um.getMission().getRewardCoins();
+        // Auto-generate endless scaling replacement mission
+        Mission harderMission = generateNextTierMission(um.getMission());
+        userMissionRepository.delete(um);
+
+        UserMission nextUm = UserMission.builder()
+                .user(user)
+                .mission(harderMission)
+                .currentAmount(0)
+                .completed(false)
+                .claimed(false)
+                .nextResetAt(um.getNextResetAt())
+                .build();
+        userMissionRepository.save(nextUm);
+
+        return results;
     }
 
     @Transactional

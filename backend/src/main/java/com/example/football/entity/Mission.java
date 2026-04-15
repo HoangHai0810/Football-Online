@@ -28,6 +28,11 @@ public class Mission {
 
     @Column(nullable = false)
     private Long rewardCoins;
+
+    private String rewardPackId;
+
+    @Builder.Default
+    private boolean rewardLuckyBp = false;
     
     @Builder.Default
     private boolean isActive = true;

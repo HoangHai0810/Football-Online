@@ -1434,12 +1434,85 @@ img {
     padding-bottom: 12px;
   }
   .pitch-container {
-    min-width: 360px; /* Ensure pitch doesn't get too slim */
+    min-width: 300px;
     min-height: 520px !important;
   }
   .glass-dark {
     width: 100% !important;
     max-height: none !important;
+  }
+
+  /* Quests Mobile Fix */
+  .quests-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Packs Mobile Fix */
+  .packs-actions {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  .packs-actions button {
+    width: 100%;
+  }
+
+  /* Market Mobile Fix */
+  .market-toolbar {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+  .market-toolbar > select,
+  .market-toolbar > .input-wrap {
+    flex: 1 1 100% !important;
+    min-width: 100% !important;
+    margin-left: 0 !important;
+  }
+  .market-ovr-range {
+    flex: 1 1 auto;
+    justify-content: space-between;
+  }
+  .market-sort {
+    flex: 1 1 100% !important;
+    min-width: 100% !important;
+    margin-left: 0 !important;
+  }
+  .market-view-toggle {
+    margin-left: auto;
+  }
+  .input-wrap {
+    min-width: 0 !important;
+  }
+  .player-modal {
+    flex-direction: column !important;
+    gap: 20px !important;
+    padding: 24px !important;
+    align-items: center !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .player-modal > div {
+    text-align: center;
+    align-items: center;
+  }
+  .market-list-header {
+      display: none !important;
+  }
+  .player-list-item {
+      grid-template-columns: 1fr auto !important;
+      gap: 8px !important;
+      position: relative;
+      padding-bottom: 44px !important;
+  }
+  .player-list-item > *:not(:first-child):not(:last-child):not(:nth-child(2)) {
+      display: none !important;
+  }
+  .player-list-item button.btn-gold {
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
+      left: 12px;
+      width: calc(100% - 24px);
   }
 }
 
@@ -1569,4 +1642,175 @@ img {
 
 .highlight-gold {
     color: var(--gold) !important;
+}
+
+/* ====================================
+   COMPREHENSIVE MOBILE RESPONSIVE v2
+   All pages — supplements existing rules
+   ==================================== */
+
+/* ---- Navbar ---- */
+@media (max-width: 768px) {
+  .navbar { padding: 0 16px; height: 56px; }
+  .navbar-brand { font-size: 22px; letter-spacing: 2px; }
+  .coins-badge { padding: 6px 10px; font-size: 12px; }
+}
+
+/* ---- Dashboard: 2-col -> 1-col ---- */
+@media (max-width: 900px) {
+  .dashboard-main-grid { grid-template-columns: 1fr !important; }
+  .quick-links-grid    { grid-template-columns: repeat(2, 1fr) !important; }
+  .balance-card-row    { flex-direction: column !important; gap: 16px !important; align-items: flex-start !important; }
+  .balance-card-row > div:last-child { flex-direction: row !important; width: 100%; }
+  .balance-card-row > div:last-child > a { flex: 1; text-align: center; }
+}
+@media (max-width: 480px) {
+  .quick-links-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ---- Upgrade: 2-col -> 1-col ---- */
+@media (max-width: 900px) {
+  .upgrade-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ---- Packs ---- */
+@media (max-width: 768px) {
+  .packs-tab-bar { gap: 8px !important; }
+  .packs-tab-bar button { flex: 1; padding: 10px 8px !important; font-size: 11px !important; }
+  .packs-store-grid { grid-template-columns: 1fr !important; }
+  .reveal-actions { flex-direction: column !important; gap: 10px !important; }
+  .reveal-actions button { width: 100% !important; }
+  .multi-result-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* ---- Tournaments ---- */
+@media (max-width: 768px) {
+  .tournament-stats { grid-template-columns: 1fr 1fr !important; }
+  .knockout-match-row { flex-direction: column !important; gap: 8px !important; text-align: center !important; }
+  .knockout-team { justify-content: center !important; }
+  .tournament-table-wrap { overflow-x: auto; }
+  .premium-table { min-width: 480px; }
+}
+
+/* ---- General tiny screens ---- */
+@media (max-width: 480px) {
+  .page { padding: 16px 12px; }
+  .page-title { font-size: 30px !important; }
+  .btn-lg { padding: 12px 20px !important; font-size: 13px !important; }
+  .stat-card-value { font-size: 30px !important; }
+  .navbar-right { gap: 8px; }
+}
+
+/* ====================================
+   MOBILE NAVIGATION SYSTEM
+   ==================================== */
+
+/* Hamburger button - hidden on desktop */
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  z-index: 1001;
+}
+
+.hamburger {
+  width: 24px;
+  height: 18px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.hamburger.open span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.open span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Mobile overlay */
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 998;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Mobile drawer */
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: -280px;
+  width: 280px;
+  height: 100vh;
+  background: rgba(6, 11, 26, 0.98);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(240, 195, 45, 0.15);
+  z-index: 999;
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  padding-top: 68px;
+}
+
+.mobile-drawer.open {
+  right: 0;
+}
+
+/* Mobile nav links */
+.mobile-nav-link {
+  display: block;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link.active {
+  color: var(--gold);
+  background: rgba(240, 195, 45, 0.1);
+}
+
+.mobile-nav-link.active {
+  border-left: 3px solid var(--gold);
+}
+
+/* Show hamburger & hide desktop elements on mobile */
+@media (max-width: 768px) {
+  .mobile-menu-btn { display: block; }
+  .navbar-logout { display: none !important; }
+}
+
+/* Hide desktop-only hints on mobile */
+@media (max-width: 768px) {
+  .desktop-only-hint {
+    display: none !important;
+  }
 }

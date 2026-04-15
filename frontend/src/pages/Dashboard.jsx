@@ -230,7 +230,7 @@ const Dashboard = () => {
         </p>
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 380px)', gap: 32, marginBottom: 32 }}>
+      <div className="dashboard-main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 380px)', gap: 32, marginBottom: 32 }}>
         {/* Left Column: Stats & Balance */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
             <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
@@ -241,6 +241,7 @@ const Dashboard = () => {
 
             <motion.div
                 custom={8} initial="hidden" animate="visible" variants={fadeUp}
+                className="balance-card-row"
                 style={{
                 padding: '32px 40px',
                 background: 'linear-gradient(135deg, rgba(240,195,45,0.1) 0%, rgba(10,18,40,0.3) 100%)',
@@ -320,7 +321,7 @@ const Dashboard = () => {
         </motion.div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+      <div className="quick-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
         {quickLinks.map((q, i) => (
           <QuickCard key={q.title} {...q} i={i + 10} />
         ))}

@@ -182,28 +182,29 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedMissions() {
         List<Mission> missions = Arrays.asList(
+            // --- Coins & Starter Missions ---
             Mission.builder().description("Starter Pack Opening: Open 1 Pack").type(MissionType.OPEN_PACK).targetAmount(1).rewardCoins(3000L).build(),
-            Mission.builder().description("Pack Hunter: Open 3 Packs").type(MissionType.OPEN_PACK).targetAmount(3).rewardCoins(10000L).build(),
-            Mission.builder().description("Pack Addict: Open 10 Packs").type(MissionType.OPEN_PACK).targetAmount(10).rewardCoins(40000L).build(),
-            Mission.builder().description("Crazy Box: Open 25 Packs").type(MissionType.OPEN_PACK).targetAmount(25).rewardCoins(125000L).build(),
-            
-            Mission.builder().description("First Signing: Collect 1 Player").type(MissionType.COLLECT_PLAYER).targetAmount(1).rewardCoins(2000L).build(),
             Mission.builder().description("Building Squad: Collect 5 Players").type(MissionType.COLLECT_PLAYER).targetAmount(5).rewardCoins(12000L).build(),
-            Mission.builder().description("Talent Scout: Collect 20 Players").type(MissionType.COLLECT_PLAYER).targetAmount(20).rewardCoins(55000L).build(),
-            Mission.builder().description("Ultimate Collector: Collect 20 Players").type(MissionType.COLLECT_PLAYER).targetAmount(20).rewardCoins(100000L).build(),
-            
             Mission.builder().description("First Upgrade: Upgrade 1 Player").type(MissionType.UPGRADE_PLAYER).targetAmount(1).rewardCoins(3000L).build(),
-            Mission.builder().description("Enhancement: Upgrade 5 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(5).rewardCoins(18000L).build(),
-            Mission.builder().description("Upgrade Master: Upgrade 15 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(15).rewardCoins(65000L).build(),
+            Mission.builder().description("Daily Login Bonus").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(5000L).build(),
             
-            Mission.builder().description("First Victory: Win 1 Match").type(MissionType.WIN_MATCH).targetAmount(1).rewardCoins(5000L).build(),
-            Mission.builder().description("Winning Streak: Win 3 Matches").type(MissionType.WIN_MATCH).targetAmount(3).rewardCoins(18000L).build(),
-            Mission.builder().description("Tournament Champion: Win 5 Tourneys").type(MissionType.WIN_MATCH).targetAmount(5).rewardCoins(50000L).build(),
+            // --- Lucky BP Rewards ---
+            Mission.builder().description("Pack Hunter: Open 3 Packs").type(MissionType.OPEN_PACK).targetAmount(3).rewardCoins(0L).rewardLuckyBp(true).build(),
+            Mission.builder().description("Match Winner: Win 3 Matches").type(MissionType.WIN_MATCH).targetAmount(3).rewardCoins(0L).rewardLuckyBp(true).build(),
+            Mission.builder().description("Upgrade Enthusiast: Upgrade 5 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(5).rewardCoins(0L).rewardLuckyBp(true).build(),
+
+            // --- Player Pack Rewards ---
+            Mission.builder().description("Pack Addict: Open 10 Packs").type(MissionType.OPEN_PACK).targetAmount(10).rewardCoins(10000L).rewardPackId("starter").build(),
+            Mission.builder().description("Match Veteran: Win 10 Matches").type(MissionType.WIN_MATCH).targetAmount(10).rewardCoins(20000L).rewardPackId("veteran").build(),
+            Mission.builder().description("Talent Scout: Collect 25 Players").type(MissionType.COLLECT_PLAYER).targetAmount(25).rewardCoins(25000L).rewardPackId("premium").build(),
+            Mission.builder().description("Upgrade Master: Upgrade 15 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(15).rewardCoins(30000L).rewardPackId("live_master").build(),
             
-            Mission.builder().description("Daily Login Bonus").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(2000L).build()
+            // --- High Taper Missions ---
+            Mission.builder().description("Crazy Box: Open 50 Packs").type(MissionType.OPEN_PACK).targetAmount(50).rewardCoins(100000L).rewardPackId("all_star").build(),
+            Mission.builder().description("Legendary Manager: Win 50 Matches").type(MissionType.WIN_MATCH).targetAmount(50).rewardCoins(200000L).rewardPackId("icon").build()
         );
         missionRepository.saveAll(missions);
-        System.out.println("Seeded database with " + missions.size() + " diverse missions.");
+        System.out.println("Seeded database with " + missions.size() + " varied missions (BP, Packs, Lucky BP).");
     }
 
     private void seedAiClubs() {

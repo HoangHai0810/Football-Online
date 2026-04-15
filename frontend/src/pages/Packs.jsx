@@ -250,11 +250,29 @@ const PackCard = ({ pack, onOpen }) => {
 
 const Packs = () => {
   const { user, setUser } = useAuth();
+  const [activeTab, setActiveTab] = useState('store'); // 'store' | 'inventory'
+  const [inventory, setInventory] = useState([]);
   const [state, setState] = useState('idle');  // idle | opening | result | multi_result | error
   const [revealedCard, setRevealedCard] = useState(null);
   const [multiRevealedCards, setMultiRevealedCards] = useState([]);
   const [activePack, setActivePack] = useState(null);
+  const [activeOpenType, setActiveOpenType] = useState('store'); // 'store' | 'inventory'
   const skipRef = useRef(false);
+
+  const fetchInventory = async () => {
+    try {
+      const res = await api.get('/inventory');
+      setInventory(res.data);
+    } catch (err) {
+      console.error("Failed to fetch inventory:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'inventory' && state === 'idle') {
+      fetchInventory();
+    }
+  }, [activeTab, state]);
 
   // Skippable sleep: resolves after `ms` OR immediately if skipped
   const skippableSleep = (ms) => new Promise(resolve => {
@@ -300,6 +318,7 @@ const Packs = () => {
 
     skipRef.current = false;
     setActivePack(packId);
+    setActiveOpenType('store');
     setState('opening');
 
     try {
@@ -337,14 +356,75 @@ const Packs = () => {
         setUser(prev => ({ ...prev, coins: prev.coins - totalCost }));
         setMultiRevealedCards(cards);
         
-        // Brief loading for multi-open
-        await sleep(1500);
-        setState('multi_result');
+        // Find the "best" card to show a special walkout
+        // We calculate OVR + bonus to find the true peak card
+        const getEffectiveOvr = (c) => {
+          const bonus = [0, 0, 1, 2, 4, 6, 8, 11, 15, 18, 21][c.upgradeLevel || 1] || 0;
+          return c.template.ovr + bonus;
+        };
+        
+        const bestCard = [...cards].sort((a, b) => getEffectiveOvr(b) - getEffectiveOvr(a))[0];
+        setRevealedCard(bestCard);
+
+        await skippableSleep(2000);
+        setState('reveal_nationality');
+        await skippableSleep(3000);
+        setState('reveal_position');
+        await skippableSleep(3000);
+        setState('reveal_club');
+        await skippableSleep(3000);
+        setState('result'); // This will show the best card first
       }
     } catch (err) {
       console.error(err);
       setState('idle');
       toast.error(err.response?.data?.message || "Failed to open pack.");
+    }
+  };
+
+  const openInventoryPack = async (packId, quantity = 1) => {
+    skipRef.current = false;
+    setActivePack(packId);
+    setActiveOpenType('inventory');
+    setState('opening');
+
+    try {
+      const params = new URLSearchParams({ packId, quantity });
+      const res = await api.post(`/inventory/open?${params.toString()}`);
+      const cards = res.data;
+
+      if (quantity === 1) {
+        setRevealedCard(cards[0]);
+        await skippableSleep(2000);
+        setState('reveal_nationality');
+        await skippableSleep(3000);
+        setState('reveal_position');
+        await skippableSleep(3000);
+        setState('reveal_club');
+        await skippableSleep(3000);
+        setState('result');
+      } else {
+        setMultiRevealedCards(cards);
+        const getEffectiveOvr = (c) => {
+          const bonus = [0, 0, 1, 2, 4, 6, 8, 11, 15, 18, 21][c.upgradeLevel || 1] || 0;
+          return c.template.ovr + bonus;
+        };
+        const bestCard = [...cards].sort((a, b) => getEffectiveOvr(b) - getEffectiveOvr(a))[0];
+        setRevealedCard(bestCard);
+
+        await skippableSleep(2000);
+        setState('reveal_nationality');
+        await skippableSleep(3000);
+        setState('reveal_position');
+        await skippableSleep(3000);
+        setState('reveal_club');
+        await skippableSleep(3000);
+        setState('result');
+      }
+    } catch (err) {
+      console.error(err);
+      setState('idle');
+      toast.error(err.response?.data?.message || "Failed to open inventory pack.");
     }
   };
 
@@ -375,18 +455,44 @@ const Packs = () => {
             Unleash the power of legendary icons and future stars.
           </p>
         </motion.div>
-        {/* Reveal Phase */}
+        
+        {state === 'idle' && (
+          <div className="packs-tab-bar" style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 32 }}>
+            <button 
+              className={`btn ${activeTab === 'store' ? 'btn-gold' : 'btn-glass'}`}
+              onClick={() => setActiveTab('store')}
+            >
+              PACK STORE
+            </button>
+            <button 
+              className={`btn ${activeTab === 'inventory' ? 'btn-gold' : 'btn-glass'}`}
+              onClick={() => setActiveTab('inventory')}
+              style={{ position: 'relative' }}
+            >
+              MY INVENTORY
+              {inventory.reduce((acc, curr) => acc + curr.quantity, 0) > 0 && (
+                <div style={{
+                  position: 'absolute', top: -8, right: -8,
+                  background: 'var(--blue)', color: 'white',
+                  borderRadius: '10px', padding: '2px 8px', fontSize: 10, fontWeight: 'bold'
+                }}>
+                  {inventory.reduce((acc, curr) => acc + curr.quantity, 0)}
+                </div>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
-        {state === 'idle' && (
+        {state === 'idle' && activeTab === 'store' && (
           <motion.div
             key="store"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
           >
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+            <div className="packs-store-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
               {PACKS.map((pack, i) => (
                 <motion.div
                   key={pack.id}
@@ -398,6 +504,45 @@ const Packs = () => {
                 </motion.div>
               ))}
             </div>
+          </motion.div>
+        )}
+
+        {state === 'idle' && activeTab === 'inventory' && (
+          <motion.div
+            key="inventory"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+          >
+            {inventory.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '100px 0', color: 'var(--text-muted)' }}>
+                <PackageOpen size={64} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
+                <h3>YOUR INVENTORY IS EMPTY</h3>
+                <p>Complete Quests or visit the Store to get packs.</p>
+              </div>
+            ) : (
+              <div className="packs-store-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                {inventory.map((inv, i) => {
+                  const basePack = PACKS.find(p => p.id === inv.packId);
+                  if (!basePack) return null;
+                  
+                  // Clone pack but override texts for inventory
+                  const invPack = { ...basePack, name: `${basePack.name} (x${inv.quantity})`, price: 0 };
+                  
+                  return (
+                    <motion.div key={inv.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+                      <PackCard pack={invPack} onOpen={(id, qty) => {
+                        if (qty === 10 && inv.quantity < 10) {
+                          toast.error(`You only have ${inv.quantity} of these packs.`);
+                          return;
+                        }
+                        openInventoryPack(id, qty);
+                      }} />
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -453,7 +598,12 @@ const Packs = () => {
             transition={{ duration: 0.8 }}
             style={{ 
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
-              minHeight: 500, textAlign: 'center' 
+              minHeight: 500, textAlign: 'center',
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              // Allow tap to skip on mobile
+              skipRef.current = true;
             }}
           >
             {state === 'reveal_nationality' && (
@@ -478,6 +628,7 @@ const Packs = () => {
             )}
 
             <motion.div 
+              className="desktop-only-hint"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{
                 position: 'fixed', bottom: 60, left: '50%', transform: 'translateX(-50%)',
@@ -539,14 +690,36 @@ const Packs = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
+              className="reveal-actions"
               style={{ display: 'flex', gap: 16 }}
             >
-              <button className="btn btn-glass btn-lg px-8" onClick={reset}>
-                CONTINUE
-              </button>
-              <button className="btn btn-gold btn-lg px-8" onClick={() => openPack(activePack)}>
-                <PackageOpen size={18} /> OPEN ANOTHER
-              </button>
+              {multiRevealedCards.length > 0 ? (
+                <button 
+                  className="btn btn-gold btn-lg px-12" 
+                  style={{ minWidth: 200, fontSize: 16 }}
+                  onClick={() => setState('multi_result')}
+                >
+                  VIEW ALL {multiRevealedCards.length} CARDS
+                </button>
+              ) : (
+                <>
+                  <button className="btn btn-glass btn-lg px-8" onClick={reset}>
+                    CONTINUE
+                  </button>
+                  <button 
+                    className="btn btn-gold btn-lg px-8" 
+                    onClick={() => {
+                      if (activeOpenType === 'store') {
+                        openPack(activePack);
+                      } else {
+                        openInventoryPack(activePack);
+                      }
+                    }}
+                  >
+                    <PackageOpen size={18} /> OPEN ANOTHER
+                  </button>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -563,7 +736,7 @@ const Packs = () => {
               </h2>
             </div>
             
-            <div style={{ 
+            <div className="multi-result-grid" style={{ 
               display: 'grid', 
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
               gap: 20,
@@ -589,11 +762,20 @@ const Packs = () => {
               ))}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 48, gap: 16 }}>
+            <div className="reveal-actions" style={{ display: 'flex', justifyContent: 'center', marginTop: 48, gap: 16 }}>
               <button className="btn btn-glass btn-lg px-8" onClick={reset}>
                 CONTINUE
               </button>
-              <button className="btn btn-gold btn-lg px-8" onClick={() => openPack(activePack, multiRevealedCards.length)}>
+              <button 
+                className="btn btn-gold btn-lg px-8" 
+                onClick={() => {
+                  if (activeOpenType === 'store') {
+                    openPack(activePack, multiRevealedCards.length);
+                  } else {
+                    openInventoryPack(activePack, multiRevealedCards.length);
+                  }
+                }}
+              >
                 <PackageOpen size={18} /> OPEN ANOTHER x{multiRevealedCards.length}
               </button>
             </div>

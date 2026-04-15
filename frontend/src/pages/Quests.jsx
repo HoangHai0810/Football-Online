@@ -41,8 +41,34 @@ const Quests = () => {
     setClaiming(id);
     try {
       const res = await api.post(`/missions/${id}/claim`);
-      setUser(prev => ({ ...prev, coins: prev.coins + m.mission.rewardCoins }));
-      toast.success(`Claimed ${m.mission.rewardCoins.toLocaleString()} Coins!`);
+      const results = res.data.results;
+      
+      // Update local coins
+      const coinsWon = results.rewardCoins || 0;
+      setUser(prev => ({ ...prev, coins: prev.coins + coinsWon }));
+      
+      // Detailed feedback
+      let msg = `Claimed ${coinsWon.toLocaleString()} Coins!`;
+      if (results.luckyBp) {
+        msg = `BOOM! Lucky BP: +${results.luckyBp.toLocaleString()}! Total: ${coinsWon.toLocaleString()} Coins.`;
+      }
+      
+      if (results.rewardPackId) {
+        const packName = results.rewardPackId.replace('_', ' ').toUpperCase();
+        toast.success(msg, { duration: 4000 });
+        toast((t) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: 24 }}>🧰</div>
+            <div>
+              <div style={{ fontWeight: 700 }}>PACK RECEIVED!</div>
+              <div style={{ fontSize: 12, color: '#666' }}>1x {packName} PACK sent to Inventory.</div>
+            </div>
+          </div>
+        ), { duration: 5000, icon: '📦' });
+      } else {
+        toast.success(msg);
+      }
+      
       fetchMissions();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to claim reward");
@@ -156,15 +182,40 @@ const Quests = () => {
                     {m.mission.description}
                   </h3>
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gold)', fontSize: 14, fontWeight: 600 }}>
-                      <Coins size={14} />
-                      {m.mission.rewardCoins.toLocaleString()}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+                    {/* Standard Coins or Lucky BP */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Coins size={16} color="var(--gold)" />
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--gold)' }}>
+                        {m.mission.rewardLuckyBp ? (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            LUCKY BP <Zap size={12} fill="var(--gold)" />
+                          </span>
+                        ) : (
+                          m.mission.rewardCoins.toLocaleString()
+                        )}
+                      </div>
                     </div>
+
+                    {/* Player Pack Reward */}
+                    {m.mission.rewardPackId && (
+                      <div style={{ 
+                        display: 'flex', alignItems: 'center', gap: 6, 
+                        background: 'rgba(52, 152, 219, 0.15)', 
+                        padding: '2px 8px', borderRadius: 6,
+                        border: '1px solid rgba(52, 152, 219, 0.3)'
+                      }}>
+                        <Package size={14} color="#3498db" />
+                        <span style={{ fontSize: 11, fontWeight: 800, color: '#3498db', textTransform: 'uppercase' }}>
+                          {m.mission.rewardPackId.replace('_', ' ')} PACK
+                        </span>
+                      </div>
+                    )}
+
                     {!m.claimed && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 12 }}>
                         <Clock size={12} />
-                        Resets in 3h
+                        3h
                       </div>
                     )}
                   </div>

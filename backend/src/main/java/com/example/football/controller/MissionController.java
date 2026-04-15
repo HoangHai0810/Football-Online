@@ -27,8 +27,8 @@ public class MissionController {
     public ResponseEntity<?> claimReward(@PathVariable Long id) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         try {
-            Long reward = missionService.claimReward(username, id);
-            return ResponseEntity.ok(Map.of("message", "Success", "reward", reward));
+            Map<String, Object> results = missionService.claimReward(username, id);
+            return ResponseEntity.ok(Map.of("message", "Success", "results", results));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

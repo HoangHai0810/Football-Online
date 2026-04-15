@@ -145,7 +145,7 @@ const Market = () => {
 
       {/* Toolbar */}
       <div
-        className="glass"
+        className="glass market-toolbar"
         style={{
           display: 'flex',
           gap: 12,
@@ -192,7 +192,7 @@ const Market = () => {
         </select>
 
         {/* OVR Range */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="market-ovr-range" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span style={{ fontSize: 13, color: '#888' }}>OVR:</span>
             <input
                 type="number"
@@ -215,7 +215,7 @@ const Market = () => {
 
         {/* Sort */}
         <select
-          className="form-input"
+          className="form-input market-sort"
           style={{ width: 160, padding: '10px 14px', marginLeft: 'auto' }}
           value={sortBy}
           onChange={e => setSortBy(e.target.value)}
@@ -227,7 +227,7 @@ const Market = () => {
         </select>
 
         {/* View Toggle */}
-        <div className="glass" style={{ display: 'flex', padding: 4, gap: 4, borderRadius: 8 }}>
+        <div className="glass market-view-toggle" style={{ display: 'flex', padding: 4, gap: 4, borderRadius: 8 }}>
           <button
             className={`btn btn-sm ${view === 'grid' ? 'btn-gold' : 'btn-glass'}`}
             style={{ padding: '6px 12px' }}
@@ -310,6 +310,7 @@ const Market = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {/* Table header */}
           <div
+            className="market-list-header"
             style={{
               display: 'grid',
               gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1fr auto',
@@ -409,7 +410,7 @@ const Market = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-              className="glass-dark"
+              className="glass-dark player-modal"
               style={{ padding: 40, borderRadius: 24, display: 'flex', gap: 40, maxWidth: 700, width: '100%', position: 'relative' }}
               onClick={e => e.stopPropagation()}
             >

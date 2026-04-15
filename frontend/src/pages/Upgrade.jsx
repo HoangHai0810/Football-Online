@@ -224,8 +224,9 @@ const Upgrade = () => {
 
   const isSamePlayer = (card1, card2) => {
     if (!card1 || !card2) return false;
-    // Same player if same template name
-    return card1.template?.name === card2.template?.name;
+    // Same player requires both same name AND same season (matches backend logic)
+    return card1.template?.name === card2.template?.name 
+        && card1.template?.season === card2.template?.season;
   };
 
   const toggleMaterial = (card) => {
@@ -365,13 +366,13 @@ const Upgrade = () => {
     <div className="page">
       <AnimatePresence>
         {phase === 'suspense' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(10,15,30,0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(10,15,30,0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', cursor: 'pointer' }} onClick={() => { skipRef.current = true; }}>
             <motion.div animate={{ x: [0, -2, 2, -2, 2, 0], rotate: [0, -1, 1, -1, 1, 0] }} transition={{ repeat: Infinity, duration: 0.1 }} style={{ position: 'relative' }}>
               <PlayerCard player={targetCard.template} size="large" upgradeLevel={targetCard.upgradeLevel} />
               <motion.div animate={{ opacity: [0, 0.8, 0], scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1 }} style={{ position: 'absolute', inset: -20, borderRadius: '50%', background: 'radial-gradient(circle, var(--gold) 0%, transparent 70%)', zIndex: -1 }} />
             </motion.div>
             <h2 style={{ marginTop: 40, letterSpacing: 8, color: 'var(--gold)', fontFamily: "'Bebas Neue', sans-serif", fontSize: 32 }}>UPGRADING...</h2>
-            <div style={{ marginTop: 20, color: 'var(--text-muted)', fontSize: 12, letterSpacing: 2 }}>PRESS <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: 4 }}>SPACE</kbd> TO SKIP</div>
+            <div className="desktop-only-hint" style={{ marginTop: 20, color: 'var(--text-muted)', fontSize: 12, letterSpacing: 2 }}>PRESS <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: 4 }}>SPACE</kbd> TO SKIP</div>
           </motion.div>
         )}
         {phase === 'result' && result && (
@@ -407,7 +408,7 @@ const Upgrade = () => {
                 </>
               )}
               {(ceremonyStage === 'final' || !result.success) && (
-                <button className="btn btn-gold" style={{ marginTop: 40, padding: '16px 64px', fontSize: 18 }} onClick={closeResult}>CONTINUE <kbd style={{ marginLeft: 16, opacity: 0.6, fontSize: 12 }}>SPACE</kbd></button>
+                <button className="btn btn-gold" style={{ marginTop: 40, padding: '16px 64px', fontSize: 18 }} onClick={closeResult}>CONTINUE <kbd className="desktop-only-hint" style={{ marginLeft: 16, opacity: 0.6, fontSize: 12 }}>SPACE</kbd></button>
               )}
             </div>
           </motion.div>
@@ -425,7 +426,7 @@ const Upgrade = () => {
       {loading ? (
         <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>Loading your cards...</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, maxWidth: 1100, margin: '0 auto' }}>
+        <div className="upgrade-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, maxWidth: 1100, margin: '0 auto' }}>
           <div>
             <div style={{ fontSize: 11, letterSpacing: 3, color: 'var(--gold)', fontWeight: 700, marginBottom: 16, textTransform: 'uppercase' }}>Step 1 — Select Target Card</div>
             <div className="glass" style={{ padding: 24, borderRadius: 20, minHeight: 400, display: 'flex', flexDirection: 'column' }}>

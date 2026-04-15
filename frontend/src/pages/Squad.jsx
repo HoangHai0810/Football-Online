@@ -416,7 +416,7 @@ const Squad = () => {
     }
 
     setLineup(newLineup);
-    toast.success("Squad Optimized (Global Strategy)!");
+    toast.success("Squad Optimized!");
   };
 
   return (
