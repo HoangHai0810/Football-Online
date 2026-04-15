@@ -31,6 +31,7 @@ public class Mission {
 
     private String rewardPackId;
 
+    @Column(name = "reward_lucky_bp", nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
     private boolean rewardLuckyBp = false;
     
