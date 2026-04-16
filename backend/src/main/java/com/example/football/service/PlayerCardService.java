@@ -126,7 +126,6 @@ public class PlayerCardService {
     private PlayerCard generateRandomCardFromList(Users user, List<PlayerTemplate> templates, int minLevel, int maxLevel) {
         double totalWeight = 0;
         for (PlayerTemplate t : templates) {
-            // INCREASED POWER: From 3 to 6 to make high OVR significantly rarer
             totalWeight += 1.0 / Math.pow(t.getOvr(), 6);
         }
 
@@ -147,12 +146,11 @@ public class PlayerCardService {
             double r = random.nextDouble();
             double totalW = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
-                // INCREASED POWER: From 2 to 6 to make high upgrade levels significantly rarer
-                totalW += 1.0 / Math.pow(6, i - minLevel); 
+                totalW += 1.0 / Math.pow(5, i - minLevel); 
             }
             double threshold = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
-                threshold += (1.0 / Math.pow(6, i - minLevel)) / totalW;
+                threshold += (1.0 / Math.pow(5, i - minLevel)) / totalW;
                 if (r <= threshold) {
                     targetLevel = i;
                     break;

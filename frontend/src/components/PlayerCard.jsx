@@ -53,7 +53,8 @@ const PlayerCard = ({
   showPurpleAura = false,
   isFlickeringPurple = false,
   isPenalty = false,
-  effectiveOvrOverride = null
+  effectiveOvrOverride = null,
+  isStarter = false
 }) => {
   const [hovered, setHovered] = useState(false);
   if (!player) return null;
@@ -212,6 +213,36 @@ const PlayerCard = ({
           }} />
         )}
 
+        {/* Starter Indicator */}
+        {isStarter && (
+          <div style={{
+            position: 'absolute',
+            top: 4,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'var(--gold)',
+            color: '#000',
+            fontSize: size === 'mini' ? 7 : 9,
+            fontWeight: 800,
+            padding: '2px 8px',
+            borderRadius: '10px',
+            fontFamily: "'Bebas Neue', sans-serif",
+            letterSpacing: 1,
+            boxShadow: '0 4px 10px rgba(240,195,45,0.4)',
+            zIndex: 20
+          }}>
+            LINEUP
+          </div>
+        )}
+
+        {/* Starter Border Glow */}
+        {isStarter && (
+          <div style={{
+            position: 'absolute', inset: -2, border: '2px solid var(--gold)', borderRadius: 'inherit', pointerEvents: 'none',
+            opacity: 0.6, boxShadow: '0 0 15px rgba(240,195,45,0.3)'
+          }} />
+        )}
+
         {/* OVR + Position */}
         <div className="card-top" style={{ 
           position: 'absolute', 
@@ -230,7 +261,12 @@ const PlayerCard = ({
         </div>
 
         {/* Season Badge */}
-        <div className="card-season" style={{ fontSize: curr.season, padding: '2px 6px', top: size === 'small' ? 8 : 10, right: size === 'small' ? 8 : 10 }}>
+        <div className="card-season" style={{ 
+          fontSize: curr.season, 
+          padding: '2px 6px', 
+          top: size === 'mini' ? 4 : size === 'small' ? 8 : 10, 
+          right: size === 'mini' ? 4 : size === 'small' ? 8 : 10 
+        }}>
           {player.season}
         </div>
 
@@ -238,7 +274,7 @@ const PlayerCard = ({
         {upgradeLevel > 0 && (
           <div style={{
             position: 'absolute',
-            top: size === 'mini' ? 16 : size === 'small' ? 32 : 40,
+            top: size === 'mini' ? 22 : size === 'small' ? 36 : 44,
             right: size === 'mini' ? 4 : size === 'small' ? 8 : 10,
             background: getUpgradeColor(upgradeLevel),
             color: upgradeLevel >= 5 ? '#fff' : '#000',

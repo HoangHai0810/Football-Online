@@ -178,7 +178,7 @@ const Upgrade = () => {
   const [materialVisibleCount, setMaterialVisibleCount] = useState(20);
   const [viewMode, setViewMode] = useState('grid'); 
   const [sortBy, setSortBy] = useState('ovr'); 
-
+  const [lineupIds, setLineupIds] = useState(new Set());
   const fetchCards = async () => {
     if (!user) return;
     try {
@@ -193,7 +193,22 @@ const Upgrade = () => {
 
   useEffect(() => {
     fetchCards();
+    fetchLineup();
   }, [user]);
+
+  const fetchLineup = async () => {
+    if (!user) return;
+    try {
+      const res = await api.get('/squad');
+      const data = res.data;
+      if (data && data.lineupJson) {
+        const parsed = typeof data.lineupJson === 'string' ? JSON.parse(data.lineupJson) : data.lineupJson;
+        setLineupIds(new Set(Object.values(parsed).map(id => Number(id))));
+      }
+    } catch (err) {
+      console.error('Failed to fetch lineup:', err);
+    }
+  };
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -230,6 +245,10 @@ const Upgrade = () => {
   };
 
   const toggleMaterial = (card) => {
+    if (lineupIds.has(card.id)) {
+      toast.error("This player is currently in the starting lineup! Please reserve him before using him as a material.");
+      return;
+    }
     if (card.id === targetCard?.id) {
       toast.error("Can't use the target card as material!");
       return;
@@ -315,7 +334,7 @@ const Upgrade = () => {
   const currentTotalChance = calculateSuccessRate();
   const nextLevelSuccessProb = (currentTotalChance * (BASE_SUCCESS_RATES[targetCard?.upgradeLevel] || 0.1) * 100).toFixed(1);
 
-  const PlayerRow = ({ card, onClick, isSelected }) => {
+  const PlayerRow = ({ card, onClick, isSelected, isStarter }) => {
     const hasJump = isSamePlayer(card, targetCard);
     return (
       <motion.div
@@ -332,6 +351,9 @@ const Upgrade = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>{card.template.name}</div>
           {hasJump && <Zap size={14} color="#a855f7" fill="#a855f7" style={{ filter: 'drop-shadow(0 0 5px #a855f7)' }} />}
+          {isStarter && (
+            <span style={{ fontSize: 8, background: 'var(--gold)', color: '#000', padding: '1px 4px', borderRadius: 4, fontWeight: 900 }}>LINEUP</span>
+          )}
         </div>
         <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)' }}>
           {(card.template.ovr || 0) + getStatBonus(card.upgradeLevel)}
@@ -438,10 +460,10 @@ const Upgrade = () => {
                       {sortedCards.slice(0, visibleCount).map(c => (
                         viewMode === 'grid' ? (
                           <motion.div key={c.id} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} style={{ cursor: 'pointer' }} onClick={() => { setTargetCard(c); setMaterialCards([]); }}>
-                            <PlayerCard player={c.template} size="small" upgradeLevel={c.upgradeLevel} />
+                            <PlayerCard player={c.template} size="small" upgradeLevel={c.upgradeLevel} isStarter={lineupIds.has(c.id)} />
                           </motion.div>
                         ) : (
-                          <PlayerRow key={c.id} card={c} onClick={() => { setTargetCard(c); setMaterialCards([]); }} />
+                          <PlayerRow key={c.id} card={c} isStarter={lineupIds.has(c.id)} onClick={() => { setTargetCard(c); setMaterialCards([]); }} />
                         )
                       ))}
                     </div>
@@ -479,8 +501,8 @@ const Upgrade = () => {
                           const isMaterial = materialCards.some(m => m.id === c.id);
                           const hasJump = isSamePlayer(c, targetCard);
                           return viewMode === 'grid' ? (
-                            <motion.div key={c.id} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => toggleMaterial(c)} style={{ cursor: 'pointer', position: 'relative', opacity: isMaterial ? 1 : 0.6, border: isMaterial ? '2px solid var(--gold)' : '2px solid transparent', borderRadius: 12, transition: 'all 0.2s ease' }}>
-                              <PlayerCard player={c.template} size="small" upgradeLevel={c.upgradeLevel} />
+                            <motion.div key={c.id} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => toggleMaterial(c)} style={{ cursor: 'pointer', position: 'relative', opacity: isMaterial ? 1 : (lineupIds.has(c.id) ? 0.3 : 0.6), border: isMaterial ? '2px solid var(--gold)' : '2px solid transparent', borderRadius: 12, transition: 'all 0.2s ease' }}>
+                              <PlayerCard player={c.template} size="small" upgradeLevel={c.upgradeLevel} isStarter={lineupIds.has(c.id)} />
                               {isMaterial && <div style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#000', zIndex: 2 }}>✓</div>}
                               {hasJump && (
                                 <div style={{
@@ -495,7 +517,7 @@ const Upgrade = () => {
                               )}
                             </motion.div>
                           ) : (
-                            <PlayerRow key={c.id} card={c} isSelected={isMaterial} onClick={() => toggleMaterial(c)} />
+                            <PlayerRow key={c.id} card={c} isSelected={isMaterial} isStarter={lineupIds.has(c.id)} onClick={() => toggleMaterial(c)} />
                           );
                         })}
                       </div>

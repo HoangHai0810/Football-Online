@@ -8,10 +8,10 @@ from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from .state import AgentState
 from prompts import SYSTEM_PROMPT
-from tools import get_game_context
+from tools import get_game_context, optimize_my_squad
 
 # Initialize Tools
-tools = [get_game_context]
+tools = [get_game_context, optimize_my_squad]
 tool_node = ToolNode(tools)
 
 # Initialize Model (Gemini)

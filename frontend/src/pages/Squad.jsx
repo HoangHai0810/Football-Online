@@ -260,6 +260,7 @@ const Squad = () => {
   const [showFormationMenu, setShowFormationMenu] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortType, setSortType] = useState('ovr');
+  const [activeTab, setActiveTab] = useState('reserve'); // 'lineup' or 'reserve'
 
   useEffect(() => {
     if (user?.clubName) setClubName(user.clubName);
@@ -537,10 +538,31 @@ const Squad = () => {
         </div>
 
         <div className="glass-dark" style={{ width: 340, maxHeight: 580, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
-              ALL CARDS <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>({cards.length})</span>
-            </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 8, gap: 16 }}>
+              <button 
+                onClick={() => setActiveTab('lineup')}
+                style={{
+                  background: 'transparent', border: 'none', color: activeTab === 'lineup' ? 'var(--gold)' : 'var(--text-muted)',
+                  fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, letterSpacing: 2, cursor: 'pointer',
+                  borderBottom: activeTab === 'lineup' ? '2px solid var(--gold)' : 'none',
+                  paddingBottom: 4, transition: 'all 0.2s'
+                }}
+              >
+                LINEUP ({Object.keys(lineup).length})
+              </button>
+              <button 
+                onClick={() => setActiveTab('reserve')}
+                style={{
+                  background: 'transparent', border: 'none', color: activeTab === 'reserve' ? 'var(--gold)' : 'var(--text-muted)',
+                  fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, letterSpacing: 2, cursor: 'pointer',
+                  borderBottom: activeTab === 'reserve' ? '2px solid var(--gold)' : 'none',
+                  paddingBottom: 4, transition: 'all 0.2s'
+                }}
+              >
+                REGISTERED ({cards.length - Object.keys(lineup).length})
+              </button>
+            </div>
           </div>
           
           <div className="search-box">
@@ -578,9 +600,10 @@ const Squad = () => {
               {cards
                 .filter(c => {
                   const alreadyInLineup = Object.values(lineup).includes(c.id);
+                  const isMatch = activeTab === 'lineup' ? alreadyInLineup : !alreadyInLineup;
                   const matchesSearch = c.template.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                      c.template.position.toLowerCase().includes(searchTerm.toLowerCase());
-                  return !alreadyInLineup && matchesSearch;
+                  return isMatch && matchesSearch;
                 })
                 .sort((a, b) => {
                   if (sortType === 'ovr') {
@@ -614,7 +637,9 @@ const Squad = () => {
                         )}
                       </div>
                       <div className="player-info">
-                        <div className="player-name">{p.name}</div>
+                        <div className="player-name">
+                          {p.name}
+                        </div>
                         <div className="player-meta">
                           {p.position} · {p.season}
                           {card.upgradeLevel > 1 && <span style={{ color: 'var(--gold)', marginLeft: 6 }}>+{card.upgradeLevel}</span>}
@@ -627,13 +652,19 @@ const Squad = () => {
                   );
                 })}
               
-              {cards.filter(c => !Object.values(lineup).includes(c.id)).length > benchVisibleCount && (
+              {cards.filter(c => {
+                const alreadyInLineup = Object.values(lineup).includes(c.id);
+                return activeTab === 'lineup' ? alreadyInLineup : !alreadyInLineup;
+              }).length > benchVisibleCount && (
                 <button 
                   className="btn btn-glass btn-sm" 
                   style={{ marginTop: 8, width: '100%', fontSize: 11 }}
                   onClick={() => setBenchVisibleCount(prev => prev + 20)}
                 >
-                  SHOW MORE ({cards.filter(c => !Object.values(lineup).includes(c.id)).length - benchVisibleCount})
+                  SHOW MORE ({cards.filter(c => {
+                    const alreadyInLineup = Object.values(lineup).includes(c.id);
+                    return activeTab === 'lineup' ? alreadyInLineup : !alreadyInLineup;
+                  }).length - benchVisibleCount})
                 </button>
               )}
             </>

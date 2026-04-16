@@ -104,7 +104,8 @@ const AiAssistant = () => {
                     <Bot size={18} />
                   </div>
                   <div className="ai-message-content">
-                    <div className="ai-typing-indicator">
+                    <div className="ai-typing-indicator" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ fontSize: 13, marginRight: 4, fontWeight: 600 }}>Processing...</div>
                       <div className="ai-typing-dot"></div>
                       <div className="ai-typing-dot"></div>
                       <div className="ai-typing-dot"></div>

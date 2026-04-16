@@ -23,11 +23,20 @@ def get_game_context() -> str:
             res = "--- GAME CONTEXT ---\n"
             
             user = data.get("user", {})
-            res += f"Manager: {user.get('username')} | Tier: {user.get('tier')} | Season: {user.get('season')} | Week: {user.get('week')} | Coins: {user.get('coins'):,}\n\n"
+            res += f"Manager: {user.get('username')} | Tier: {user.get('tier')} | Season: {user.get('season')} | Week: {user.get('week')} | Coins: {user.get('coins'):,}\n"
+            res += f"Current Formation: {data.get('currentFormation', 'unknown')}\n\n"
             
-            res += "Squad Composition:\n"
-            for p in data.get("squad", []):
+            res += "Starters (Current Lineup):\n"
+            for p in data.get("starters", []):
                 res += f"- {p['name']} (OVR {p['ovr']}, {p['position']}, Level {p['level']})\n"
+                
+            res += "\nSubstitutes / Bench:\n"
+            for p in data.get("substitutes", []):
+                res += f"- {p['name']} (OVR {p['ovr']}, {p['position']}, Level {p['level']})\n"
+            
+            res += "\nMarket Suggestions (Affordable players you could buy):\n"
+            for p in data.get("marketSuggestions", []):
+                res += f"- {p['name']} (OVR {p['ovr']}, {p['position']})\n"
             
             res += "\nTournament Progress:\n"
             for t in data.get("tournaments", []):
@@ -42,3 +51,17 @@ def get_game_context() -> str:
             return res
     except Exception as e:
         return f"Error fetching game context: {str(e)}"
+
+@tool
+def optimize_my_squad() -> str:
+    """Automatically optimizes the user's squad by choosing the best formation and starters based on effective OVR and positions. Call this when the user asks to 'optimize' or 'fix' their lineup."""
+    jwt_token = os.getenv("JWT_TOKEN", "")
+    headers = {"Authorization": f"Bearer {jwt_token}"}
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(f"{BACKEND_URL}/api/ai/v1/optimize", headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            return str(data)
+    except Exception as e:
+        return f"Error optimizing squad: {str(e)}"
