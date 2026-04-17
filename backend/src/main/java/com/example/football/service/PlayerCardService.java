@@ -146,11 +146,11 @@ public class PlayerCardService {
             double r = random.nextDouble();
             double totalW = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
-                totalW += 1.0 / Math.pow(5, i - minLevel); 
+                totalW += 1.0 / Math.pow(4, i - minLevel); 
             }
             double threshold = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
-                threshold += (1.0 / Math.pow(5, i - minLevel)) / totalW;
+                threshold += (1.0 / Math.pow(4, i - minLevel)) / totalW;
                 if (r <= threshold) {
                     targetLevel = i;
                     break;

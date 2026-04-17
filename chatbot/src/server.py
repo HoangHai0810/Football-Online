@@ -13,7 +13,26 @@ from typing import List, Optional
 from agent.graph import graph
 from langchain_core.messages import HumanMessage
 
+import time
+
 app = FastAPI(title="Football Chatbot API")
+
+RATE_LIMIT_WINDOW = 60
+MAX_REQUESTS = 5
+user_request_history = {}
+
+def is_rate_limited(user_id: str) -> bool:
+    now = time.time()
+    if user_id not in user_request_history:
+        user_request_history[user_id] = []
+    
+    user_request_history[user_id] = [t for t in user_request_history[user_id] if now - t < RATE_LIMIT_WINDOW]
+    
+    if len(user_request_history[user_id]) >= MAX_REQUESTS:
+        return True
+    
+    user_request_history[user_id].append(now)
+    return False
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,9 +52,16 @@ async def chat(request: ChatRequest, authorization: Optional[str] = Header(None)
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     
     jwt_token = authorization.split(" ")[1]
+    
+    # Check rate limit before processing
+    if is_rate_limited(jwt_token):
+        raise HTTPException(
+            status_code=429, 
+            detail="Too many requests. Please wait a minute before sending more messages."
+        )
+
     os.environ["JWT_TOKEN"] = jwt_token
     
-    # Prepare the initial state
     initial_state = {
         "messages": [HumanMessage(content=request.message)],
     }

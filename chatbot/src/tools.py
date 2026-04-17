@@ -58,7 +58,7 @@ def optimize_my_squad() -> str:
     jwt_token = os.getenv("JWT_TOKEN", "")
     headers = {"Authorization": f"Bearer {jwt_token}"}
     try:
-        with httpx.Client(timeout=30.0) as client:
+        with httpx.Client(timeout=60.0) as client:
             response = client.post(f"{BACKEND_URL}/api/ai/v1/optimize", headers=headers)
             response.raise_for_status()
             data = response.json()

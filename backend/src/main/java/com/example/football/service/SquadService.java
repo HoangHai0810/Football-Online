@@ -210,7 +210,7 @@ public class SquadService {
                                    int[][] scoreMatrix, int[] maxPotentials, Integer[][] sortedIdxPerSlot,
                                    OptimalResult best, List<SlotInfo> slots, List<PlayerCard> pool, long startTime) {
         
-        if (System.currentTimeMillis() - startTime > 1500) return;
+        if (System.currentTimeMillis() - startTime > 5000) return;
 
         if (slotIdx == slots.size()) {
             if (currentSum > best.totalOvr) {
@@ -223,14 +223,12 @@ public class SquadService {
             return;
         }
 
-        // Pruning: if remaining slots even with absolute max potential can't beat best, stop
         int remainingMax = 0;
         for (int i = slotIdx; i < slots.size(); i++) {
             remainingMax += maxPotentials[i];
         }
         if (currentSum + remainingMax <= best.totalOvr) return;
 
-        // Try players for this slot using pre-sorted indices
         for (int pIdx : sortedIdxPerSlot[slotIdx]) {
             if (used[pIdx]) continue;
 

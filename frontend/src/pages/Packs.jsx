@@ -145,6 +145,31 @@ const PACKS = [
   },
 ];
 
+const NATIONALITY_CODES = {
+  'Argentina': 'ar', 'Portugal': 'pt', 'Brazil': 'br', 'France': 'fr',
+  'Germany': 'de', 'Spain': 'es', 'England': 'gb-eng', 'Italy': 'it',
+  'Netherlands': 'nl', 'Belgium': 'be', 'Croatia': 'hr', 'Uruguay': 'uy',
+  'Colombia': 'co', 'Senegal': 'sn', 'Egypt': 'eg', 'Poland': 'pl',
+  'Serbia': 'rs', 'South Korea': 'kr', 'Japan': 'jp', 'USA': 'us',
+  'United States': 'us', 'Norway': 'no', 'Sweden': 'se', 'Denmark': 'dk',
+  'Morocco': 'ma', 'Algeria': 'dz', 'Mexico': 'mx', 'Canada': 'ca',
+  'Wales': 'gb-wls', 'Scotland': 'gb-sct', 'Switzerland': 'ch', 'Austria': 'at',
+  'Ivory Coast': 'ci', 'Cameroon': 'cm', 'Ghana': 'gh', 'Nigeria': 'ng',
+  'Mali': 'ml', 'Ecuador': 'ec', 'Chile': 'cl', 'Peru': 'pe',
+  'Turkey': 'tr', 'Greece': 'gr', 'Czech Republic': 'cz', 'Ukraine': 'ua',
+  'Republic of Ireland': 'ie', 'Northern Ireland': 'gb-nir', 'Bosnia': 'ba',
+  'Bosnia and Herzegovina': 'ba', 'Slovakia': 'sk', 'Hungary': 'hu',
+  'Romania': 'ro', 'Bulgaria': 'bg', 'Iceland': 'is', 'Georgia': 'ge',
+  'Paraguay': 'py', 'Venezuela': 've', 'Bolivia': 'bo', 'Jamaica': 'jm',
+  'Honduras': 'hn', 'Costa Rica': 'cr', 'Panama': 'pa', 'Saudi Arabia': 'sa',
+  'Iran': 'ir', 'Australia': 'au', 'New Zealand': 'nz', 'Ivory coast': 'ci'
+};
+
+const getFlagUrl = (nationality) => {
+  const code = NATIONALITY_CODES[nationality];
+  return code ? `https://flagcdn.com/w160/${code}.png` : null;
+};
+
 const PackCard = ({ pack, onOpen }) => {
   const Icon = pack.icon;
   return (
@@ -609,6 +634,16 @@ const Packs = () => {
             {state === 'reveal_nationality' && (
               <motion.div key="nat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 3, opacity: 0.6, marginBottom: 8 }}>PLAYER NATIONALITY</div>
+                {getFlagUrl(revealedCard.template.nationality) && (
+                  <motion.img 
+                    src={getFlagUrl(revealedCard.template.nationality)} 
+                    alt={revealedCard.template.nationality}
+                    style={{ height: 80, objectFit: 'contain', margin: '0 auto 16px', borderRadius: 4, display: 'block' }}
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring' }}
+                  />
+                )}
                 <div style={{ fontSize: 44, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 4 }}>{revealedCard.template.nationality}</div>
               </motion.div>
             )}
