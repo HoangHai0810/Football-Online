@@ -192,8 +192,8 @@ public class DataInitializer implements CommandLineRunner {
         
         // 2. Open Pack Missions (25 levels)
         for (int i = 1; i <= 25; i++) {
-            int target = i * 2;
-            long coins = i * 3000L;
+            int target = i;
+            long coins = 3000L + (i * 2000L);
             String packId = (i % 5 == 0) ? "premium" : null;
             if (i == 25) packId = "all_star";
             boolean luckyBp = (i % 3 == 0);
@@ -209,8 +209,8 @@ public class DataInitializer implements CommandLineRunner {
 
         // 3. Win Match Missions (25 levels)
         for (int i = 1; i <= 25; i++) {
-            int target = i * 3;
-            long coins = i * 5000L;
+            int target = i;
+            long coins = 5000L + (i * 3000L);
             String packId = (i % 5 == 0) ? "veteran" : null;
             if (i == 25) packId = "icon";
             boolean luckyBp = (i % 4 == 0);
@@ -226,8 +226,8 @@ public class DataInitializer implements CommandLineRunner {
 
         // 4. Upgrade Player Missions (25 levels)
         for (int i = 1; i <= 25; i++) {
-            int target = i * 2;
-            long coins = i * 4000L;
+            int target = i;
+            long coins = 4000L + (i * 2000L);
             String packId = (i % 10 == 0) ? "live_master" : null;
             if (i == 25) packId = "golden_ticket";
             boolean luckyBp = (i % 2 == 0);
@@ -243,8 +243,8 @@ public class DataInitializer implements CommandLineRunner {
 
         // 5. Collect Player Missions (25 levels)
         for (int i = 1; i <= 25; i++) {
-            int target = i * 5;
-            long coins = i * 2000L;
+            int target = i * 2;
+            long coins = 2000L + (i * 1000L);
             String packId = (i % 5 == 0) ? "starter" : null;
             if (i == 25) packId = "toty_upgrade";
             boolean luckyBp = false;

@@ -90,16 +90,14 @@ public class CareerService {
     }
 
     @Transactional
-    public Map<String, Object> advanceWeek(Long userId, Integer userHomeScore, Integer userAwayScore, Integer homePen, Integer awayPen, Long fixtureId) {
+    public Map<String, Object> advanceWeek(Long userId, Integer userHomeScore, Integer userAwayScore, Integer homePen, Integer awayPen, Long targetFixtureId, Boolean isQuickSim) {
         UserCareer career = getCareerByUserId(userId);
         List<Tournament> activeTournaments = tournamentRepository.findByUserAndSeasonIndex(career.getUser(), career.getCurrentSeason());
 
-        // Find the specific fixture being played
         MatchFixture targetFixture = null;
-        if (fixtureId != null) {
-            targetFixture = fixtureRepository.findById(fixtureId).orElse(null);
+        if (targetFixtureId != null) {
+            targetFixture = fixtureRepository.findById(targetFixtureId).orElse(null);
         } else {
-            // Fallback: find any unplayed user match in the current week
             targetFixture = fixtureRepository.findByTournamentInAndMatchWeek(activeTournaments, career.getCurrentWeek())
                     .stream()
                     .filter(f -> (f.isHomeIsUser() || f.isAwayIsUser()) && !f.isPlayed())
@@ -107,7 +105,12 @@ public class CareerService {
                     .orElse(null);
         }
 
+        long matchRewardTotal = 0;
+        Map<String, Long> rewardDetails = new java.util.LinkedHashMap<>();
+
         if (targetFixture != null && !targetFixture.isPlayed()) {
+            boolean isInteractive = (userHomeScore != null && userAwayScore != null && (isQuickSim == null || !isQuickSim));
+            
             if (userHomeScore != null && userAwayScore != null) {
                 matchSimulationEngine.applyUserInteractiveResult(targetFixture, userHomeScore, userAwayScore, homePen, awayPen);
             } else {
@@ -117,9 +120,53 @@ public class CareerService {
                 updateStandings(targetFixture);
             }
             fixtureRepository.save(targetFixture);
+
+            if (targetFixture.isHomeIsUser() || targetFixture.isAwayIsUser()) {
+                long baseReward = 0;
+                if (targetFixture.isUserWinner()) {
+                    baseReward = 2500;
+                    rewardDetails.put("Match Win", baseReward);
+                } else if (targetFixture.getHomeScore().equals(targetFixture.getAwayScore())) {
+                    baseReward = 1000;
+                    rewardDetails.put("Match Draw", baseReward);
+                } else {
+                    baseReward = 500;
+                    rewardDetails.put("Match Played", baseReward);
+                }
+                matchRewardTotal += baseReward;
+
+                if (isInteractive) {
+                    long interactiveBonus = 1000;
+                    rewardDetails.put("Interactive Bonus", interactiveBonus);
+                    matchRewardTotal += interactiveBonus;
+
+                    int userGoals = targetFixture.isHomeIsUser() ? targetFixture.getHomeScore() : targetFixture.getAwayScore();
+                    int aiGoals = targetFixture.isHomeIsUser() ? targetFixture.getAwayScore() : targetFixture.getHomeScore();
+
+                    if (userGoals > 0) {
+                        long goalsBonus = userGoals * 200L;
+                        rewardDetails.put("Goals Scored (" + userGoals + ")", goalsBonus);
+                        matchRewardTotal += goalsBonus;
+                    }
+
+                    if (aiGoals == 0) {
+                        long cleanSheetBonus = 1500;
+                        rewardDetails.put("Clean Sheet", cleanSheetBonus);
+                        matchRewardTotal += cleanSheetBonus;
+                    }
+
+                    if (userGoals - aiGoals >= 3) {
+                        long dominantBonus = 1000;
+                        rewardDetails.put("Dominant Win", dominantBonus);
+                        matchRewardTotal += dominantBonus;
+                    }
+                }
+
+                career.getUser().setCoins(career.getUser().getCoins() + matchRewardTotal);
+                userRepository.save(career.getUser());
+            }
         }
 
-        // Simulate ALL AI matches for the current WEEK in ALL active tournaments
         List<MatchFixture> allCurrentFixtures = fixtureRepository.findByTournamentInAndMatchWeek(activeTournaments, career.getCurrentWeek());
         for (MatchFixture f : allCurrentFixtures) {
             if (!f.isPlayed() && !f.isHomeIsUser() && !f.isAwayIsUser()) {
@@ -129,14 +176,12 @@ public class CareerService {
             }
         }
 
-        // Process Knockout Advancement if any round is finished
         for (Tournament t : activeTournaments) {
             if (t.getType().equals("CUP") || t.getType().equals("CONTINENTAL") || t.getType().equals("SUPER_CUP")) {
                 processKnockoutAdvancement(t, career.getCurrentWeek());
             }
         }
 
-        // Logic check: Advance global week ONLY if user has no unplayed fixtures left in THIS week
         boolean hasMoreUserMatchesThisWeek = fixtureRepository.findByTournamentInAndMatchWeek(activeTournaments, career.getCurrentWeek())
                 .stream().anyMatch(f -> (f.isHomeIsUser() || f.isAwayIsUser()) && !f.isPlayed());
 
@@ -145,7 +190,7 @@ public class CareerService {
         if (!hasMoreUserMatchesThisWeek) {
             career.setCurrentWeek(career.getCurrentWeek() + 1);
             
-            if (career.getCurrentWeek() > 38) { // End of season
+            if (career.getCurrentWeek() > 38) {
                 seasonSummary = generateSeasonSummary(activeTournaments, career.getUser());
                 
                 for (Tournament t : activeTournaments) {
@@ -164,12 +209,16 @@ public class CareerService {
             userCareerRepository.save(career);
         }
 
-        return Map.of(
-            "weekSimulated", hasMoreUserMatchesThisWeek ? career.getCurrentWeek() : career.getCurrentWeek() - 1,
-            "fixtures", allCurrentFixtures,
-            "career", career,
-            "seasonSummary", seasonSummary != null ? seasonSummary : Map.of()
-        );
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("weekSimulated", hasMoreUserMatchesThisWeek ? career.getCurrentWeek() : career.getCurrentWeek() - 1);
+        response.put("fixtures", allCurrentFixtures);
+        response.put("career", career);
+        response.put("seasonSummary", seasonSummary != null ? seasonSummary : Map.of());
+        if (matchRewardTotal > 0) {
+            response.put("matchReward", matchRewardTotal);
+            response.put("matchRewardDetails", rewardDetails);
+        }
+        return response;
     }
 
     private Map<String, Object> generateSeasonSummary(List<Tournament> tournaments, Users user) {

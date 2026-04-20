@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Trophy, Shield, Zap, Play, ChevronRight, Lock, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Shield, Zap, Play, ChevronRight, Lock, Loader2, Coins } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 
 const TournamentHub = () => {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
     const [tournaments, setTournaments] = useState([]);
     const [nextFixture, setNextFixture] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -17,6 +17,7 @@ const TournamentHub = () => {
     const [isQuickSimMode, setIsQuickSimMode] = useState(false);
     const [userOvr, setUserOvr] = useState(85);
     const [squadCards, setSquadCards] = useState([]);
+    const [rewardModal, setRewardModal] = useState(null);
 
     const fetchData = React.useCallback(async () => {
         try {
@@ -50,15 +51,25 @@ const TournamentHub = () => {
 
     const handleAdvance = async (userHomeScore = null, userAwayScore = null, homePen = null, awayPen = null) => {
         try {
-            let url = `/career/advance?userId=${user.id}&fixtureId=${nextFixture?.id}`;
+            let url = `/career/advance?userId=${user.id}&fixtureId=${nextFixture?.id}&isQuickSim=${isQuickSimMode}`;
             if (userHomeScore !== null && userAwayScore !== null) {
                 url += `&userHomeScore=${userHomeScore}&userAwayScore=${userAwayScore}`;
                 if (homePen !== null && awayPen !== null) url += `&homePen=${homePen}&awayPen=${awayPen}`;
             }
-            await api.post(url);
-            toast.success("Match completed!");
+            const res = await api.post(url);
+            
+            setShowInteractiveMatch(false); // Close match immediately
+
+            if (res.data && res.data.matchReward) {
+                const reward = res.data.matchReward;
+                const details = res.data.matchRewardDetails || {};
+                
+                setUser(prev => ({ ...prev, coins: prev.coins + reward }));
+                
+                setRewardModal({ reward, details }); // Open custom modal instead of toast
+            }
+            
             fetchData();
-            setShowInteractiveMatch(false);
         } catch (err) {
             toast.error("Failed to simulate match.");
         }
@@ -227,6 +238,61 @@ const TournamentHub = () => {
                     onCancel={() => setShowInteractiveMatch(false)}
                 />
             )}
+
+            <AnimatePresence>
+                {rewardModal && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 99999,
+                            background: 'rgba(5, 8, 20, 0.9)',
+                            backdropFilter: 'blur(10px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
+                            style={{
+                                background: 'linear-gradient(180deg, rgba(30, 40, 70, 0.9) 0%, rgba(15, 20, 40, 0.95) 100%)',
+                                border: '1px solid var(--gold)',
+                                borderRadius: 24, padding: 40, width: '100%', maxWidth: 460,
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(240,195,45,0.2)'
+                            }}
+                        >
+                            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                                <div style={{ fontSize: 48, marginBottom: 12 }}>💰</div>
+                                <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'white', letterSpacing: 2, marginBottom: 8 }}>MATCH REWARDS</h2>
+                                <p style={{ color: 'var(--text-muted)' }}>Match completed! Here is your payout:</p>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+                                {Object.entries(rewardModal.details).map(([key, val]) => (
+                                    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: 12 }}>
+                                        <span style={{ color: '#9ca3af', fontWeight: 500 }}>{key}</span>
+                                        <span style={{ color: 'white', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            +{val.toLocaleString()} <Coins size={14} color="var(--gold)" />
+                                        </span>
+                                    </div>
+                                ))}
+                                <div style={{ 
+                                    display: 'flex', justifyContent: 'space-between', padding: '16px', 
+                                    background: 'rgba(46, 204, 113, 0.1)', borderRadius: 12, 
+                                    border: '1px solid rgba(46, 204, 113, 0.3)', marginTop: 8 
+                                }}>
+                                    <span style={{ color: 'white', fontWeight: 800, fontSize: 18 }}>TOTAL EARNED</span>
+                                    <span style={{ color: '#2ecc71', fontWeight: 900, fontSize: 18, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        +{rewardModal.reward.toLocaleString()} <Coins size={20} color="var(--gold)" />
+                                    </span>
+                                </div>
+                            </div>
+
+                            <button className="btn btn-gold" style={{ width: '100%', height: 56, fontSize: 18 }} onClick={() => setRewardModal(null)}>
+                                CLAIM REWARDS
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

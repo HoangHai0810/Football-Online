@@ -71,7 +71,8 @@ public class CareerController {
             @RequestParam(required = false) Integer userAwayScore,
             @RequestParam(required = false) Integer homePen,
             @RequestParam(required = false) Integer awayPen,
-            @RequestParam(required = false) Long fixtureId) {
-        return careerService.advanceWeek(userId, userHomeScore, userAwayScore, homePen, awayPen, fixtureId);
+            @RequestParam(required = false) Long fixtureId,
+            @RequestParam(required = false, defaultValue = "false") Boolean isQuickSim) {
+        return careerService.advanceWeek(userId, userHomeScore, userAwayScore, homePen, awayPen, fixtureId, isQuickSim);
     }
 }

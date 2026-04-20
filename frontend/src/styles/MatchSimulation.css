@@ -5,12 +5,12 @@
     inset: 0;
     z-index: 9999;
     background: radial-gradient(circle at center, #1a2a4a 0%, #050814 100%);
-    overflow-y: auto; /* Allow scrolling if content is too tall */
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 60px 20px;
+    padding: 40px 20px;
 }
 
 /* Stadium Atmosphere */
@@ -18,7 +18,7 @@
     position: absolute;
     inset: 0;
     opacity: 0.15;
-    background-image: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=2070&auto=format&fit=crop');
+    background-image: url('https://png.pngtree.com/thumb_back/fh260/background/20230525/pngtree-green-field-inside-football-stadium-in-silhouette-under-sky-image_2628209.jpg');
     background-size: cover;
     background-position: center;
     filter: blur(4px);
@@ -40,25 +40,26 @@
 .scoreboard-wrapper {
     background: linear-gradient(180deg, rgba(20, 30, 60, 0.8) 0%, rgba(5, 10, 25, 0.9) 100%);
     backdrop-filter: blur(20px);
-    border-radius: 24px;
+    border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,255,255,0.02);
     display: flex;
-    align-items: center;
-    overflow: visible; 
-    margin-bottom: 40px;
+    align-items: stretch;
+    justify-content: space-between;
+    overflow: hidden; 
+    margin-bottom: 24px;
     animation: slideDown 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
     z-index: 10;
-    flex-shrink: 0; /* Don't compress me */
+    width: 100%;
+    max-width: 1200px;
 }
 
 .team-panel {
     display: flex;
     align-items: center;
-    gap: 32px;
-    padding: 24px 50px; 
-    min-height: 120px;
-    min-width: 440px;
+    gap: 16px;
+    padding: 12px 24px; 
+    flex: 1;
 }
 
 .team-panel.home { 
@@ -80,7 +81,7 @@
 
 .team-name-lg {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 52px;
+    font-size: 32px;
     color: white;
     letter-spacing: 1.5px;
     line-height: 1.1;
@@ -88,7 +89,7 @@
 }
 
 .team-ovr-label {
-    font-size: 13px;
+    font-size: 11px;
     color: var(--text-muted);
     font-weight: 800;
     letter-spacing: 2px;
@@ -96,26 +97,25 @@
 }
 
 .team-logo-squircle {
-    width: 64px;
-    height: 64px;
-    border-radius: 18px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
     border: 1.5px solid rgba(255,255,255,0.2);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
+    font-size: 24px;
     color: var(--gold);
     box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
-.home .team-logo-squircle { border-color: var(--gold); box-shadow: 0 0 30px rgba(240, 195, 45, 0.4); }
+.home .team-logo-squircle { border-color: var(--gold); box-shadow: 0 0 20px rgba(240, 195, 45, 0.3); }
 
 .score-center {
     background: #050a19;
-    min-height: 120px;
-    padding: 10px 50px;
+    padding: 12px 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -124,22 +124,23 @@
     box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
     border-left: 1px solid rgba(255,255,255,0.1);
     border-right: 1px solid rgba(255,255,255,0.1);
+    min-width: 140px;
 }
 
 .score-digits {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 88px;
+    font-size: 48px;
     color: var(--platinum);
     line-height: 1;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .score-digits .separator {
     opacity: 0.3;
-    font-size: 64px;
-    margin-top: -10px;
+    font-size: 36px;
+    margin-top: -6px;
 }
 
 .score-digits .active {
@@ -158,29 +159,11 @@
     border-radius: 4px;
 }
 
-/* Match Clock */
-.match-clock-container {
-    background: rgba(0,0,0,0.3);
-    padding: 8px 20px;
-    border-radius: 100px;
-    border: 1px solid rgba(240, 195, 45, 0.2);
-    margin-bottom: 40px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
 
-.clock-time {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 42px;
-    color: var(--gold);
-    min-width: 60px;
-    text-align: center;
-}
 
 /* Moment Decision UI */
 .tactical-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(5, 8, 20, 0.85);
     backdrop-filter: blur(10px);
@@ -237,6 +220,11 @@
 
 /* Goal Banner */
 .goal-banner {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    z-index: 1000;
     background: linear-gradient(90deg, transparent, rgba(240, 195, 45, 0.9), transparent);
     width: 100%;
     padding: 40px 0;
@@ -278,8 +266,11 @@
 /* Match Feed / Log */
 .match-feed-panel {
     position: relative;
-    width: 720px;
-    height: 520px; /* SHOWN MORE DATA */
+    width: 100%;
+    max-width: 1200px; /* Match scoreboard width */
+    flex: 1;
+    min-height: 0;
+    margin-bottom: 24px;
     background: rgba(10, 15, 30, 0.6);
     backdrop-filter: blur(25px);
     border-radius: 20px;
@@ -289,7 +280,6 @@
     overflow: hidden;
     animation: slideUp 0.8s ease;
     box-shadow: 0 15px 50px rgba(0,0,0,0.6);
-    flex-shrink: 0;
 }
 
 .feed-header {

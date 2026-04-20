@@ -192,6 +192,16 @@ const InteractiveMatch = ({ fixture, userClubName, userOvr, opponentOvr, opponen
     }
   };
 
+  useEffect(() => {
+      // Auto-advance match after full time
+      if (matchEnded) {
+          const t = setTimeout(() => {
+              handleFinish();
+          }, 2500);
+          return () => clearTimeout(t);
+      }
+  }, [matchEnded]);
+
   const handleFinish = () => {
     onFinish(homeScore, awayScore, penalties?.home, penalties?.away);
   };
@@ -225,6 +235,9 @@ const InteractiveMatch = ({ fixture, userClubName, userOvr, opponentOvr, opponen
         </div>
 
         <div className="score-center">
+            <div style={{ color: 'var(--gold)', fontSize: 18, fontWeight: 700, letterSpacing: 2, marginBottom: 4 }}>
+                {minute}' {isQuickSim && <span style={{fontSize: 10, opacity: 0.7}}></span>}
+            </div>
             <div className="score-digits">
                 <span className={homeScore > 0 ? 'active' : ''}>{homeScore}</span>
                 <span className="separator">:</span>
@@ -244,12 +257,6 @@ const InteractiveMatch = ({ fixture, userClubName, userOvr, opponentOvr, opponen
              <div className="team-ovr-label">OVR {awayOvrVal}</div>
            </div>
         </div>
-      </div>
-
-      <div className="match-clock-container">
-          <div className="clock-time">{minute}'</div>
-          <div style={{ width: 2, height: 20, background: 'rgba(255,255,255,0.1)' }} />
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 1 }}>{isQuickSim ? 'QUICK SIM' : 'MATCH LIVE'}</div>
       </div>
 
       {/* Match Log Panel - NOW CENTERED */}
@@ -278,13 +285,13 @@ const InteractiveMatch = ({ fixture, userClubName, userOvr, opponentOvr, opponen
         )}
       </AnimatePresence>
 
-      <div style={{ minHeight: 200, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+      <div style={{ flexShrink: 0, paddingBottom: 16, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
         {!isPlaying && minute === 0 && !matchEnded && (
           <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, color: 'white', marginBottom: 24 }}>KICK OFF INBOUND</div>
-            <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
-                <button className="btn btn-gold" onClick={() => setIsPlaying(true)} style={{ height: 48, padding: '0 32px', fontSize: 16 }}>START MATCH</button>
-                <button className="btn btn-glass" onClick={onCancel} style={{ height: 48 }}>CANCEL</button>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'white', marginBottom: 16 }}>KICK OFF INBOUND</div>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button className="btn btn-gold" onClick={() => setIsPlaying(true)} style={{ height: 42, padding: '0 24px', fontSize: 14 }}>START MATCH</button>
+                <button className="btn btn-glass" onClick={onCancel} style={{ height: 42, fontSize: 14 }}>CANCEL</button>
             </div>
           </motion.div>
         )}
@@ -318,7 +325,7 @@ const InteractiveMatch = ({ fixture, userClubName, userOvr, opponentOvr, opponen
         )}
 
         {momentResult && (
-          <motion.div className="goal-banner" initial={{ x: '-100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }}>
+          <motion.div className="goal-banner" initial={{ x: '-100%', y: '-50%', opacity: 0 }} animate={{ x: 0, y: '-50%', opacity: 1 }} exit={{ x: '100%', y: '-50%', opacity: 0 }}>
              <div className="goal-title">{momentResult.isWin ? 'BRILLIANT!' : 'MISSED!'}</div>
              <div className="goal-scorer">{momentResult.scorer || momentResult.msg}</div>
              {momentResult.isWin && momentResult.scorer && <div style={{ color: 'white', opacity: 0.6, marginTop: 10 }}>{momentResult.msg}</div>}
@@ -328,10 +335,13 @@ const InteractiveMatch = ({ fixture, userClubName, userOvr, opponentOvr, opponen
         {matchEnded && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ textAlign: 'center', marginTop: 24 }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: 'white', textShadow: '0 0 15px rgba(0,0,0,0.4)', marginBottom: 8, letterSpacing: 4 }}>FULL TIME</div>
-            <div className="match-status-label">MATCH COMPLETED</div>
-            <div style={{ marginTop: 20 }}>
-                <button className="btn btn-gold" onClick={handleFinish} style={{ height: 56, padding: '0 56px', fontSize: 18, boxShadow: '0 10px 30px rgba(240, 195, 45, 0.3)' }}>CONTINUE</button>
-            </div>
+            <div className="match-status-label" style={{ color: 'var(--gold)', borderColor: 'var(--gold)' }}>FINALIZING RESULTS...</div>
+            <motion.div 
+               animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.2 }}
+               style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 12, letterSpacing: 1 }}
+            >
+               Please wait...
+            </motion.div>
           </motion.div>
         )}
       </div>
