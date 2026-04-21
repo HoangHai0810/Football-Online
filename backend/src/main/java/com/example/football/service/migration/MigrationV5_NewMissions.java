@@ -19,6 +19,7 @@ public class MigrationV5_NewMissions implements DataMigration {
 
     private final MissionRepository missionRepository;
     private final UserMissionRepository userMissionRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Override
     public int getVersion() {
@@ -33,6 +34,15 @@ public class MigrationV5_NewMissions implements DataMigration {
     @Override
     @Transactional
     public void execute() {
+        log.info("MigrationV5: Dropping old missions_type_check constraint if exists...");
+        try {
+            // Drop constraint if it exists to allow new MissionType enum values (PostgreSQL specific fix)
+            jdbcTemplate.execute("ALTER TABLE missions DROP CONSTRAINT IF EXISTS missions_type_check");
+            log.info("MigrationV5: Constraint missions_type_check dropped successfully.");
+        } catch (Exception e) {
+            log.warn("MigrationV5: Could not drop constraint missions_type_check (it might not exist or name differs): {}", e.getMessage());
+        }
+
         log.info("MigrationV5: Clearing old bloated missions and user missions...");
         userMissionRepository.deleteAll();
         missionRepository.deleteAll();
