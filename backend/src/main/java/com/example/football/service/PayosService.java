@@ -4,11 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.payos.PayOS;
-import vn.payos.model.v2.common.ItemData;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
+import vn.payos.model.v2.paymentRequests.ItemData;
 import vn.payos.type.Webhook;
 import vn.payos.type.WebhookData;
+
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -35,12 +38,12 @@ public class PayosService {
                     .orderCode(orderCode)
                     .amount((long) amount)
                     .description(description)
-                    .item(item)
+                    .items(Collections.singletonList(item))
                     .returnUrl(returnUrl)
                     .cancelUrl(cancelUrl)
                     .build();
 
-            CreatePaymentLinkResponse response = payOS.paymentRequests().create(request);
+            CreatePaymentLinkResponse response = payOS.createPaymentLink(request);
             return response.getCheckoutUrl();
         } catch (Exception e) {
             log.error("Failed to create PayOS link (v2): ", e);
