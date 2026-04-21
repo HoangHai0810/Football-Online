@@ -7,8 +7,6 @@ import vn.payos.PayOS;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 import vn.payos.model.v2.paymentRequests.ItemData;
-import vn.payos.type.Webhook;
-import vn.payos.type.WebhookData;
 
 import java.util.Collections;
 import java.util.List;
@@ -43,7 +41,7 @@ public class PayosService {
                     .cancelUrl(cancelUrl)
                     .build();
 
-            CreatePaymentLinkResponse response = payOS.createPaymentLink(request);
+            CreatePaymentLinkResponse response = payOS.paymentRequests().create(request);
             return response.getCheckoutUrl();
         } catch (Exception e) {
             log.error("Failed to create PayOS link (v2): ", e);
@@ -51,7 +49,7 @@ public class PayosService {
         }
     }
 
-    public WebhookData verifyWebhook(Webhook webhook) {
+    public Object verifyWebhook(Object webhook) {
         try {
             return payOS.webhooks().verify(webhook);
         } catch (Exception e) {
