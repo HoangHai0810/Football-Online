@@ -185,85 +185,72 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedMissions() {
+        userMissionRepository.deleteAll();
+        missionRepository.deleteAll();
+
         List<Mission> missions = new ArrayList<>();
 
         missions.add(Mission.builder().description("Daily Login Bonus").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(5000L).build());
+         
+        // Match Winning
+        missions.add(Mission.builder().description("Warmup: Win 1 Match").type(MissionType.WIN_MATCH).targetAmount(1).rewardCoins(3000L).build());
+        missions.add(Mission.builder().description("Consistency: Win 2 Matches").type(MissionType.WIN_MATCH).targetAmount(2).rewardCoins(6500L).build());
+        missions.add(Mission.builder().description("Striker: Win 3 Matches").type(MissionType.WIN_MATCH).targetAmount(3).rewardCoins(10000L).rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Unstoppable: Win 4 Matches").type(MissionType.WIN_MATCH).targetAmount(4).rewardCoins(12500L).rewardPackId("starter").build());
+        missions.add(Mission.builder().description("Dominator: Win 5 Matches").type(MissionType.WIN_MATCH).targetAmount(5).rewardCoins(16000L).rewardPackId("veteran").build());
+        missions.add(Mission.builder().description("Invincible: Win 7 Matches").type(MissionType.WIN_MATCH).targetAmount(7).rewardCoins(22000L).rewardPackId("premium").rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Champion's Will: Win 10 Matches").type(MissionType.WIN_MATCH).targetAmount(10).rewardCoins(35000L).rewardPackId("all_star").build());
         
-        for (int i = 1; i <= 25; i++) {
-            int target = i;
-            long coins = 3000L + (i * 2000L);
-            String packId = (i % 5 == 0) ? "premium" : null;
-            if (i == 25) packId = "all_star";
-            boolean luckyBp = (i % 3 == 0);
-            missions.add(Mission.builder()
-                .description("Pack Opener Tier " + i + ": Open " + target + " Packs")
-                .type(MissionType.OPEN_PACK)
-                .targetAmount(target)
-                .rewardCoins(coins)
-                .rewardPackId(packId)
-                .rewardLuckyBp(luckyBp)
-                .build());
-        }
+        // Pack Opening
+        missions.add(Mission.builder().description("Scout: Open 1 Pack").type(MissionType.OPEN_PACK).targetAmount(1).rewardCoins(2000L).build());
+        missions.add(Mission.builder().description("Explorer: Open 2 Packs").type(MissionType.OPEN_PACK).targetAmount(2).rewardCoins(5000L).build());
+        missions.add(Mission.builder().description("Recruiter: Open 3 Packs").type(MissionType.OPEN_PACK).targetAmount(3).rewardCoins(8500L).rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Supplier: Open 4 Packs").type(MissionType.OPEN_PACK).targetAmount(4).rewardCoins(11000L).rewardPackId("starter").build());
+        missions.add(Mission.builder().description("Agent: Open 5 Packs").type(MissionType.OPEN_PACK).targetAmount(5).rewardCoins(14000L).rewardPackId("premium").build());
+        missions.add(Mission.builder().description("Whale: Open 8 Packs").type(MissionType.OPEN_PACK).targetAmount(8).rewardCoins(20000L).rewardPackId("all_star").rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Addicted: Open 10 Packs").type(MissionType.OPEN_PACK).targetAmount(10).rewardCoins(30000L).rewardPackId("icon").build());
 
-        for (int i = 1; i <= 25; i++) {
-            int target = i;
-            long coins = 5000L + (i * 3000L);
-            String packId = (i % 5 == 0) ? "veteran" : null;
-            if (i == 25) packId = "icon";
-            boolean luckyBp = (i % 4 == 0);
-            missions.add(Mission.builder()
-                .description("Match Winner Tier " + i + ": Win " + target + " Matches")
-                .type(MissionType.WIN_MATCH)
-                .targetAmount(target)
-                .rewardCoins(coins)
-                .rewardPackId(packId)
-                .rewardLuckyBp(luckyBp)
-                .build());
-        }
+        // Player Upgrading
+        missions.add(Mission.builder().description("Trainer: Upgrade 1 Player").type(MissionType.UPGRADE_PLAYER).targetAmount(1).rewardCoins(4000L).build());
+        missions.add(Mission.builder().description("Instructor: Upgrade 2 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(2).rewardCoins(8500L).build());
+        missions.add(Mission.builder().description("Coach: Upgrade 3 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(3).rewardCoins(12500L).rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Development: Upgrade 4 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(4).rewardCoins(16000L).build());
+        missions.add(Mission.builder().description("Manager: Upgrade 5 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(5).rewardCoins(20000L).rewardPackId("live_master").build());
+        missions.add(Mission.builder().description("Masterclass: Upgrade 7 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(7).rewardCoins(28000L).rewardPackId("toty_upgrade").rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Visionary: Upgrade 10 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(10).rewardCoins(45000L).rewardPackId("golden_ticket").build());
 
-        // 4. Upgrade Player Missions (25 levels)
-        for (int i = 1; i <= 25; i++) {
-            int target = i;
-            long coins = 4000L + (i * 2000L);
-            String packId = (i % 10 == 0) ? "live_master" : null;
-            if (i == 25) packId = "golden_ticket";
-            boolean luckyBp = (i % 2 == 0);
-            missions.add(Mission.builder()
-                .description("Upgrade Master Tier " + i + ": Upgrade " + target + " Players")
-                .type(MissionType.UPGRADE_PLAYER)
-                .targetAmount(target)
-                .rewardCoins(coins)
-                .rewardPackId(packId)
-                .rewardLuckyBp(luckyBp)
-                .build());
-        }
+        // Player Collecting
+        missions.add(Mission.builder().description("Collector: Obtain 2 Players").type(MissionType.COLLECT_PLAYER).targetAmount(2).rewardCoins(3000L).build());
+        missions.add(Mission.builder().description("Gatherer: Obtain 3 Players").type(MissionType.COLLECT_PLAYER).targetAmount(3).rewardCoins(5500L).build());
+        missions.add(Mission.builder().description("Hoarder: Obtain 5 Players").type(MissionType.COLLECT_PLAYER).targetAmount(5).rewardCoins(9000L).build());
+        missions.add(Mission.builder().description("Squad Builder: Obtain 8 Players").type(MissionType.COLLECT_PLAYER).targetAmount(8).rewardCoins(14000L).rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Talent Finder: Obtain 10 Players").type(MissionType.COLLECT_PLAYER).targetAmount(10).rewardCoins(18000L).rewardPackId("starter").build());
+        missions.add(Mission.builder().description("Director: Obtain 15 Players").type(MissionType.COLLECT_PLAYER).targetAmount(15).rewardCoins(26000L).rewardPackId("veteran").rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Mass Recruiter: Obtain 20 Players").type(MissionType.COLLECT_PLAYER).targetAmount(20).rewardCoins(38000L).rewardPackId("premium").build());
 
-        for (int i = 1; i <= 25; i++) {
-            int target = i * 2;
-            long coins = 2000L + (i * 1000L);
-            String packId = (i % 5 == 0) ? "starter" : null;
-            if (i == 25) packId = "toty_upgrade";
-            boolean luckyBp = false;
-            missions.add(Mission.builder()
-                .description("Talent Scout Tier " + i + ": Collect " + target + " Players")
-                .type(MissionType.COLLECT_PLAYER)
-                .targetAmount(target)
-                .rewardCoins(coins)
-                .rewardPackId(packId)
-                .rewardLuckyBp(luckyBp)
-                .build());
+        // Playing Matches
+        missions.add(Mission.builder().description("Participant: Play 2 Matches").type(MissionType.PLAY_MATCH).targetAmount(2).rewardCoins(4000L).build());
+        missions.add(Mission.builder().description("Active Player: Play 5 Matches").type(MissionType.PLAY_MATCH).targetAmount(5).rewardCoins(8500L).rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Grinder: Play 10 Matches").type(MissionType.PLAY_MATCH).targetAmount(10).rewardCoins(20000L).rewardPackId("starter").build());
+
+        // Star Signings (OVR >= 90)
+        missions.add(Mission.builder().description("Star Signing: Obtain 1 Player (90+ OVR)").type(MissionType.COLLECT_STAR_PLAYER).targetAmount(1).rewardCoins(10000L).rewardLuckyBp(true).build());
+        missions.add(Mission.builder().description("Galacticos: Obtain 3 Players (90+ OVR)").type(MissionType.COLLECT_STAR_PLAYER).targetAmount(3).rewardCoins(30000L).rewardPackId("icon").build());
+
+        // Seasons
+        missions.add(Mission.builder().description("Endurance: Finish 1 Season").type(MissionType.FINISH_SEASON).targetAmount(1).rewardCoins(50000L).rewardPackId("all_star").build());
+
+        for (Mission m : missions) {
+            m.setActive(true);
         }
 
         missionRepository.saveAll(missions);
-        System.out.println("Seeded database with " + missions.size() + " progressive missions (Total: 101).");
+        System.out.println("Seeded database with " + missions.size() + " balanced repeatable missions.");
     }
 
     private void seedAiClubs() {
-        // We want to ensure we have our 60 specific clubs. 
-        // We check by name to avoid duplicates and preserve IDs for foreign keys.
         List<AiClub> newClubs = new ArrayList<>();
         
-        // Optimize: Load all existing clubs once to avoid multiple selects in loop
         Map<String, AiClub> existingClubsMap = aiClubRepository.findAll().stream()
                 .collect(Collectors.toMap(AiClub::getName, club -> club));
         

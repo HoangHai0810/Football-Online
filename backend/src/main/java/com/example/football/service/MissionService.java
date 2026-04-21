@@ -47,11 +47,9 @@ public class MissionService {
     }
 
     private List<UserMission> refreshMissions(Users user) {
-        // Delete old missions
         List<UserMission> oldMissions = userMissionRepository.findByUser(user);
         userMissionRepository.deleteAll(oldMissions);
 
-        // Get active missions, shuffle and pick 6
         List<Mission> allMissions = missionRepository.findByIsActiveTrue();
         Collections.shuffle(allMissions);
         List<Mission> selected = allMissions.stream().limit(6).collect(Collectors.toList());
@@ -72,36 +70,7 @@ public class MissionService {
         return userMissionRepository.saveAll(newMissions);
     }
 
-    private Mission generateNextTierMission(Mission oldMission) {
-        // Auto-generate a harder version of the claimed mission
-        int newTarget = (int) Math.ceil(oldMission.getTargetAmount() * 1.5);
-        long newCoins = (long) Math.ceil(oldMission.getRewardCoins() * 1.5);
-        if (oldMission.getRewardCoins() == 0) newCoins = 0; // Keep 0 if it was pure pack/lucky BP
 
-        // Upgrade pack randomly if it gets very hard
-        String newPack = oldMission.getRewardPackId();
-        if (newTarget > 10 && "starter".equals(newPack)) newPack = "veteran";
-        if (newTarget > 25 && "veteran".equals(newPack)) newPack = "premium";
-        if (newTarget > 50 && "premium".equals(newPack)) newPack = "all_star";
-
-        // Keep Lucky BP
-        boolean keepLucky = oldMission.isRewardLuckyBp();
-        if (newTarget > 10 && random.nextDouble() > 0.8) keepLucky = true;
-
-        String prefix = oldMission.getDescription().split(" -> ")[0].replaceAll("\\s\\(.*\\)", "");
-        String newDesc = prefix + " (" + newTarget + " " + oldMission.getType().name().replace("_", " ") + ")";
-
-        Mission nextM = Mission.builder()
-                .description(newDesc)
-                .type(oldMission.getType())
-                .targetAmount(newTarget)
-                .rewardCoins(newCoins)
-                .rewardPackId(newPack)
-                .rewardLuckyBp(keepLucky)
-                .isActive(true)
-                .build();
-        return missionRepository.save(nextM);
-    }
 
     @Transactional
     public void updateProgress(String username, MissionType type, int amount) {
@@ -138,12 +107,9 @@ public class MissionService {
 
         java.util.Map<String, Object> results = new java.util.HashMap<>();
         
-        // 1. Regular Coins
         long totalCoins = um.getMission().getRewardCoins();
         
-        // 2. Lucky BP
         if (um.getMission().isRewardLuckyBp()) {
-            // Range 10,000 to 100,000
             long luckyAmount = 10000 + random.nextInt(90001);
             totalCoins += luckyAmount;
             results.put("luckyBp", luckyAmount);
@@ -154,22 +120,25 @@ public class MissionService {
             results.put("rewardCoins", totalCoins);
         }
 
-        // 3. Player Pack -> Add to INVENTORY instead of opening
         if (um.getMission().getRewardPackId() != null && !um.getMission().getRewardPackId().isEmpty()) {
             inventoryService.addPack(user, um.getMission().getRewardPackId(), 1);
             results.put("rewardPackId", um.getMission().getRewardPackId());
-            // We no longer return rewardCard strictly here since it goes to inventory.
         }
         
         userRepository.save(user);
 
-        // Auto-generate endless scaling replacement mission
-        Mission harderMission = generateNextTierMission(um.getMission());
+        List<Mission> allMissions = missionRepository.findByIsActiveTrue();
+        Collections.shuffle(allMissions);
+        Mission nextMission = allMissions.stream()
+                .filter(m -> !m.getId().equals(um.getMission().getId()))
+                .findFirst()
+                .orElse(allMissions.get(0));
+
         userMissionRepository.delete(um);
 
         UserMission nextUm = UserMission.builder()
                 .user(user)
-                .mission(harderMission)
+                .mission(nextMission)
                 .currentAmount(0)
                 .completed(false)
                 .claimed(false)
@@ -197,10 +166,8 @@ public class MissionService {
         user.setCoins(user.getCoins() - 200);
         userRepository.save(user);
 
-        // Pick a random new mission
         List<Mission> allMissions = missionRepository.findByIsActiveTrue();
         Collections.shuffle(allMissions);
-        // Ensure it's not exactly the same base mission
         Mission newMission = allMissions.stream()
                 .filter(m -> !m.getId().equals(um.getMission().getId()))
                 .findFirst()
@@ -214,7 +181,7 @@ public class MissionService {
                 .currentAmount(0)
                 .completed(false)
                 .claimed(false)
-                .nextResetAt(um.getNextResetAt()) // Keep the same reset schedule
+                .nextResetAt(um.getNextResetAt())
                 .build();
 
         return userMissionRepository.save(newUm);

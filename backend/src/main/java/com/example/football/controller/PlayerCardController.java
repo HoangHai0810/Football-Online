@@ -36,6 +36,9 @@ public class PlayerCardController {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
             missionService.updateProgress(username, MissionType.OPEN_PACK, 1);
             missionService.updateProgress(username, MissionType.COLLECT_PLAYER, 1);
+            if (card.getTemplate().getOvr() >= 90) {
+                missionService.updateProgress(username, MissionType.COLLECT_STAR_PLAYER, 1);
+            }
         } catch (Exception e) {
             System.err.println("Failed to update mission progress: " + e.getMessage());
         }
@@ -56,6 +59,10 @@ public class PlayerCardController {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
             missionService.updateProgress(username, MissionType.OPEN_PACK, quantity);
             missionService.updateProgress(username, MissionType.COLLECT_PLAYER, quantity);
+            long starCount = cards.stream().filter(c -> c.getTemplate().getOvr() >= 90).count();
+            if (starCount > 0) {
+                missionService.updateProgress(username, MissionType.COLLECT_STAR_PLAYER, (int) starCount);
+            }
         } catch (Exception e) {
             System.err.println("Failed to update mission progress: " + e.getMessage());
         }
@@ -68,6 +75,9 @@ public class PlayerCardController {
         try {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
             missionService.updateProgress(username, MissionType.COLLECT_PLAYER, 1);
+            if (card.getTemplate().getOvr() >= 90) {
+                missionService.updateProgress(username, MissionType.COLLECT_STAR_PLAYER, 1);
+            }
         } catch (Exception e) {
             System.err.println("Failed to update mission progress: " + e.getMessage());
         }

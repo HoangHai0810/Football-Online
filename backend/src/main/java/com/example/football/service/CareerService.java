@@ -26,6 +26,7 @@ public class CareerService {
     private final UserRepository userRepository;
     private final TrophyRepository trophyRepository;
     private final TournamentPlayerStatRepository playerStatRepository;
+    private final MissionService missionService;
 
     @Transactional
     public UserCareer getCareerByUserId(Long userId) {
@@ -135,6 +136,16 @@ public class CareerService {
                 }
                 matchRewardTotal += baseReward;
 
+                try {
+                    String username = career.getUser().getUsername();
+                    missionService.updateProgress(username, MissionType.PLAY_MATCH, 1);
+                    if (targetFixture.isUserWinner()) {
+                        missionService.updateProgress(username, MissionType.WIN_MATCH, 1);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to update mission progress: " + e.getMessage());
+                }
+
                 if (isInteractive) {
                     long interactiveBonus = 1000;
                     rewardDetails.put("Interactive Bonus", interactiveBonus);
@@ -205,6 +216,10 @@ public class CareerService {
                 career.setCurrentWeek(1);
                 career.setCurrentSeason(career.getCurrentSeason() + 1);
                 seasonGeneratorService.createNewSeason(career.getUser());
+
+                try {
+                    missionService.updateProgress(career.getUser().getUsername(), MissionType.FINISH_SEASON, 1);
+                } catch (Exception e) {}
             }
             userCareerRepository.save(career);
         }
