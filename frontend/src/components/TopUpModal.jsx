@@ -43,41 +43,43 @@ export default function TopUpModal({ isOpen, onClose }) {
           <X size={24} />
         </button>
         
-        <div className="topup-header">
-          <div className="topup-icon-wrapper">
-            <CreditCard size={32} className="topup-icon" />
+        <div className="topup-header" style={{ textAlign: 'center' }}>
+          <div className="topup-icon-wrapper" style={{ margin: '0 auto 16px', width: '64px', height: '64px', background: 'var(--gold-subtle)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Zap size={32} style={{ color: 'var(--gold)' }} />
           </div>
-          <h2>BANK & STORE (PAYOS)</h2>
-          <p>Scan VietQR securely via PayOS Open Banking.</p>
-          <div className="current-balance">
-            <span>Balance:</span>
-            <span className="balance-value">
-              <span className="coin-icon">₡</span> 
-              {user?.coins?.toLocaleString()}
+          <h2>BANK & STORE</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '20px' }}>
+            Upgrade your squad with premium FC Coins via PayOS Secure Banking
+          </p>
+          
+          <div className="current-balance" style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(255,255,255,0.03)', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <span style={{ color: '#aaa', marginRight: '10px', fontSize: '13px' }}>Current Balance:</span>
+            <span style={{ color: 'var(--gold)', fontWeight: '800' }}>
+              ₡ {user?.coins?.toLocaleString()}
             </span>
           </div>
         </div>
 
         {isProcessing ? (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <Loader2 size={48} className="spinner" style={{ margin: '0 auto 20px', color: '#ffba00' }} />
-            <h3>Routing to Secure Gateway...</h3>
-            <p style={{ color: '#aaa' }}>Please wait while we prepare your VietQR code.</p>
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <Loader2 size={56} className="spinner" style={{ margin: '0 auto 24px', color: 'var(--gold)' }} />
+            <h3 style={{ fontFamily: 'Bebas Neue', fontSize: '28px', letterSpacing: '2px' }}>ROUTING TO SECURE GATEWAY...</h3>
+            <p style={{ color: '#666', fontSize: '14px' }}>Securing your connection to PayOS VietQR...</p>
           </div>
         ) : (
           <div className="topup-packages">
             {PACKAGES.map(pkg => (
-              <div key={pkg.id} className={`package-card ${pkg.isBest ? 'popular' : ''}`}>
-                {pkg.isBest && <div className="popular-badge"><Zap size={14} /> BEST VALUE</div>}
+              <div key={pkg.id} className={`package-card ${pkg.isBest ? 'popular popular-card-glow' : ''}`}>
+                {pkg.isBest && <div className="popular-badge">BEST VALUE</div>}
                 {pkg.bonus > 0 && <div className="bonus-badge">+{pkg.bonus}% BONUS</div>}
                 
                 <div className="pack-coins">
-                  <span className="coin-icon" style={{ fontSize: '24px' }}>₡</span>
+                  <div className="coin-icon-gold">₡</div>
                   <h3>{pkg.coins.toLocaleString()}</h3>
                 </div>
                 
                 <button 
-                  className="btn btn-gold btn-full buy-btn"
+                  className="btn btn-gold buy-btn"
                   onClick={() => handlePayment(pkg)}
                 >
                   {pkg.vnd.toLocaleString()} VND
@@ -87,9 +89,9 @@ export default function TopUpModal({ isOpen, onClose }) {
           </div>
         )}
         
-        <div className="topup-footer">
-          <ShieldCheck size={16} />
-          <span>Transactions are automatically processed and verified by PayOS.</span>
+        <div className="topup-footer" style={{ marginTop: '40px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', color: '#555', fontSize: '12px' }}>
+          <ShieldCheck size={18} style={{ color: 'var(--success)' }} />
+          <span>Secured by PayOS Open Banking. Transactions are instant and encrypted.</span>
         </div>
       </div>
     </div>

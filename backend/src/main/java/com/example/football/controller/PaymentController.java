@@ -110,8 +110,9 @@ public class PaymentController {
             return ResponseEntity.ok(Map.of("success", true));
             
         } catch (Exception e) {
-            log.error("PayOS Webhook verification or processing failed", e);
-            return ResponseEntity.status(400).body(Map.of("success", false));
+            log.error("PayOS Webhook verification or processing failed (registration ping or invalid callback)", e);
+            // Return 200 OK even on failure for Webhook registration phase or test pings
+            return ResponseEntity.ok(Map.of("success", false, "message", "Processing failed but ping received"));
         }
     }
 }
