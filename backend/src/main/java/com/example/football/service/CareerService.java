@@ -238,7 +238,6 @@ public class CareerService {
 
     private Map<String, Object> generateSeasonSummary(List<Tournament> tournaments, Users user) {
         List<Map<String, Object>> tournamentResults = new ArrayList<>();
-        long totalCoinsAwarded = 0;
         
         for (Tournament t : tournaments) {
             List<TournamentStanding> stds = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(t);
@@ -334,7 +333,6 @@ public class CareerService {
 
     private void awardTournamentRewards(Tournament tournament, Users user) {
         long rewardAmount = 0;
-        String reason = "Tournament Reward: " + tournament.getName();
 
         if (tournament.getType().equals("LEAGUE")) {
             List<TournamentStanding> standings = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(tournament);
@@ -345,7 +343,6 @@ public class CareerService {
                     else if (rank == 2) rewardAmount = 200000;
                     else if (rank <= 4) rewardAmount = 100000;
                     else if (rank <= 10) rewardAmount = 50000;
-                    reason += " (Rank " + rank + ")";
                     break;
                 }
             }
@@ -363,23 +360,19 @@ public class CareerService {
                 if (lastMatch.getMatchWeek() == 32) { // Final
                     if (wonLast) {
                         rewardAmount = tournament.getType().equals("CONTINENTAL") ? 1000000 : 300000;
-                        reason += " (WINNER)";
                     } else {
                         rewardAmount = tournament.getType().equals("CONTINENTAL") ? 400000 : 100000;
-                        reason += " (RUNNER-UP)";
                     }
                 } else if (lastMatch.getMatchWeek() == 22 && wonLast) { /* Handled in Final */ }
-                else if (lastMatch.getMatchWeek() == 22) { rewardAmount = 50000; reason += " (Semi-Finalist)"; }
+                else if (lastMatch.getMatchWeek() == 22) { rewardAmount = 50000;}
             }
         }
 
         if (rewardAmount > 0) {
             user.setCoins(user.getCoins() + rewardAmount);
             userRepository.save(user);
-            // Optionally save to quest/history, but for now just update coins
         }
         
-        // Finalize Trophy entry
         awardTrophies(tournament, user, tournament.getSeasonIndex());
     }
 

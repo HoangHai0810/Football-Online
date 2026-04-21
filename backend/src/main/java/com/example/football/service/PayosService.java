@@ -19,15 +19,14 @@ import java.util.Map;
 public class PayosService {
 
     private final PayOS payOS;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .findAndRegisterModules();
 
     public PayosService(
             @Value("${payos.client-id}") String clientId,
             @Value("${payos.api-key}") String apiKey,
-            @Value("${payos.checksum-key}") String checksumKey,
-            ObjectMapper objectMapper) {
+            @Value("${payos.checksum-key}") String checksumKey) {
         this.payOS = new PayOS(clientId, apiKey, checksumKey);
-        this.objectMapper = objectMapper;
     }
 
     public String createPaymentLink(Long orderCode, int amount, String description, String cancelUrl, String returnUrl) {

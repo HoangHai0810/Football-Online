@@ -12,7 +12,6 @@ import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -34,7 +33,6 @@ public class MatchSimulationEngine {
 
         int homeScore, awayScore;
 
-        // Force loss if user has 0 OVR (incomplete squad)
         if (fixture.isHomeIsUser() && homeOvr == 0) {
             homeScore = 0;
             awayScore = 3;
@@ -42,17 +40,14 @@ public class MatchSimulationEngine {
             homeScore = 3;
             awayScore = 0;
         } else {
-            // Simple probability based on OVR
             double homeWinProb = 0.5 + (homeOvr - awayOvr) * 0.02;
             homeWinProb = Math.max(0.1, Math.min(0.9, homeWinProb));
 
             double rand = random.nextDouble();
             if (rand < homeWinProb) {
-                // Home wins or draws
                 homeScore = random.nextInt(4);
                 awayScore = random.nextInt(Math.max(1, homeScore + 1));
             } else {
-                // Away wins
                 awayScore = random.nextInt(4);
                 homeScore = random.nextInt(Math.max(1, awayScore + 1));
             }
@@ -62,12 +57,9 @@ public class MatchSimulationEngine {
         fixture.setAwayScore(awayScore);
         fixture.setPlayed(true);
 
-        // Attribute stats
         attributeStats(fixture, homeScore, awayScore);
 
-        // Knockout Logic: Extra Time & Penalties if draw
         if (fixture.isKnockout() && homeScore == awayScore) {
-            // Simulate Extra Time (Simplified: 50% chance of 1 more goal for one side)
             double etRand = random.nextDouble();
             if (etRand < 0.3) {
                 fixture.setHomeScore(homeScore + 1);
@@ -76,8 +68,7 @@ public class MatchSimulationEngine {
                 fixture.setAwayScore(awayScore + 1);
                 fixture.setExtraTimeUsed(true);
             } else {
-                // Still draw after ET -> Penalties
-                int homePen = 3 + random.nextInt(3); // 3-5
+                int homePen = 3 + random.nextInt(3);
                 int awayPen = 3 + random.nextInt(3);
                 while (homePen == awayPen) {
                     awayPen = 3 + random.nextInt(3);
@@ -90,7 +81,6 @@ public class MatchSimulationEngine {
 
         fixture.setPlayed(true);
 
-        // Check if user was eliminated (Knockout only)
         checkUserElimination(fixture);
     }
 
@@ -104,7 +94,6 @@ public class MatchSimulationEngine {
         }
         fixture.setPlayed(true);
         
-        // Attribute stats (Interactive matches also need to record who scored)
         attributeStats(fixture, homeScore, awayScore);
         
         checkUserElimination(fixture);
@@ -146,18 +135,15 @@ public class MatchSimulationEngine {
     }
 
     private int calculateUserSquadOvr(Users user) {
-        // Must calculate from active squad. Fallback is removed to enforce 11-player rule.
         Optional<SquadFormation> squadOpt = squadFormationRepository.findFirstByUserOrderByIdDesc(user);
         if (squadOpt.isPresent() && squadOpt.get().getLineupJson() != null && !squadOpt.get().getLineupJson().isBlank()) {
             try {
                 Map<String, Long> lineup = objectMapper.readValue(squadOpt.get().getLineupJson(), new TypeReference<Map<String, Long>>() {});
-                
-                // User must have exactly 11 players in lineup
+
                 if (lineup.size() < 11) {
-                    return 0; // Incomplete squad
+                    return 0;
                 }
 
-                List<PlayerCard> activeCards = playerCardRepository.findAllById(lineup.values());
                 String formation = squadOpt.get().getFormation() != null ? squadOpt.get().getFormation() : "4-3-3";
                 String[] slotPositions = getPositionsForFormation(formation);
                 
@@ -176,11 +162,10 @@ public class MatchSimulationEngine {
                 }
                 return (int) Math.round(totalEffOvr / 11.0);
             } catch (Exception e) {
-                // Ignore and return 0
             }
         }
 
-        return 0; // Squad not found or incomplete
+        return 0;
     }
 
     private void attributeStats(MatchFixture fixture, int homeGoals, int awayGoals) {

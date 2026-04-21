@@ -1,16 +1,12 @@
 package com.example.football.service.migration;
 
 import com.example.football.entity.AiClub;
-import com.example.football.entity.PlayerTemplate;
 import com.example.football.repository.AiClubRepository;
 import com.example.football.repository.PlayerTemplateRepository;
 import com.example.football.service.PlayerSeeder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor

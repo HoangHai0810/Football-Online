@@ -22,7 +22,6 @@ public class MissionService {
     private final MissionRepository missionRepository;
     private final UserMissionRepository userMissionRepository;
     private final UserRepository userRepository;
-    private final PlayerCardService playerCardService;
     private final InventoryService inventoryService;
     private final java.util.Random random = new java.util.Random();
 
