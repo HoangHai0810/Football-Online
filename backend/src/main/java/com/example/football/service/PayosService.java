@@ -10,8 +10,6 @@ import vn.payos.type.PaymentData;
 import vn.payos.type.Webhook;
 import vn.payos.type.WebhookData;
 
-import java.util.Map;
-
 @Slf4j
 @Service
 public class PayosService {
@@ -50,9 +48,9 @@ public class PayosService {
         }
     }
 
-    public WebhookData verifyWebhook(String webhookBodyJson) {
+    public WebhookData verifyWebhook(Webhook webhook) {
         try {
-            return payOS.verifyPaymentWebhookData(new Webhook(webhookBodyJson));
+            return payOS.verifyPaymentWebhookData(webhook);
         } catch (Exception e) {
             log.error("PayOS Webhook Verification Failed: ", e);
             throw new RuntimeException("Invalid webhook signature");

@@ -16,7 +16,6 @@ public class StartupService {
     private final PlayerTemplateRepository playerTemplateRepository;
     private final PlayerCardRepository playerCardRepository;
     private final SquadFormationRepository squadFormationRepository;
-    private final UserCareerRepository userCareerRepository;
     private final SeasonGeneratorService seasonGeneratorService;
 
     @Transactional

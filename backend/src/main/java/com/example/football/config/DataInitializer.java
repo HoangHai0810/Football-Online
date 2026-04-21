@@ -1,10 +1,6 @@
 package com.example.football.config;
-
-import com.example.football.entity.*;
 import com.example.football.repository.PlayerTemplateRepository;
-import com.example.football.repository.PlayerCardRepository;
-import com.example.football.repository.MissionRepository;
-import com.example.football.service.PlayerSeeder;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +8,6 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -20,7 +15,6 @@ import java.util.stream.Collectors;
 
 import com.example.football.entity.AiClub;
 import com.example.football.repository.AiClubRepository;
-import com.example.football.repository.UserMissionRepository;
 
 @Configuration
 @RequiredArgsConstructor
@@ -28,11 +22,7 @@ import com.example.football.repository.UserMissionRepository;
 public class DataInitializer implements CommandLineRunner {
 
     private final PlayerTemplateRepository repository;
-    private final PlayerCardRepository playerCardRepository;
-    private final MissionRepository missionRepository;
-    private final PlayerSeeder playerSeeder;
     private final AiClubRepository aiClubRepository;
-    private final UserMissionRepository userMissionRepository;
 
     @Override
     @Transactional
@@ -47,30 +37,6 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("DataInitializer: Initial seed for AI Clubs...");
             seedAiClubs();
         }
-    }
-
-    private void seedPlayers() {
-        List<PlayerTemplate> players = Arrays.asList(
-            PlayerTemplate.builder().name("Lionel Messi").position(Position.RW).age(36).height(170).weight(72).bodyType(BodyType.LEAN).nationality("Argentina").club("Inter Miami").season(Season.BASE).ovr(102).pace(85).shooting(95).passing(100).dribbling(102).defending(30).physical(65).acceleration(90).sprintSpeed(80).finishing(98).shotPower(90).longShot(95).positioning(98).volleys(90).shortPassing(102).longPassing(95).vision(102).crossing(88).curve(98).dribblingStat(105).ballControl(102).agility(100).balance(100).reactions(98).interceptions(40).marking(30).standingTackle(35).slidingTackle(30).strength(68).aggression(55).stamina(75).jumping(60).heading(65).attackingWorkRate(WorkRate.LOW).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Finesse Shot", "Playmaker")).build(),
-            PlayerTemplate.builder().name("Cristiano Ronaldo").position(Position.ST).age(39).height(187).weight(83).bodyType(BodyType.REPRESENTATIVE).nationality("Portugal").club("Al Nassr").season(Season.BASE).ovr(102).pace(88).shooting(102).passing(85).dribbling(90).defending(35).physical(85).acceleration(85).sprintSpeed(90).finishing(105).shotPower(105).longShot(98).positioning(102).volleys(98).shortPassing(88).longPassing(80).vision(85).crossing(85).curve(85).dribblingStat(92).ballControl(95).agility(80).balance(75).reactions(98).interceptions(45).marking(35).standingTackle(40).slidingTackle(35).strength(88).aggression(75).stamina(80).jumping(102).heading(105).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Power Free-Kick", "Acrobat")).build(),
-            PlayerTemplate.builder().name("Kylian Mbappé").position(Position.ST).age(25).height(178).weight(73).bodyType(BodyType.LEAN).nationality("France").club("PSG").season(Season.BASE).ovr(100).pace(105).shooting(98).passing(88).dribbling(100).defending(40).physical(80).acceleration(108).sprintSpeed(102).finishing(102).shotPower(95).longShot(88).positioning(100).volleys(90).shortPassing(90).longPassing(80).vision(88).crossing(85).curve(85).dribblingStat(102).ballControl(100).agility(100).balance(95).reactions(100).interceptions(45).marking(38).standingTackle(45).slidingTackle(40).strength(82).aggression(70).stamina(90).jumping(85).heading(82).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Speed Dribbler", "Flair")).build(),
-            PlayerTemplate.builder().name("Kevin De Bruyne").position(Position.CM).age(32).height(181).weight(70).bodyType(BodyType.REPRESENTATIVE).nationality("Belgium").club("Man City").season(Season.BASE).ovr(100).pace(80).shooting(90).passing(105).dribbling(92).defending(65).physical(80).acceleration(82).sprintSpeed(78).finishing(88).shotPower(95).longShot(98).positioning(92).volleys(85).shortPassing(108).longPassing(105).vision(108).crossing(105).curve(95).dribblingStat(95).ballControl(98).agility(80).balance(82).reactions(98).interceptions(70).marking(65).standingTackle(70).slidingTackle(65).strength(82).aggression(80).stamina(92).jumping(70).heading(70).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.HIGH).traits(Arrays.asList("Early Crosser", "Playmaker")).build(),
-            PlayerTemplate.builder().name("Virgil van Dijk").position(Position.CB).age(32).height(193).weight(92).bodyType(BodyType.STOCKY).nationality("Netherlands").club("Liverpool").season(Season.BASE).ovr(98).pace(85).shooting(55).passing(78).dribbling(75).defending(102).physical(95).acceleration(82).sprintSpeed(88).finishing(50).shotPower(75).longShot(60).positioning(65).volleys(55).shortPassing(85).longPassing(88).vision(75).crossing(60).curve(65).dribblingStat(78).ballControl(82).agility(70).balance(65).reactions(98).interceptions(105).marking(102).standingTackle(105).slidingTackle(100).strength(98).aggression(92).stamina(88).jumping(98).heading(100).attackingWorkRate(WorkRate.LOW).defensiveWorkRate(WorkRate.HIGH).traits(Arrays.asList("Power Header", "Long Passer")).build(),
-            
-            PlayerTemplate.builder().name("Diego Maradona").position(Position.CAM).age(60).height(165).weight(70).bodyType(BodyType.STOCKY).nationality("Argentina").club("Napoli").season(Season.ICON).ovr(110).pace(105).shooting(110).passing(110).dribbling(110).defending(40).physical(85).acceleration(110).sprintSpeed(100).finishing(110).shotPower(105).longShot(110).positioning(110).volleys(108).shortPassing(110).longPassing(110).vision(110).crossing(110).curve(110).dribblingStat(110).ballControl(110).agility(110).balance(110).reactions(110).interceptions(45).marking(35).standingTackle(40).slidingTackle(38).strength(85).aggression(88).stamina(90).jumping(85).heading(82).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Playmaker", "Finesse Shot")).build(),
-            PlayerTemplate.builder().name("Zinedine Zidane").position(Position.CAM).age(48).height(185).weight(80).bodyType(BodyType.REPRESENTATIVE).nationality("France").club("Real Madrid").season(Season.ICON).ovr(110).pace(95).shooting(110).passing(110).dribbling(110).defending(65).physical(90).acceleration(92).sprintSpeed(98).finishing(110).shotPower(110).longShot(110).positioning(110).volleys(110).shortPassing(110).longPassing(110).vision(110).crossing(110).curve(110).dribblingStat(110).ballControl(110).agility(100).balance(108).reactions(110).interceptions(68).marking(60).standingTackle(70).slidingTackle(65).strength(90).aggression(82).stamina(95).jumping(85).heading(98).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.MEDIUM).traits(Arrays.asList("Playmaker", "Elegance")).build(),
-            PlayerTemplate.builder().name("Kaká").position(Position.CAM).age(42).height(186).weight(82).bodyType(BodyType.LEAN).nationality("Brazil").club("AC Milan").season(Season.ICON).ovr(107).pace(110).shooting(110).passing(110).dribbling(110).defending(45).physical(85).acceleration(110).sprintSpeed(110).finishing(110).shotPower(108).longShot(110).positioning(110).volleys(105).shortPassing(110).longPassing(108).vision(110).crossing(110).curve(108).dribblingStat(110).ballControl(110).agility(110).balance(105).reactions(110).interceptions(50).marking(42).standingTackle(45).slidingTackle(40).strength(82).aggression(75).stamina(94).jumping(80).heading(85).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Speedster", "Distance Shooter")).build(),
-            PlayerTemplate.builder().name("Zlatan Ibrahimović").position(Position.ST).age(42).height(195).weight(95).bodyType(BodyType.STOCKY).nationality("Sweden").club("AC Milan").season(Season.ICON).ovr(110).pace(95).shooting(110).passing(102).dribbling(108).defending(45).physical(110).acceleration(92).sprintSpeed(98).finishing(110).shotPower(110).longShot(110).positioning(110).volleys(110).shortPassing(105).longPassing(90).vision(102).crossing(88).curve(95).dribblingStat(110).ballControl(110).agility(85).balance(80).reactions(110).interceptions(45).marking(35).standingTackle(48).slidingTackle(40).strength(110).aggression(110).stamina(88).jumping(100).heading(110).attackingWorkRate(WorkRate.MEDIUM).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Acrobat", "Power Free-Kick")).build(),
-            PlayerTemplate.builder().name("Ronaldo Nazário").position(Position.ST).age(45).height(183).weight(82).bodyType(BodyType.REPRESENTATIVE).nationality("Brazil").club("Inter").season(Season.ICON).ovr(110).pace(110).shooting(110).passing(100).dribbling(110).defending(40).physical(95).acceleration(110).sprintSpeed(110).finishing(110).shotPower(110).longShot(110).positioning(110).volleys(110).shortPassing(105).longPassing(92).vision(102).crossing(95).curve(108).dribblingStat(110).ballControl(110).agility(110).balance(110).reactions(110).interceptions(45).marking(38).standingTackle(40).slidingTackle(38).strength(98).aggression(85).stamina(92).jumping(95).heading(98).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Speed Dribbler", "Clinical Finisher")).build(),
-            PlayerTemplate.builder().name("Ronaldinho").position(Position.LW).age(44).height(180).weight(80).bodyType(BodyType.LEAN).nationality("Brazil").club("Barcelona").season(Season.ICON).ovr(110).pace(110).shooting(108).passing(110).dribbling(110).defending(42).physical(85).acceleration(110).sprintSpeed(108).finishing(110).shotPower(105).longShot(110).positioning(108).volleys(108).shortPassing(110).longPassing(110).vision(110).crossing(110).curve(110).dribblingStat(110).ballControl(110).agility(110).balance(110).reactions(110).interceptions(45).marking(38).standingTackle(45).slidingTackle(40).strength(85).aggression(80).stamina(90).jumping(85).heading(82).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Flair", "Free-kick Specialist")).build(),
-            PlayerTemplate.builder().name("Paolo Maldini").position(Position.CB).age(55).height(186).weight(83).bodyType(BodyType.REPRESENTATIVE).nationality("Italy").club("AC Milan").season(Season.ICON).ovr(110).pace(98).shooting(60).passing(95).dribbling(85).defending(110).physical(110).acceleration(95).sprintSpeed(100).finishing(55).shotPower(68).longShot(60).positioning(70).volleys(58).shortPassing(98).longPassing(105).vision(85).crossing(92).curve(80).dribblingStat(85).ballControl(90).agility(88).balance(85).reactions(110).interceptions(110).marking(110).standingTackle(110).slidingTackle(110).strength(108).aggression(105).stamina(100).jumping(110).heading(110).attackingWorkRate(WorkRate.MEDIUM).defensiveWorkRate(WorkRate.HIGH).traits(Arrays.asList("Dives Into Tackles", "Leadership")).build(),
-            PlayerTemplate.builder().name("Johan Cruyff").position(Position.CF).age(70).height(180).weight(71).bodyType(BodyType.LEAN).nationality("Netherlands").club("Ajax").season(Season.ICON).ovr(110).pace(110).shooting(110).passing(110).dribbling(110).defending(50).physical(84).acceleration(110).sprintSpeed(110).finishing(110).shotPower(105).longShot(110).positioning(110).volleys(110).shortPassing(110).longPassing(110).vision(110).crossing(110).curve(110).dribblingStat(110).ballControl(110).agility(110).balance(110).reactions(110).interceptions(55).marking(45).standingTackle(52).slidingTackle(45).strength(80).aggression(75).stamina(92).jumping(85).heading(88).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Playmaker", "Technical Dribbler")).build(),
-            PlayerTemplate.builder().name("Pelé").position(Position.CAM).age(80).height(173).weight(70).bodyType(BodyType.LEAN).nationality("Brazil").club("Santos").season(Season.ICON).ovr(110).pace(110).shooting(110).passing(110).dribbling(110).defending(55).physical(88).acceleration(110).sprintSpeed(110).finishing(110).shotPower(110).longShot(110).positioning(110).volleys(110).shortPassing(110).longPassing(108).vision(110).crossing(110).curve(110).dribblingStat(110).ballControl(110).agility(110).balance(110).reactions(110).interceptions(60).marking(50).standingTackle(55).slidingTackle(48).strength(85).aggression(82).stamina(95).jumping(98).heading(108).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.MEDIUM).traits(Arrays.asList("Finesse Shot", "Flair")).build(),
-            PlayerTemplate.builder().name("Thierry Henry").position(Position.ST).age(46).height(188).weight(83).bodyType(BodyType.LEAN).nationality("France").club("Arsenal").season(Season.ICON).ovr(110).pace(110).shooting(110).passing(105).dribbling(110).defending(45).physical(90).acceleration(110).sprintSpeed(110).finishing(110).shotPower(110).longShot(110).positioning(110).volleys(110).shortPassing(108).longPassing(95).vision(108).crossing(105).curve(110).dribblingStat(110).ballControl(110).agility(110).balance(100).reactions(110).interceptions(50).marking(40).standingTackle(48).slidingTackle(42).strength(92).aggression(80).stamina(92).jumping(90).heading(100).attackingWorkRate(WorkRate.HIGH).defensiveWorkRate(WorkRate.LOW).traits(Arrays.asList("Finesse Shot", "Speedster")).build()
-        );
-
-        repository.saveAll(players);
-        System.out.println("Seeded database with 15 top players (Base + ICONs).");
     }
 
     private void seedAiClubs() {
