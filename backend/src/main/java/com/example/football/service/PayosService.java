@@ -1,6 +1,7 @@
 package com.example.football.service;
 
 import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.payos.PayOS;
@@ -11,7 +12,6 @@ import vn.payos.model.webhooks.Webhook;
 import vn.payos.model.webhooks.WebhookData;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -19,12 +19,15 @@ import java.util.Map;
 public class PayosService {
 
     private final PayOS payOS;
+    private final ObjectMapper objectMapper;
 
     public PayosService(
             @Value("${payos.client-id}") String clientId,
             @Value("${payos.api-key}") String apiKey,
-            @Value("${payos.checksum-key}") String checksumKey) {
+            @Value("${payos.checksum-key}") String checksumKey,
+            ObjectMapper objectMapper) {
         this.payOS = new PayOS(clientId, apiKey, checksumKey);
+        this.objectMapper = objectMapper;
     }
 
     public String createPaymentLink(Long orderCode, int amount, String description, String cancelUrl, String returnUrl) {
@@ -57,7 +60,7 @@ public class PayosService {
             Webhook webhookBody = Webhook.builder()
                 .code(body.get("code") != null ? body.get("code").toString() : null)
                 .desc(body.get("desc") != null ? body.get("desc").toString() : null)
-                .data(body.get("data") != null ? (WebhookData) body.get("data") : null)
+                .data(body.get("data") != null ? objectMapper.convertValue(body.get("data"), WebhookData.class) : null)
                 .signature(body.get("signature") != null ? body.get("signature").toString() : null)
                 .build();
             return payOS.webhooks().verify(webhookBody);
