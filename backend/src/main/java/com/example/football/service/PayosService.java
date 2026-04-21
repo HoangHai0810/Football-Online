@@ -4,9 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.payos.PayOS;
-import vn.payos.type.CheckoutResponseData;
-import vn.payos.type.ItemData;
-import vn.payos.type.PaymentData;
+import vn.payos.model.v2.common.ItemData;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 import vn.payos.type.Webhook;
 import vn.payos.type.WebhookData;
 
@@ -31,28 +31,28 @@ public class PayosService {
                     .price(amount)
                     .build();
 
-            PaymentData paymentData = PaymentData.builder()
+            CreatePaymentLinkRequest request = CreatePaymentLinkRequest.builder()
                     .orderCode(orderCode)
-                    .amount(amount)
+                    .amount((long) amount)
                     .description(description)
                     .item(item)
                     .returnUrl(returnUrl)
                     .cancelUrl(cancelUrl)
                     .build();
 
-            CheckoutResponseData data = payOS.createPaymentLink(paymentData);
-            return data.getCheckoutUrl();
+            CreatePaymentLinkResponse response = payOS.paymentRequests().create(request);
+            return response.getCheckoutUrl();
         } catch (Exception e) {
-            log.error("Failed to create PayOS link: ", e);
-            throw new RuntimeException("Failed to initiate payment. Please try again.");
+            log.error("Failed to create PayOS link (v2): ", e);
+            throw new RuntimeException("Failed to initiate payment: " + e.getMessage());
         }
     }
 
     public WebhookData verifyWebhook(Webhook webhook) {
         try {
-            return payOS.verifyPaymentWebhookData(webhook);
+            return payOS.webhooks().verify(webhook);
         } catch (Exception e) {
-            log.error("PayOS Webhook Verification Failed: ", e);
+            log.error("PayOS Webhook Verification Failed (v2): ", e);
             throw new RuntimeException("Invalid webhook signature");
         }
     }

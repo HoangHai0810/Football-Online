@@ -44,7 +44,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                // Allow public access to templates and cards for demo/dev purposes
                 .requestMatchers("/api/templates/**").permitAll()
                 .requestMatchers("/api/cards/**").permitAll()
                 .requestMatchers("/api/players/**").permitAll()

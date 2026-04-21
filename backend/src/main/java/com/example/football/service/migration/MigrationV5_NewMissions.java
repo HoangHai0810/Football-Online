@@ -36,7 +36,6 @@ public class MigrationV5_NewMissions implements DataMigration {
     public void execute() {
         log.info("MigrationV5: Dropping old missions_type_check constraint if exists...");
         try {
-            // Drop constraint if it exists to allow new MissionType enum values (PostgreSQL specific fix)
             jdbcTemplate.execute("ALTER TABLE missions DROP CONSTRAINT IF EXISTS missions_type_check");
             log.info("MigrationV5: Constraint missions_type_check dropped successfully.");
         } catch (Exception e) {
