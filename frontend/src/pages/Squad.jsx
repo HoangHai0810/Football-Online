@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -422,6 +423,10 @@ const Squad = () => {
 
   return (
     <div className="page squad-page">
+      <Helmet>
+        <title>My Squad — FC Challenge</title>
+        <meta name="description" content={`Manage your Ultimate Team lineup, formations, and tactical setup. Optimize your squad for maximum OVR and climb the FC Challenge rankings.`} />
+      </Helmet>
       <div className="squad-header" style={{ position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
         <div>
           {editingClub ? (

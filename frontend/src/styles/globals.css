@@ -2144,6 +2144,18 @@ img {
 }
 
 /* ---- BANK & STORE PREMIUM STYLES ---- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
 .topup-modal {
   max-width: 900px !important;
   background: rgba(10, 15, 30, 0.9) !important;
@@ -2191,6 +2203,7 @@ img {
   background: linear-gradient(180deg, rgba(240, 195, 45, 0.05) 0%, transparent 100%);
   opacity: 0;
   transition: 0.4s;
+  pointer-events: none;
 }
 
 .package-card:hover {
@@ -2224,13 +2237,15 @@ img {
 }
 
 .bonus-badge {
+  position: absolute;
+  top: 0; left: 0;
   background: rgba(255, 82, 82, 0.9);
   color: white;
   font-size: 10px;
   font-weight: 800;
   padding: 4px 10px;
-  border-radius: 6px;
-  margin-bottom: 12px;
+  border-bottom-right-radius: 12px;
+  z-index: 2;
 }
 
 .pack-coins {

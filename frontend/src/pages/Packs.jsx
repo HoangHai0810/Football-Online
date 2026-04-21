@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import { PackageOpen, Sparkles, Zap, Star, Shield, Coins } from 'lucide-react';
 import PlayerCard from '../components/PlayerCard';
 import api from '../services/api';
@@ -464,7 +465,11 @@ const Packs = () => {
 
   return (
     <div className="page">
-      {/* Header */}
+      <Helmet>
+        <title>Open Packs — FC Challenge</title>
+        <meta name="description" content="Try your luck and open legendary player packs. Find ICON stars, TOTY legends, and future talents to upgrade your squad in FC Challenge." />
+      </Helmet>
+      {/* Header index */}
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}

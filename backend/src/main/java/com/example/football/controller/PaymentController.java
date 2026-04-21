@@ -4,6 +4,7 @@ import com.example.football.entity.TopupOrder;
 import com.example.football.repository.TopupOrderRepository;
 import com.example.football.repository.UserRepository;
 import com.example.football.service.PayosService;
+import com.example.football.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ public class PaymentController {
     private final PayosService payosService;
     private final TopupOrderRepository topupOrderRepository;
     private final UserRepository userRepository;
+    private final InventoryService inventoryService;
     
     @Value("${app.frontend.url:https://football-frontend-9asm.onrender.com}")
     private String frontendUrl;
@@ -35,12 +37,15 @@ public class PaymentController {
             
             int amountVnd = 0;
             int coinsReward = 0;
+            String rewardPackId = null;
+            Integer rewardPackQty = 0;
+
             if (packageId == 1) { amountVnd = 10000; coinsReward = 100000; }
             else if (packageId == 2) { amountVnd = 20000; coinsReward = 220000; }
             else if (packageId == 3) { amountVnd = 50000; coinsReward = 600000; }
-            else if (packageId == 4) { amountVnd = 100000; coinsReward = 1500000; }
-            else if (packageId == 5) { amountVnd = 200000; coinsReward = 3500000; }
-            else if (packageId == 6) { amountVnd = 500000; coinsReward = 10000000; }
+            else if (packageId == 4) { amountVnd = 100000; coinsReward = 1500000; rewardPackId = "premium"; rewardPackQty = 1; }
+            else if (packageId == 5) { amountVnd = 200000; coinsReward = 3500000; rewardPackId = "all_star"; rewardPackQty = 2; }
+            else if (packageId == 6) { amountVnd = 500000; coinsReward = 10000000; rewardPackId = "icon"; rewardPackQty = 1; }
             else { return ResponseEntity.badRequest().body(Map.of("message", "Invalid package")); }
 
             long orderCode = Long.parseLong(String.valueOf(System.currentTimeMillis()).substring(3) + (int)(Math.random() * 99));
@@ -50,6 +55,8 @@ public class PaymentController {
                     .userId(user.getId())
                     .coinsAmount(coinsReward)
                     .priceVnd(amountVnd)
+                    .rewardPackId(rewardPackId)
+                    .rewardPackQuantity(rewardPackQty)
                     .status("PENDING")
                     .createdAt(LocalDateTime.now())
                     .build();
@@ -73,12 +80,10 @@ public class PaymentController {
     public ResponseEntity<?> handlePayOSWebhook(@RequestBody Map<String, Object> body) {
         log.info("Received PayOS Webhook (Defensive Map): {}", body);
         try {
-            // Object bypasses introspection issues with SDK classes
             Object verifiedData = payosService.verifyWebhook(body);
             
             Long orderCode = null;
             try {
-                // Safely extract orderCode via reflection
                 orderCode = (Long) verifiedData.getClass().getMethod("getOrderCode").invoke(verifiedData);
             } catch (Exception e) {
                 log.warn("Reflection extraction failed, trying direct property check");
@@ -100,6 +105,17 @@ public class PaymentController {
                             u.setCoins(u.getCoins() + order.getCoinsAmount());
                             userRepository.save(u);
                             log.info("Successfully added {} coins to user id: {} via verified webhook", order.getCoinsAmount(), u.getId());
+                            
+                            // Add extra rewards (Packs)
+                            if (order.getRewardPackId() != null && order.getRewardPackQuantity() > 0) {
+                                try {
+                                    inventoryService.addPack(u, order.getRewardPackId(), order.getRewardPackQuantity());
+                                    log.info("Successfully added {}x pack '{}' to user id: {}", 
+                                        order.getRewardPackQuantity(), order.getRewardPackId(), u.getId());
+                                } catch (Exception ex) {
+                                    log.error("Failed to add reward pack to user inventory", ex);
+                                }
+                            }
                         });
                     }
                 } else {
@@ -111,7 +127,6 @@ public class PaymentController {
             
         } catch (Exception e) {
             log.error("PayOS Webhook verification or processing failed (registration ping or invalid callback)", e);
-            // Return 200 OK even on failure for Webhook registration phase or test pings
             return ResponseEntity.ok(Map.of("success", false, "message", "Processing failed but ping received"));
         }
     }

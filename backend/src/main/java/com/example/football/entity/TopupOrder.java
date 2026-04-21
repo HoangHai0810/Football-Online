@@ -34,4 +34,10 @@ public class TopupOrder {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    @Column
+    private String rewardPackId;
+
+    @Column
+    private Integer rewardPackQuantity;
 }

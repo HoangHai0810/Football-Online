@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import { Search, Filter, ShoppingCart, X, Coins } from 'lucide-react';
 import PlayerCard from '../components/PlayerCard';
 import api from '../services/api';
@@ -137,7 +138,11 @@ const Market = () => {
 
   return (
     <div className="page">
-      {/* Header */}
+      <Helmet>
+        <title>Transfer Market — FC Challenge</title>
+        <meta name="description" content="Browse the global transfer market to recruit world-class talents, ICON legends, and rising stars for your club. Build your legacy in FC Challenge." />
+      </Helmet>
+      {/* Header index */}
       <div className="page-header">
         <h1 className="page-title">TRANSFER <span>MARKET</span></h1>
         <p className="page-subtitle">Browse and recruit world-class talents for your club.</p>

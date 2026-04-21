@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, X, ShieldCheck, Zap, Loader2 } from 'lucide-react';
+import { CreditCard, X, ShieldCheck, Zap, Loader2, Package } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -9,9 +9,9 @@ const PACKAGES = [
   { id: 1, vnd: 10000, coins: 100000, isBest: false, bonus: 0 },
   { id: 2, vnd: 20000, coins: 220000, isBest: false, bonus: 10 },
   { id: 3, vnd: 50000, coins: 600000, isBest: true, bonus: 20 },
-  { id: 4, vnd: 100000, coins: 1500000, isBest: false, bonus: 50 },
-  { id: 5, vnd: 200000, coins: 3500000, isBest: false, bonus: 75 },
-  { id: 6, vnd: 500000, coins: 10000000, isBest: false, bonus: 100 },
+  { id: 4, vnd: 100000, coins: 1500000, isBest: false, bonus: 50, packReward: 'Premium Pack', packQty: 1 },
+  { id: 5, vnd: 200000, coins: 3500000, isBest: false, bonus: 75, packReward: 'All-Star Packs', packQty: 2 },
+  { id: 6, vnd: 500000, coins: 10000000, isBest: false, bonus: 100, packReward: 'ICON Guaranteed', packQty: 1 },
 ];
 
 export default function TopUpModal({ isOpen, onClose }) {
@@ -44,12 +44,12 @@ export default function TopUpModal({ isOpen, onClose }) {
         </button>
         
         <div className="topup-header" style={{ textAlign: 'center' }}>
-          <div className="topup-icon-wrapper" style={{ margin: '0 auto 16px', width: '64px', height: '64px', background: 'var(--gold-subtle)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="topup-icon-wrapper glass animate-glow" style={{ margin: '0 auto 16px', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Zap size={32} style={{ color: 'var(--gold)' }} />
           </div>
           <h2>BANK & STORE</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '20px' }}>
-            Upgrade your squad with premium FC Coins via PayOS Secure Banking
+            Upgrade your squad with premium FC Coins & Player Packs
           </p>
           
           <div className="current-balance" style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(255,255,255,0.03)', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -77,6 +77,20 @@ export default function TopUpModal({ isOpen, onClose }) {
                   <div className="coin-icon-gold">₡</div>
                   <h3>{pkg.coins.toLocaleString()}</h3>
                 </div>
+
+                {pkg.packReward && (
+                  <div className="combo-reward" style={{ marginBottom: '20px', width: '100%' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--gold)', fontWeight: '900', letterSpacing: '1px', marginBottom: '6px', textAlign: 'center' }}>
+                      + COMBO REWARD
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(240,195,45,0.08)', borderRadius: '12px', border: '1px solid rgba(240,195,45,0.2)' }}>
+                      <Package size={16} style={{ color: 'var(--gold)' }} />
+                      <span style={{ fontSize: '12px', fontWeight: '800', color: '#fff', whiteSpace: 'nowrap' }}>
+                         {pkg.packQty}x {pkg.packReward}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 
                 <button 
                   className="btn btn-gold buy-btn"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import { Users, Package, ShoppingCart, Trophy, TrendingUp, Star, Zap, Award, Coins, ChevronRight, Play, Clock } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -208,6 +209,10 @@ const Dashboard = () => {
 
   return (
     <div className="page">
+      <Helmet>
+        <title>Dashboard — FC Challenge</title>
+        <meta name="description" content={`Welcome back, Manager ${user?.username || ''}. Track your squad OVR, club balance, and prepare for the next fixture in your FC Challenge career.`} />
+      </Helmet>
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
