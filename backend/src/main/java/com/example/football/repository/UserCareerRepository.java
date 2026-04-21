@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface UserCareerRepository extends JpaRepository<UserCareer, Long> {
-    Optional<UserCareer> findByUser(Users user);
+    Optional<UserCareer> findFirstByUserOrderByIdDesc(Users user);
 }

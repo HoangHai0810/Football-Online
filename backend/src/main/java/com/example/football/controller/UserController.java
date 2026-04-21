@@ -92,7 +92,7 @@ public class UserController {
                     List<PlayerCard> cards = playerCardRepository.findByOwner(user);
                     int teamOvr = 0;
                     
-                    Optional<SquadFormation> squadOpt = squadFormationRepository.findByUser(user);
+                    Optional<SquadFormation> squadOpt = squadFormationRepository.findFirstByUserOrderByIdDesc(user);
                     if (squadOpt.isPresent()) {
                         SquadFormation squad = squadOpt.get();
                         if (squad.getLineupJson() != null && !squad.getLineupJson().isBlank()) {

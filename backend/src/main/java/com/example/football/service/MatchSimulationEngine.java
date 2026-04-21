@@ -147,7 +147,7 @@ public class MatchSimulationEngine {
 
     private int calculateUserSquadOvr(Users user) {
         // Must calculate from active squad. Fallback is removed to enforce 11-player rule.
-        Optional<SquadFormation> squadOpt = squadFormationRepository.findByUser(user);
+        Optional<SquadFormation> squadOpt = squadFormationRepository.findFirstByUserOrderByIdDesc(user);
         if (squadOpt.isPresent() && squadOpt.get().getLineupJson() != null && !squadOpt.get().getLineupJson().isBlank()) {
             try {
                 Map<String, Long> lineup = objectMapper.readValue(squadOpt.get().getLineupJson(), new TypeReference<Map<String, Long>>() {});
@@ -214,7 +214,7 @@ public class MatchSimulationEngine {
 
     private void recordUserGoal(MatchFixture fixture, Users user) {
         try {
-            Optional<SquadFormation> squadOpt = squadFormationRepository.findByUser(user);
+            Optional<SquadFormation> squadOpt = squadFormationRepository.findFirstByUserOrderByIdDesc(user);
             if (squadOpt.isPresent()) {
                 Map<String, Long> lineup = objectMapper.readValue(squadOpt.get().getLineupJson(), new TypeReference<Map<String, Long>>() {});
                 // Bias towards forwards/mids for goals

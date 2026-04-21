@@ -186,11 +186,9 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedMissions() {
         List<Mission> missions = new ArrayList<>();
-        
-        // 1. Daily Login (1 mission)
+
         missions.add(Mission.builder().description("Daily Login Bonus").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(5000L).build());
         
-        // 2. Open Pack Missions (25 levels)
         for (int i = 1; i <= 25; i++) {
             int target = i;
             long coins = 3000L + (i * 2000L);
@@ -207,7 +205,6 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
         }
 
-        // 3. Win Match Missions (25 levels)
         for (int i = 1; i <= 25; i++) {
             int target = i;
             long coins = 5000L + (i * 3000L);
@@ -241,7 +238,6 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
         }
 
-        // 5. Collect Player Missions (25 levels)
         for (int i = 1; i <= 25; i++) {
             int target = i * 2;
             long coins = 2000L + (i * 1000L);

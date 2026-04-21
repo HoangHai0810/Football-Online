@@ -31,12 +31,12 @@ public class CareerService {
     public UserCareer getCareerByUserId(Long userId) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        return userCareerRepository.findByUser(user)
+        return userCareerRepository.findFirstByUserOrderByIdDesc(user)
                 .orElseGet(() -> {
-                    return userCareerRepository.findByUser(user)
+                    return userCareerRepository.findFirstByUserOrderByIdDesc(user)
                             .orElseGet(() -> {
                                 seasonGeneratorService.createNewSeason(user);
-                                return userCareerRepository.findByUser(user).orElseThrow();
+                                return userCareerRepository.findFirstByUserOrderByIdDesc(user).orElseThrow();
                             });
                 });
     }

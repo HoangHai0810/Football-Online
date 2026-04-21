@@ -67,7 +67,7 @@ public class AiController {
         context.put("allPlayerCards", cardList);
 
         // 3. Current Squad / Lineup
-        Optional<SquadFormation> squadOpt = squadRepo.findByUser(user);
+        Optional<SquadFormation> squadOpt = squadRepo.findFirstByUserOrderByIdDesc(user);
         if (squadOpt.isPresent()) {
             SquadFormation squad = squadOpt.get();
             context.put("currentFormation", squad.getFormation());

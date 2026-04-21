@@ -22,7 +22,7 @@ public class SquadController {
     public ResponseEntity<SquadResponse> getLineup() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepo.findByUsername(username)
-                .flatMap(user -> squadRepo.findByUser(user))
+                .flatMap(user -> squadRepo.findFirstByUserOrderByIdDesc(user))
                 .map(squad -> ResponseEntity.ok(new SquadResponse(squad.getLineupJson(), squad.getFormation())))
                 .orElse(ResponseEntity.ok(new SquadResponse("{}", "4-3-3")));
     }
@@ -31,7 +31,7 @@ public class SquadController {
     public ResponseEntity<Void> saveLineup(@RequestBody LineupRequest request) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         userRepo.findByUsername(username).ifPresent(user -> {
-            SquadFormation squad = squadRepo.findByUser(user)
+            SquadFormation squad = squadRepo.findFirstByUserOrderByIdDesc(user)
                     .orElse(SquadFormation.builder().user(user).build());
             squad.setLineupJson(request.getLineupJson());
             if (request.getFormation() != null) {

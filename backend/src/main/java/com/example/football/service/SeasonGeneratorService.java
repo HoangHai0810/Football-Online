@@ -22,7 +22,7 @@ public class SeasonGeneratorService {
 
     @Transactional
     public void createNewSeason(Users user) {
-        UserCareer career = userCareerRepository.findByUser(user)
+        UserCareer career = userCareerRepository.findFirstByUserOrderByIdDesc(user)
                 .orElseGet(() -> userCareerRepository.save(UserCareer.builder().user(user).build()));
         
         int seasonIndex = career.getCurrentSeason();

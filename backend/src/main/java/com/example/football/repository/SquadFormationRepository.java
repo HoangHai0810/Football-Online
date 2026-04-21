@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface SquadFormationRepository extends JpaRepository<SquadFormation, Long> {
-    Optional<SquadFormation> findByUser(Users user);
+    Optional<SquadFormation> findFirstByUserOrderByIdDesc(Users user);
 }

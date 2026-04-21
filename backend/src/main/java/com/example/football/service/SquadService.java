@@ -126,7 +126,7 @@ public class SquadService {
         System.out.println("Squad Optimization (Global) completed in " + duration + "ms.");
 
         // Save result
-        SquadFormation squad = squadRepository.findByUser(user)
+        SquadFormation squad = squadRepository.findFirstByUserOrderByIdDesc(user)
                 .orElse(SquadFormation.builder().user(user).build());
         
         try {
