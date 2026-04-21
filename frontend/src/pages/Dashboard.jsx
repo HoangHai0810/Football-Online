@@ -141,6 +141,18 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment_success') === 'true') {
+      toast.success("Payment successful! Your coins will be added shortly.", { icon: '💎', duration: 5000 });
+      // Remove params to avoid re-toasting
+      window.history.replaceState({}, document.title, "/dashboard");
+      // Fetch data to see updated coins
+      setTimeout(fetchData, 1000); 
+    } else if (params.get('payment_cancel') === 'true') {
+      toast.error("Payment was cancelled or failed.");
+      window.history.replaceState({}, document.title, "/dashboard");
+    }
+    
     fetchData();
   }, [isAuthenticated, user]);
 

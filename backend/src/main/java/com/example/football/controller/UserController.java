@@ -84,6 +84,22 @@ public class UserController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/topup")
+    public ResponseEntity<?> topupCoins(@RequestParam long amount) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (amount <= 0 || amount > 100_000_000L) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid amount"));
+        }
+        return userRepository.findByUsername(username).map(user -> {
+            user.setCoins(user.getCoins() + amount);
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of(
+                "message", "Successfully topped up!",
+                "newBalance", user.getCoins()
+            ));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/stats")
     public ResponseEntity<UserStatsDTO> getStats() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();

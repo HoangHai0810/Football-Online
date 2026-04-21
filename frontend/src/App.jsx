@@ -15,6 +15,8 @@ import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import AiAssistant from './components/AiAssistant';
+import TopUpModal from './components/TopUpModal';
+import { Plus } from 'lucide-react';
 import './styles/globals.css';
 
 const COINS_KEY = 'fc_coins';
@@ -32,6 +34,7 @@ const NavLink = ({ to, label }) => {
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showTopUp, setShowTopUp] = useState(false);
   const location = useLocation();
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
@@ -72,9 +75,14 @@ const Navbar = () => {
         <div className="navbar-right">
           {isAuthenticated ? (
             <>
-              <div className="coins-badge">
+              <div 
+                className="coins-badge" 
+                onClick={() => setShowTopUp(true)}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
                 <span className="coin-icon">₡</span>
                 <span className="coins-value">{coins.toLocaleString()}</span>
+                <Plus size={14} color="#00ff00" style={{ marginLeft: 2 }} />
               </div>
               <button onClick={logout} className="btn btn-glass btn-sm navbar-logout">LOGOUT</button>
             </>
@@ -92,6 +100,8 @@ const Navbar = () => {
           </button>
         </div>
       </nav>
+
+      <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} />
 
       {mobileOpen && <div className="mobile-overlay" onClick={() => setMobileOpen(false)} />}
       <div className={`mobile-drawer ${mobileOpen ? 'open' : ''}`}>

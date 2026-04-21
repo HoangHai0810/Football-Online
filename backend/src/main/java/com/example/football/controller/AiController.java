@@ -41,7 +41,6 @@ public class AiController {
 
         Map<String, Object> context = new HashMap<>();
 
-        // 1. User and Career
         UserCareer career = careerService.getCareerByUserId(userId);
         context.put("user", Map.of(
                 "username", username,
@@ -51,7 +50,6 @@ public class AiController {
                 "season", career.getCurrentSeason()
         ));
 
-        // 2. Full Player Collection (with effective OVR)
         List<PlayerCard> cards = playerCardService.getCardsByUserId(userId);
         List<Map<String, Object>> cardList = cards.stream().map(c -> {
             Map<String, Object> m = new HashMap<>();
@@ -66,7 +64,6 @@ public class AiController {
         }).collect(Collectors.toList());
         context.put("allPlayerCards", cardList);
 
-        // 3. Current Squad / Lineup
         Optional<SquadFormation> squadOpt = squadRepo.findFirstByUserOrderByIdDesc(user);
         if (squadOpt.isPresent()) {
             SquadFormation squad = squadOpt.get();
@@ -82,7 +79,6 @@ public class AiController {
             }
         }
 
-        // 4. Market Suggestions (Affordable players)
         context.put("marketSuggestions", playerTemplateRepository.findAll().stream()
                 .map(t -> {
                     int price = (int) (Math.pow(t.getOvr() - 70, 2) * 50 + 1000);
@@ -104,7 +100,6 @@ public class AiController {
                     );
                 }).collect(Collectors.toList()));
 
-        // 5. Tournaments (Existing logic)
         List<Tournament> tournaments = careerService.getTournamentsByUserId(userId);
         context.put("tournaments", tournaments.stream().map(t -> {
             List<TournamentStanding> standings = careerService.getStandings(t.getId());
@@ -112,7 +107,7 @@ public class AiController {
                     "name", t.getName(),
                     "type", t.getType(),
                     "standings", standings.stream()
-                            .filter(s -> s.isUserTeam() || standings.indexOf(s) < 3) // Top 3 + user
+                            .filter(s -> s.isUserTeam() || standings.indexOf(s) < 3)
                             .map(s -> Map.of(
                                     "team", s.isUserTeam() ? username : (s.getAiClub() != null ? s.getAiClub().getName() : "Unknown"),
                                     "rank", standings.indexOf(s) + 1,
@@ -122,7 +117,6 @@ public class AiController {
             );
         }).collect(Collectors.toList()));
 
-        // 4. Missions
         List<UserMission> missions = missionService.getActiveMissionsForUser(username);
         context.put("missions", missions.stream()
                 .filter(m -> !m.isCompleted())

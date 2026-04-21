@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/cards/**").permitAll()
                 .requestMatchers("/api/players/**").permitAll()
                 .requestMatchers("/api/career/**").permitAll()
+                .requestMatchers("/api/payments/payos/webhook").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )

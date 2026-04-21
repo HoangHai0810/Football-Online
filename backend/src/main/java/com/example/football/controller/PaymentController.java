@@ -1,0 +1,125 @@
+package com.example.football.controller;
+
+import com.example.football.entity.TopupOrder;
+import com.example.football.entity.Users;
+import com.example.football.repository.TopupOrderRepository;
+import com.example.football.repository.UserRepository;
+import com.example.football.service.PayosService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+import vn.payos.type.Webhook;
+import vn.payos.type.WebhookData;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+@Slf4j
+@RestController
+@RequestMapping("/api/payments/payos")
+@RequiredArgsConstructor
+public class PaymentController {
+
+    private final PayosService payosService;
+    private final TopupOrderRepository topupOrderRepository;
+    private final UserRepository userRepository;
+    
+    // Fallback static URL just in case, but usually we use window location in frontend
+    @Value("${app.frontend.url:https://football-frontend-9asm.onrender.com}")
+    private String frontendUrl;
+
+    @PostMapping("/create")
+    public ResponseEntity<?> createPaymentLink(@RequestParam long packageId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username).map(user -> {
+            
+            // Map packages to actual VND values
+            int amountVnd = 0;
+            int coinsReward = 0;
+            if (packageId == 1) { amountVnd = 10000; coinsReward = 100000; }
+            else if (packageId == 2) { amountVnd = 20000; coinsReward = 220000; }
+            else if (packageId == 3) { amountVnd = 50000; coinsReward = 600000; }
+            else if (packageId == 4) { amountVnd = 100000; coinsReward = 1500000; }
+            else if (packageId == 5) { amountVnd = 200000; coinsReward = 3500000; }
+            else if (packageId == 6) { amountVnd = 500000; coinsReward = 10000000; }
+            else { return ResponseEntity.badRequest().body(Map.of("message", "Invalid package")); }
+
+            // Generate unique order code for PayOS (max 53 bit integer) -> safe to use currentTimeMillis combined with a random fast digit
+            long orderCode = Long.parseLong(String.valueOf(System.currentTimeMillis()).substring(3) + (int)(Math.random() * 99));
+
+            TopupOrder order = TopupOrder.builder()
+                    .orderCode(orderCode)
+                    .userId(user.getId())
+                    .coinsAmount(coinsReward)
+                    .priceVnd(amountVnd)
+                    .status("PENDING")
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            topupOrderRepository.save(order);
+
+            String description = "NAP " + username;
+            if (description.length() > 25) {
+                description = description.substring(0, 25);
+            }
+
+            String returnUrl = frontendUrl + "/dashboard?payment_success=true";
+            String cancelUrl = frontendUrl + "/dashboard?payment_cancel=true";
+
+            String checkoutUrl = payosService.createPaymentLink(orderCode, amountVnd, description, cancelUrl, returnUrl);
+            return ResponseEntity.ok(Map.of("checkoutUrl", checkoutUrl, "orderCode", orderCode));
+            
+        }).orElse(ResponseEntity.status(401).build());
+    }
+
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+    @PostMapping("/webhook")
+    public ResponseEntity<?> handlePayOSWebhook(@RequestBody Map<String, Object> body) {
+        log.info("Received PayOS Webhook: {}", body);
+        try {
+            // Convert Map back to JSON string for verification
+            String jsonBody = objectMapper.writeValueAsString(body);
+            
+            // Verify webhook signature
+            vn.payos.type.WebhookData verifiedData = payosService.verifyWebhook(jsonBody);
+            
+            // If verifyWebhook doesn't throw, signature is valid
+            Long orderCode = verifiedData.getOrderCode();
+            
+            // PayOS also sends 'code' in the data. "00" is success.
+            // Check success from verifiedData or from body
+            // verifiedData usually contains the actual transaction data
+            
+            Optional<TopupOrder> orderOpt = topupOrderRepository.findByOrderCode(orderCode);
+            if (orderOpt.isPresent()) {
+                TopupOrder order = orderOpt.get();
+                if ("PENDING".equals(order.getStatus())) {
+                    order.setStatus("SUCCESS");
+                    topupOrderRepository.save(order);
+                    
+                    // Add coins
+                    userRepository.findById(order.getUserId()).ifPresent(u -> {
+                        u.setCoins(u.getCoins() + order.getCoinsAmount());
+                        userRepository.save(u);
+                        log.info("Successfully added {} coins to user id: {} via verified webhook", order.getCoinsAmount(), u.getId());
+                    });
+                }
+            } else {
+                log.warn("TopupOrder not found for verified orderCode: {}", orderCode);
+            }
+            
+            return ResponseEntity.ok(Map.of("success", true));
+            
+        } catch (Exception e) {
+            log.error("PayOS Webhook verification or processing failed", e);
+            // Return 200 even if failed to stop PayOS retrying if it's a structural error, 
+            // but usually return 400 if it's a signature mismatch.
+            return ResponseEntity.status(400).body(Map.of("success", false));
+        }
+    }
+}
