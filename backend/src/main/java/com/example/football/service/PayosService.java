@@ -4,9 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.payos.PayOS;
-import vn.payos.model.*;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
+import vn.payos.model.v2.paymentRequests.ItemData;
+import vn.payos.model.v2.webhooks.Webhook;
+import vn.payos.model.v2.webhooks.WebhookData;
 
 import java.util.Collections;
 import java.util.List;
@@ -49,11 +51,11 @@ public class PayosService {
         }
     }
 
-    public Object verifyWebhook(Object webhook) {
+    public WebhookData verifyWebhook(Webhook webhook) {
         try {
             return payOS.webhooks().verify(webhook);
         } catch (Exception e) {
-            log.error("PayOS Webhook Verification Failed (v2.0.1 - Defensive): ", e);
+            log.error("PayOS Webhook Verification Failed (v2.0.1): ", e);
             throw new RuntimeException("Invalid webhook signature");
         }
     }
