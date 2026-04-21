@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CreditCard, X, ShieldCheck, Zap, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import api from '../utils/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import '../styles/globals.css';
 
