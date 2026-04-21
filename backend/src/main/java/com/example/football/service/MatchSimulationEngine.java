@@ -186,22 +186,41 @@ public class MatchSimulationEngine {
         boolean isUser = isHome ? fixture.isHomeIsUser() : fixture.isAwayIsUser();
         Users user = isHome ? fixture.getHomeUser() : fixture.getAwayUser();
         
+        // Maps to track total goals/assists per entity (User cardId or AI name)
         java.util.Map<String, Integer> aiGoalMap = new java.util.HashMap<>();
+        java.util.Map<String, Integer> aiAssistMap = new java.util.HashMap<>();
         java.util.Map<Long, Integer> userGoalMap = new java.util.HashMap<>();
+        java.util.Map<Long, Integer> userAssistMap = new java.util.HashMap<>();
 
         for (int i = 0; i < count; i++) {
             if (isUser && user != null) {
-                Long cardId = pickRandomUserScorer(user);
-                if (cardId != null) userGoalMap.put(cardId, userGoalMap.getOrDefault(cardId, 0) + 1);
+                Long scorerId = pickWeightedUserPlayer(user, true, null);
+                if (scorerId != null) {
+                    userGoalMap.put(scorerId, userGoalMap.getOrDefault(scorerId, 0) + 1);
+                    // 80% chance of assist from someone else
+                    if (random.nextDouble() < 0.8) {
+                        Long assisterId = pickWeightedUserPlayer(user, false, scorerId);
+                        if (assisterId != null) {
+                            userAssistMap.put(assisterId, userAssistMap.getOrDefault(assisterId, 0) + 1);
+                        }
+                    }
+                }
             } else {
-                String aiName = pickRandomAiScorer(fixture, isHome);
-                aiGoalMap.put(aiName, aiGoalMap.getOrDefault(aiName, 0) + 1);
+                String aiScorer = pickWeightedAiPlayer(fixture, isHome, true, null);
+                aiGoalMap.put(aiScorer, aiGoalMap.getOrDefault(aiScorer, 0) + 1);
+                // 80% chance of assist
+                if (random.nextDouble() < 0.8) {
+                    String aiAssister = pickWeightedAiPlayer(fixture, isHome, false, aiScorer);
+                    aiAssistMap.put(aiAssister, aiAssistMap.getOrDefault(aiAssister, 0) + 1);
+                }
             }
         }
 
-        for (Map.Entry<Long, Integer> entry : userGoalMap.entrySet()) {
-            Long cardId = entry.getKey();
-            Integer goalsScored = entry.getValue();
+        // Persist User Stats
+        java.util.Set<Long> involvedUserCards = new java.util.HashSet<>(userGoalMap.keySet());
+        involvedUserCards.addAll(userAssistMap.keySet());
+        
+        for (Long cardId : involvedUserCards) {
             PlayerCard card = playerCardRepository.findById(cardId).orElse(null);
             if (card != null) {
                 com.example.football.entity.TournamentPlayerStat stat = playerStatRepository.findFirstByTournamentAndPlayerCardIdOrderByIdDesc(fixture.getTournament(), card.getId())
@@ -209,48 +228,144 @@ public class MatchSimulationEngine {
                         .tournament(fixture.getTournament())
                         .playerCardId(card.getId())
                         .playerName(card.getTemplate().getName())
-                        .clubName(user.getClubName())
+                        .clubName(user != null ? user.getClubName() : "Unknown")
                         .build());
-                stat.setGoals(stat.getGoals() + goalsScored);
+                stat.setGoals(stat.getGoals() + userGoalMap.getOrDefault(cardId, 0));
+                stat.setAssists(stat.getAssists() + userAssistMap.getOrDefault(cardId, 0));
                 playerStatRepository.save(stat);
             }
         }
 
-        for (Map.Entry<String, Integer> entry : aiGoalMap.entrySet()) {
-            String name = entry.getKey();
-            Integer goalsScored = entry.getValue();
+        // Persist AI Stats
+        java.util.Set<String> involvedAiNames = new java.util.HashSet<>(aiGoalMap.keySet());
+        involvedAiNames.addAll(aiAssistMap.keySet());
+        
+        for (String name : involvedAiNames) {
             com.example.football.entity.TournamentPlayerStat stat = playerStatRepository.findFirstByTournamentAndPlayerNameAndClubNameOrderByIdDesc(fixture.getTournament(), name, clubName)
                 .orElse(com.example.football.entity.TournamentPlayerStat.builder()
                     .tournament(fixture.getTournament())
                     .playerName(name)
                     .clubName(clubName)
                     .build());
-            stat.setGoals(stat.getGoals() + goalsScored);
+            stat.setGoals(stat.getGoals() + aiGoalMap.getOrDefault(name, 0));
+            stat.setAssists(stat.getAssists() + aiAssistMap.getOrDefault(name, 0));
             playerStatRepository.save(stat);
         }
     }
 
-    private Long pickRandomUserScorer(Users user) {
+    private Long pickWeightedUserPlayer(Users user, boolean isGoal, Long excludeId) {
         try {
             Optional<SquadFormation> squadOpt = squadFormationRepository.findFirstByUserOrderByIdDesc(user);
             if (squadOpt.isPresent()) {
                 Map<String, Long> lineup = objectMapper.readValue(squadOpt.get().getLineupJson(), new TypeReference<Map<String, Long>>() {});
-                List<Long> possibleIds = List.copyOf(lineup.values());
-                if (!possibleIds.isEmpty()) {
-                    return possibleIds.get(random.nextInt(possibleIds.size()));
+                String formation = squadOpt.get().getFormation() != null ? squadOpt.get().getFormation() : "4-3-3";
+                String[] slotPositions = getPositionsForFormation(formation);
+
+                double totalWeight = 0;
+                java.util.Map<Long, Double> candidates = new java.util.HashMap<>();
+
+                for (Map.Entry<String, Long> entry : lineup.entrySet()) {
+                    int slotIdx = Integer.parseInt(entry.getKey());
+                    Long cardId = entry.getValue();
+                    if (slotIdx >= 0 && slotIdx < 11 && (excludeId == null || !cardId.equals(excludeId))) {
+                        String pos = slotPositions[slotIdx];
+                        double weight = isGoal ? getScoringWeight(pos) : getAssistWeight(pos);
+                        candidates.put(cardId, weight);
+                        totalWeight += weight;
+                    }
+                }
+
+                if (totalWeight <= 0) return null;
+
+                double r = random.nextDouble() * totalWeight;
+                double cumulative = 0;
+                for (Map.Entry<Long, Double> candidate : candidates.entrySet()) {
+                    cumulative += candidate.getValue();
+                    if (r <= cumulative) return candidate.getKey();
                 }
             }
         } catch (Exception e) {}
         return null;
     }
 
-    private String pickRandomAiScorer(MatchFixture fixture, boolean isHome) {
-        String[] stars = {"Striker", "Winger", "Midfielder"}; 
+    private String pickWeightedAiPlayer(MatchFixture fixture, boolean isHome, boolean isGoal, String excludeName) {
         AiClub club = isHome ? fixture.getHomeAiClub() : fixture.getAwayAiClub();
-        if (club != null && club.getStarPlayers() != null && !club.getStarPlayers().isBlank()) {
-            stars = club.getStarPlayers().split(",\\s*");
+        String clubSuffix = club != null ? " (" + club.getName() + ")" : "";
+        
+        // Define default roles with weights
+        java.util.Map<String, Double> roles = new java.util.HashMap<>();
+        if (isGoal) {
+            roles.put("Striker", 10.0);
+            roles.put("Winger", 4.0);
+            roles.put("Midfielder", 1.5);
+            roles.put("Defender", 0.1);
+        } else {
+            roles.put("Midfielder", 10.0);
+            roles.put("Winger", 7.0);
+            roles.put("Striker", 2.0);
+            roles.put("Defender", 1.0);
         }
-        return stars[random.nextInt(stars.length)];
+
+        if (club != null && club.getStarPlayers() != null && !club.getStarPlayers().isBlank()) {
+            String[] stars = club.getStarPlayers().split(",\\s*");
+            // If stars are available, we give them high weights
+            double totalWeight = 0;
+            java.util.Map<String, Double> candidates = new java.util.HashMap<>();
+            for (String s : stars) {
+                if (excludeName == null || !s.equals(excludeName)) {
+                    double w = isGoal ? 5.0 : 3.0; // Fixed high weight for "Star" names
+                    candidates.put(s, w);
+                    totalWeight += w;
+                }
+            }
+            if (totalWeight > 0) {
+                double r = random.nextDouble() * totalWeight;
+                double cumulative = 0;
+                for (Map.Entry<String, Double> cand : candidates.entrySet()) {
+                    cumulative += cand.getValue();
+                    if (r <= cumulative) return cand.getKey();
+                }
+            }
+        }
+        
+        // Fallback to position-based generic names if no stars or if we want variety
+        List<String> roleKeys = new java.util.ArrayList<>(roles.keySet());
+        roleKeys.remove(excludeName != null && excludeName.contains(" ") ? excludeName.split(" ")[0] : excludeName);
+        
+        double totalWeight = 0;
+        for (String role : roleKeys) totalWeight += roles.get(role);
+        
+        double r = random.nextDouble() * totalWeight;
+        double cumulative = 0;
+        for (String role : roleKeys) {
+            cumulative += roles.get(role);
+            if (r <= cumulative) return role + clubSuffix;
+        }
+        
+        return "Unknown Player" + clubSuffix;
+    }
+
+    private double getScoringWeight(String pos) {
+        return switch (pos) {
+            case "ST", "CF" -> 10.0;
+            case "LW", "RW", "CAM" -> 4.0;
+            case "LM", "RM", "CM" -> 1.5;
+            case "LB", "RB", "CB", "LWB", "RWB", "CDM" -> 0.2;
+            case "GK" -> 0.01;
+            default -> 1.0;
+        };
+    }
+
+    private double getAssistWeight(String pos) {
+        return switch (pos) {
+            case "CAM", "CM" -> 10.0;
+            case "LW", "RW", "LM", "RM" -> 8.0;
+            case "ST", "CF" -> 3.0;
+            case "LB", "RB", "LWB", "RWB", "CDM" -> 1.5;
+            case "CB" -> 0.5;
+            case "GK" -> 0.05;
+            default -> 1.0;
+        };
     }
 
     private String[] getPositionsForFormation(String formation) {

@@ -9,6 +9,7 @@ import TournamentLeaders from '../components/TournamentLeaders';
 import MatchSimulationModal from '../components/MatchSimulationModal';
 import InteractiveMatch from '../components/InteractiveMatch';
 import SeasonSummaryModal from '../components/SeasonSummaryModal';
+import TournamentBracket from '../components/TournamentBracket';
 import toast from 'react-hot-toast';
 
 const Tournaments = () => {
@@ -184,41 +185,10 @@ const Tournaments = () => {
                             <Trophy size={20} className="highlight-gold" /> {isKnockoutOnly ? 'Knockout Stages' : 'Tournament Table'}
                         </h2>
                         {isKnockoutOnly ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                {allFixtures.length === 0 && <div className="empty-state">No fixtures generated yet.</div>}
-                                {allFixtures.sort((a,b) => a.matchWeek - b.matchWeek).map(f => {
-                                    const isMyMatch = f.homeIsUser || f.awayIsUser;
-                                    return (
-                                        <div key={f.id} className={`knockout-match-row ${isMyMatch ? 'my-match' : ''}`}>
-                                            <div className="knockout-team home">
-                                                <span className="team-name">{f.homeIsUser ? user.clubName : (f.homeAiClub?.name || 'TBD')}</span>
-                                                <div className="team-badge-circle sm">
-                                                    {f.homeIsUser ? (user.clubName?.charAt(0)) : (f.homeAiClub?.name?.charAt(0))}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="knockout-score">
-                                                {f.played ? (
-                                                    <div className="score-box">
-                                                        <span>{f.homeScore}</span>
-                                                        <span className="divider">-</span>
-                                                        <span>{f.awayScore}</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="vs-badge">VS</div>
-                                                )}
-                                            </div>
-
-                                            <div className="knockout-team away">
-                                                <div className="team-badge-circle sm">
-                                                    {f.awayIsUser ? (user.clubName?.charAt(0)) : (f.awayAiClub?.name?.charAt(0))}
-                                                </div>
-                                                <span className="team-name">{f.awayIsUser ? user.clubName : (f.awayAiClub?.name || 'TBD')}</span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            <TournamentBracket 
+                                fixtures={allFixtures} 
+                                userClubName={user.clubName} 
+                            />
                         ) : (
                             <StandingsTable standings={standings} userTeamName={user.clubName} />
                         )}
