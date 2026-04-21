@@ -4,9 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.payos.PayOS;
+import vn.payos.model.*;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
-import vn.payos.model.v2.paymentRequests.ItemData;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +29,7 @@ public class PayosService {
             ItemData item = ItemData.builder()
                     .name("FC Coins Package")
                     .quantity(1)
-                    .price(amount)
+                    .price((long) amount)
                     .build();
 
             CreatePaymentLinkRequest request = CreatePaymentLinkRequest.builder()
@@ -44,7 +44,7 @@ public class PayosService {
             CreatePaymentLinkResponse response = payOS.paymentRequests().create(request);
             return response.getCheckoutUrl();
         } catch (Exception e) {
-            log.error("Failed to create PayOS link (v2): ", e);
+            log.error("Failed to create PayOS link (v2.0.1): ", e);
             throw new RuntimeException("Failed to initiate payment: " + e.getMessage());
         }
     }
@@ -53,7 +53,7 @@ public class PayosService {
         try {
             return payOS.webhooks().verify(webhook);
         } catch (Exception e) {
-            log.error("PayOS Webhook Verification Failed (v2): ", e);
+            log.error("PayOS Webhook Verification Failed (v2.0.1 - Defensive): ", e);
             throw new RuntimeException("Invalid webhook signature");
         }
     }

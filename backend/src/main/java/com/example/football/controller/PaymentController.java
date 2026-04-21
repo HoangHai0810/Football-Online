@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import vn.payos.model.*;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -71,30 +73,41 @@ public class PaymentController {
 
     @PostMapping("/webhook")
     public ResponseEntity<?> handlePayOSWebhook(@RequestBody Object body) {
-        log.info("Received PayOS Webhook: {}", body);
+        log.info("Received PayOS Webhook (Generic): {}", body);
         try {
-            // Using Object to bypass compilation errors from missing SDK packages
+            // Use generic Object to bypass compilation errors from missing SDK packages
             Object verifiedData = payosService.verifyWebhook(body);
             
-            // Access orderCode via reflection to be safe from type resolution issues
-            Long orderCode = (Long) verifiedData.getClass().getMethod("getOrderCode").invoke(verifiedData);
-            
-            Optional<TopupOrder> orderOpt = topupOrderRepository.findByOrderCode(orderCode);
-            if (orderOpt.isPresent()) {
-                TopupOrder order = orderOpt.get();
-                if ("PENDING".equals(order.getStatus())) {
-                    order.setStatus("SUCCESS");
-                    topupOrderRepository.save(order);
-                    
-                    // Add coins
-                    userRepository.findById(order.getUserId()).ifPresent(u -> {
-                        u.setCoins(u.getCoins() + order.getCoinsAmount());
-                        userRepository.save(u);
-                        log.info("Successfully added {} coins to user id: {} via verified webhook", order.getCoinsAmount(), u.getId());
-                    });
+            // Safe reflection to get orderCode from WebhookData
+            Long orderCode = null;
+            try {
+                orderCode = (Long) verifiedData.getClass().getMethod("getOrderCode").invoke(verifiedData);
+            } catch (Exception e) {
+                log.error("Failed to extract orderCode via reflection", e);
+                // Fallback: try to see if it's a Map
+                if (verifiedData instanceof Map) {
+                    orderCode = Long.valueOf(((Map<?, ?>) verifiedData).get("orderCode").toString());
                 }
-            } else {
-                log.warn("TopupOrder not found for verified orderCode: {}", orderCode);
+            }
+            
+            if (orderCode != null) {
+                Optional<TopupOrder> orderOpt = topupOrderRepository.findByOrderCode(orderCode);
+                if (orderOpt.isPresent()) {
+                    TopupOrder order = orderOpt.get();
+                    if ("PENDING".equals(order.getStatus())) {
+                        order.setStatus("SUCCESS");
+                        topupOrderRepository.save(order);
+                        
+                        // Add coins
+                        userRepository.findById(order.getUserId()).ifPresent(u -> {
+                            u.setCoins(u.getCoins() + order.getCoinsAmount());
+                            userRepository.save(u);
+                            log.info("Successfully added {} coins to user id: {} via verified webhook", order.getCoinsAmount(), u.getId());
+                        });
+                    }
+                } else {
+                    log.warn("TopupOrder not found for verified orderCode: {}", orderCode);
+                }
             }
             
             return ResponseEntity.ok(Map.of("success", true));
