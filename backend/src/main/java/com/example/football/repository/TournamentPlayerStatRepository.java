@@ -12,6 +12,6 @@ import java.util.Optional;
 public interface TournamentPlayerStatRepository extends JpaRepository<TournamentPlayerStat, Long> {
     List<TournamentPlayerStat> findByTournamentOrderByGoalsDescAssistsDesc(Tournament tournament);
     List<TournamentPlayerStat> findByTournamentOrderByAssistsDescGoalsDesc(Tournament tournament);
-    Optional<TournamentPlayerStat> findByTournamentAndPlayerNameAndClubName(Tournament tournament, String playerName, String clubName);
-    Optional<TournamentPlayerStat> findByTournamentAndPlayerCardId(Tournament tournament, Long playerCardId);
+    Optional<TournamentPlayerStat> findFirstByTournamentAndPlayerNameAndClubNameOrderByIdDesc(Tournament tournament, String playerName, String clubName);
+    Optional<TournamentPlayerStat> findFirstByTournamentAndPlayerCardIdOrderByIdDesc(Tournament tournament, Long playerCardId);
 }

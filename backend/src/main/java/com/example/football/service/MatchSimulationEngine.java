@@ -201,61 +201,71 @@ public class MatchSimulationEngine {
         boolean isUser = isHome ? fixture.isHomeIsUser() : fixture.isAwayIsUser();
         Users user = isHome ? fixture.getHomeUser() : fixture.getAwayUser();
         
+        java.util.Map<String, Integer> aiGoalMap = new java.util.HashMap<>();
+        java.util.Map<Long, Integer> userGoalMap = new java.util.HashMap<>();
+
         for (int i = 0; i < count; i++) {
             if (isUser && user != null) {
-                // Pick a player from user lineup
-                recordUserGoal(fixture, user);
+                Long cardId = pickRandomUserScorer(user);
+                if (cardId != null) userGoalMap.put(cardId, userGoalMap.getOrDefault(cardId, 0) + 1);
             } else {
-                // Pick an AI star
-                recordAiGoal(fixture, isHome, clubName);
+                String aiName = pickRandomAiScorer(fixture, isHome);
+                aiGoalMap.put(aiName, aiGoalMap.getOrDefault(aiName, 0) + 1);
             }
+        }
+
+        for (Map.Entry<Long, Integer> entry : userGoalMap.entrySet()) {
+            Long cardId = entry.getKey();
+            Integer goalsScored = entry.getValue();
+            PlayerCard card = playerCardRepository.findById(cardId).orElse(null);
+            if (card != null) {
+                com.example.football.entity.TournamentPlayerStat stat = playerStatRepository.findFirstByTournamentAndPlayerCardIdOrderByIdDesc(fixture.getTournament(), card.getId())
+                    .orElse(com.example.football.entity.TournamentPlayerStat.builder()
+                        .tournament(fixture.getTournament())
+                        .playerCardId(card.getId())
+                        .playerName(card.getTemplate().getName())
+                        .clubName(user.getClubName())
+                        .build());
+                stat.setGoals(stat.getGoals() + goalsScored);
+                playerStatRepository.save(stat);
+            }
+        }
+
+        for (Map.Entry<String, Integer> entry : aiGoalMap.entrySet()) {
+            String name = entry.getKey();
+            Integer goalsScored = entry.getValue();
+            com.example.football.entity.TournamentPlayerStat stat = playerStatRepository.findFirstByTournamentAndPlayerNameAndClubNameOrderByIdDesc(fixture.getTournament(), name, clubName)
+                .orElse(com.example.football.entity.TournamentPlayerStat.builder()
+                    .tournament(fixture.getTournament())
+                    .playerName(name)
+                    .clubName(clubName)
+                    .build());
+            stat.setGoals(stat.getGoals() + goalsScored);
+            playerStatRepository.save(stat);
         }
     }
 
-    private void recordUserGoal(MatchFixture fixture, Users user) {
+    private Long pickRandomUserScorer(Users user) {
         try {
             Optional<SquadFormation> squadOpt = squadFormationRepository.findFirstByUserOrderByIdDesc(user);
             if (squadOpt.isPresent()) {
                 Map<String, Long> lineup = objectMapper.readValue(squadOpt.get().getLineupJson(), new TypeReference<Map<String, Long>>() {});
-                // Bias towards forwards/mids for goals
                 List<Long> possibleIds = List.copyOf(lineup.values());
-                if (possibleIds.isEmpty()) return;
-                
-                Long cardId = possibleIds.get(random.nextInt(possibleIds.size())); // Simple random for now
-                PlayerCard card = playerCardRepository.findById(cardId).orElse(null);
-                if (card != null) {
-                    com.example.football.entity.TournamentPlayerStat stat = playerStatRepository.findByTournamentAndPlayerCardId(fixture.getTournament(), card.getId())
-                        .orElse(com.example.football.entity.TournamentPlayerStat.builder()
-                            .tournament(fixture.getTournament())
-                            .playerCardId(card.getId())
-                            .playerName(card.getTemplate().getName())
-                            .clubName(user.getClubName())
-                            .build());
-                    stat.setGoals(stat.getGoals() + 1);
-                    playerStatRepository.save(stat);
+                if (!possibleIds.isEmpty()) {
+                    return possibleIds.get(random.nextInt(possibleIds.size()));
                 }
             }
         } catch (Exception e) {}
+        return null;
     }
 
-    private void recordAiGoal(MatchFixture fixture, boolean isHome, String clubName) {
-        String[] stars = {"Striker", "Winger", "Midfielder"}; // Default fallback
-        
+    private String pickRandomAiScorer(MatchFixture fixture, boolean isHome) {
+        String[] stars = {"Striker", "Winger", "Midfielder"}; 
         AiClub club = isHome ? fixture.getHomeAiClub() : fixture.getAwayAiClub();
         if (club != null && club.getStarPlayers() != null && !club.getStarPlayers().isBlank()) {
             stars = club.getStarPlayers().split(",\\s*");
         }
-        
-        String name = stars[random.nextInt(stars.length)];
-        
-        com.example.football.entity.TournamentPlayerStat stat = playerStatRepository.findByTournamentAndPlayerNameAndClubName(fixture.getTournament(), name, clubName)
-            .orElse(com.example.football.entity.TournamentPlayerStat.builder()
-                .tournament(fixture.getTournament())
-                .playerName(name)
-                .clubName(clubName)
-                .build());
-        stat.setGoals(stat.getGoals() + 1);
-        playerStatRepository.save(stat);
+        return stars[random.nextInt(stars.length)];
     }
 
     private String[] getPositionsForFormation(String formation) {
