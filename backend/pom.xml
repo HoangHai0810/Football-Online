@@ -149,7 +149,7 @@
 
 					<org>hoang-hai-anh</org>
 
-					<project>java-spring-boot</project>
+					<project>football-challenge</project>
 
 					<!-- provide your auth token via SENTRY_AUTH_TOKEN environment variable -->
 					<authToken>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</authToken>
