@@ -70,7 +70,7 @@ public class PlayerCardService {
         userRepository.save(user);
         
         List<PlayerTemplate> templates = fetchFilteredTemplates(minOvr, seasonStr);
-        PlayerCard card = generateRandomCardFromList(user, templates, minLevel, maxLevel);
+        PlayerCard           card      = generateRandomCardFromList(user, templates, minLevel, maxLevel);
         return playerCardRepository.save(card);
     }
 
@@ -106,10 +106,10 @@ public class PlayerCardService {
             templates = playerTemplateRepository.findByOvrGreaterThanEqual(minOvr);
         } else {
             try {
-                Season season = Season.valueOf(seasonStr.toUpperCase());
-                templates = playerTemplateRepository.findByOvrGreaterThanEqualAndSeason(minOvr, season);
+                Season season    = Season.valueOf(seasonStr.toUpperCase());
+                       templates = playerTemplateRepository.findByOvrGreaterThanEqualAndSeason(minOvr, season);
             } catch (IllegalArgumentException e) {
-                // Fallback to manual filter if enum doesn't match exactly, or just empty
+                  // Fallback to manual filter if enum doesn't match exactly, or just empty
                 templates = playerTemplateRepository.findByOvrGreaterThanEqual(minOvr)
                         .stream()
                         .filter(t -> t.getSeason().name().equalsIgnoreCase(seasonStr))
@@ -129,8 +129,8 @@ public class PlayerCardService {
             totalWeight += 1.0 / Math.pow(t.getOvr(), 6);
         }
 
-        double randomValue = random.nextDouble() * totalWeight;
-        double currentWeightSum = 0;
+        double         randomValue      = random.nextDouble() * totalWeight;
+        double         currentWeightSum = 0;
         PlayerTemplate selectedTemplate = templates.get(0);
 
         for (PlayerTemplate t : templates) {
@@ -143,10 +143,10 @@ public class PlayerCardService {
 
         int targetLevel = minLevel;
         if (maxLevel > minLevel) {
-            double r = random.nextDouble();
+            double r      = random.nextDouble();
             double totalW = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
-                totalW += 1.0 / Math.pow(4, i - minLevel); 
+                totalW += 1.0 / Math.pow(4, i - minLevel);
             }
             double threshold = 0;
             for (int i = minLevel; i <= maxLevel; i++) {
@@ -170,8 +170,8 @@ public class PlayerCardService {
         PlayerCard targetCard = playerCardRepository.findById(targetCardId)
                 .orElseThrow(() -> new RuntimeException("Target card not found"));
         
-        int originalLevel = targetCard.getUpgradeLevel();
-        List<PlayerCard> materials = playerCardRepository.findAllById(materialCardIds);
+        int              originalLevel = targetCard.getUpgradeLevel();
+        List<PlayerCard> materials     = playerCardRepository.findAllById(materialCardIds);
         
         if (materials.isEmpty()) {
             throw new RuntimeException("No material cards provided or found");
@@ -180,28 +180,28 @@ public class PlayerCardService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Maximum 5 material cards allowed");
         }
 
-        double totalChance = 0;
-        int targetEffectiveOvr = targetCard.getTemplate().getOvr() + getStatBonus(targetCard.getUpgradeLevel());
+        double totalChance        = 0;
+        int    targetEffectiveOvr = targetCard.getTemplate().getOvr() + getStatBonus(targetCard.getUpgradeLevel());
         
-        // Critical Success (Jump) calculation
+          // Critical Success (Jump) calculation
         double criticalChance = 0;
-        Long templateId = targetCard.getTemplate().getId();
+        Long   templateId     = targetCard.getTemplate().getId();
 
         int safetyLevelFloor = 1;
 
         for (PlayerCard material : materials) {
-            int materialEffectiveOvr = material.getTemplate().getOvr() + getStatBonus(material.getUpgradeLevel());
-            double diffOvr = materialEffectiveOvr - targetEffectiveOvr;
+            int    materialEffectiveOvr = material.getTemplate().getOvr() + getStatBonus(material.getUpgradeLevel());
+            double diffOvr              = materialEffectiveOvr - targetEffectiveOvr;
 
-            double contribution = 0.2 * Math.pow(1.5, diffOvr);
-            totalChance += contribution;
+            double contribution  = 0.2 * Math.pow(1.5, diffOvr);
+                   totalChance  += contribution;
             
-            // Check for same-player fodder for jump chance and safety floor
+              // Check for same-player fodder for jump chance and safety floor
             if (material.getTemplate().getId().equals(templateId)) {
-                int materialLevel = material.getUpgradeLevel();
-                safetyLevelFloor = Math.max(safetyLevelFloor, materialLevel);
+                int materialLevel    = material.getUpgradeLevel();
+                    safetyLevelFloor = Math.max(safetyLevelFloor, materialLevel);
                 
-                double fodderChance = 0.10; // 10% base for same level
+                double fodderChance = 0.10;  // 10% base for same level
                 if (materialLevel < originalLevel) {
                     fodderChance = 0.10 - (double)(originalLevel - materialLevel) * 0.10 / originalLevel;
                 }
@@ -211,27 +211,27 @@ public class PlayerCardService {
 
         totalChance = Math.min(1.0, totalChance);
         
-        double levelMultiplier = BASE_SUCCESS_RATES.getOrDefault(originalLevel, 0.1);
+        double levelMultiplier  = BASE_SUCCESS_RATES.getOrDefault(originalLevel, 0.1);
         double finalSuccessRate = totalChance * levelMultiplier;
 
-        boolean isSuccess = random.nextDouble() <= finalSuccessRate;
+        boolean isSuccess         = random.nextDouble() <= finalSuccessRate;
         boolean isCriticalSuccess = false;
-        int intermediateLevel = originalLevel;
+        int     intermediateLevel = originalLevel;
 
         if (isSuccess) {
             intermediateLevel = originalLevel + 1;
             targetCard.setUpgradeLevel(intermediateLevel);
             
-            // Roll for jump if same-player fodder used
+              // Roll for jump if same-player fodder used
             if (criticalChance > 0 && random.nextDouble() <= criticalChance) {
                 isCriticalSuccess = true;
-                targetCard.setUpgradeLevel(targetCard.getUpgradeLevel() + 1); // Total +2 jump
+                targetCard.setUpgradeLevel(targetCard.getUpgradeLevel() + 1);  // Total +2 jump
             }
         } else {
             if (originalLevel > 1) {
-                int dropAmount = random.nextInt(originalLevel - 1) + 1;
+                int dropAmount   = random.nextInt(originalLevel - 1) + 1;
                 int droppedLevel = Math.max(1, originalLevel - dropAmount);
-                // Apply safety floor: cannot drop below the level of the best same-player fodder used
+                  // Apply safety floor: cannot drop below the level of the best same-player fodder used
                 targetCard.setUpgradeLevel(Math.max(droppedLevel, safetyLevelFloor));
             }
         }
@@ -275,10 +275,10 @@ public class PlayerCardService {
 
     @Transactional
     public PlayerCard openPackById(Users user, String packId) {
-        int minOvr = 0;
+        int    minOvr = 0;
         String season = "";
-        int minLvl = 1;
-        int maxLvl = 1;
+        int    minLvl = 1;
+        int    maxLvl = 1;
 
         switch (packId) {
             case "starter" -> { minOvr = 70; }
@@ -292,7 +292,7 @@ public class PlayerCardService {
         }
 
         List<PlayerTemplate> templates = fetchFilteredTemplates(minOvr, season);
-        PlayerCard card = generateRandomCardFromList(user, templates, minLvl, maxLvl);
+        PlayerCard           card      = generateRandomCardFromList(user, templates, minLvl, maxLvl);
         return playerCardRepository.save(card);
     }
 }

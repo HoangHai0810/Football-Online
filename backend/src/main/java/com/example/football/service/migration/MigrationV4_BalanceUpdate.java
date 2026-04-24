@@ -30,7 +30,6 @@ public class MigrationV4_BalanceUpdate implements DataMigration {
     public void execute() {
         log.info("MigrationV4: Starting database balance update and cleanup...");
 
-        // 1. Cap ICON OVRs at 110
         playerTemplateRepository.findAll().stream()
                 .filter(p -> p.getSeason() == Season.ICON && p.getOvr() > 110)
                 .forEach(p -> {
@@ -40,7 +39,6 @@ public class MigrationV4_BalanceUpdate implements DataMigration {
                     playerTemplateRepository.save(p);
                 });
 
-        // 2. Cap LIVE/TOTY/Other Modern OVRs at 102
         playerTemplateRepository.findAll().stream()
                 .filter(p -> p.getSeason() != Season.ICON && p.getOvr() > 102)
                 .forEach(p -> {

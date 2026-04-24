@@ -36,7 +36,7 @@ public class MissionController {
 
     @PostMapping("/{id}/reroll")
     public ResponseEntity<UserMission> rerollMission(@PathVariable Long id) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        String      username   = SecurityContextHolder.getContext().getAuthentication().getName();
         UserMission newMission = missionService.rerollMission(username, id);
         return ResponseEntity.ok(newMission);
     }

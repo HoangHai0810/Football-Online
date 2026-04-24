@@ -29,7 +29,7 @@ public class Trophy {
     private Integer seasonIndex;
 
     @Column(nullable = false)
-    private String rank; // "WINNER", "RUNNER_UP", "TOP_4"
+    private String rank;  // "WINNER", "RUNNER_UP", "TOP_4"
 
     @Builder.Default
     private LocalDateTime wonAt = LocalDateTime.now();

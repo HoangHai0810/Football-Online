@@ -2,7 +2,6 @@ package com.example.football.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +29,7 @@ public class JwtUtils {
     @PostConstruct
     public void init() {
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        this.key = Keys.hmacShaKeyFor(keyBytes);
+               this.key   = Keys.hmacShaKeyFor(keyBytes);
         log.info("JWT Key initialized with length: {} bits", keyBytes.length * 8);
     }
 

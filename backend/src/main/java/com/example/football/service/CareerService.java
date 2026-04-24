@@ -92,7 +92,7 @@ public class CareerService {
 
     @Transactional
     public Map<String, Object> advanceWeek(Long userId, Integer userHomeScore, Integer userAwayScore, Integer homePen, Integer awayPen, Long targetFixtureId, Boolean isQuickSim) {
-        UserCareer career = getCareerByUserId(userId);
+        UserCareer       career            = getCareerByUserId(userId);
         List<Tournament> activeTournaments = tournamentRepository.findByUserAndSeasonIndex(career.getUser(), career.getCurrentSeason());
 
         MatchFixture targetFixture = null;
@@ -106,7 +106,7 @@ public class CareerService {
                     .orElse(null);
         }
 
-        long matchRewardTotal = 0;
+        long       matchRewardTotal     = 0;
         Map<String, Long> rewardDetails = new java.util.LinkedHashMap<>();
 
         if (targetFixture != null && !targetFixture.isPlayed()) {
@@ -152,7 +152,7 @@ public class CareerService {
                     matchRewardTotal += interactiveBonus;
 
                     int userGoals = targetFixture.isHomeIsUser() ? targetFixture.getHomeScore() : targetFixture.getAwayScore();
-                    int aiGoals = targetFixture.isHomeIsUser() ? targetFixture.getAwayScore() : targetFixture.getHomeScore();
+                    int aiGoals   = targetFixture.isHomeIsUser() ? targetFixture.getAwayScore() : targetFixture.getHomeScore();
 
                     if (userGoals > 0) {
                         long goalsBonus = userGoals * 200L;
@@ -241,7 +241,7 @@ public class CareerService {
         
         for (Tournament t : tournaments) {
             List<TournamentStanding> stds = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(t);
-            int rank = -1;
+            int                      rank = -1;
             for (int i = 0; i < stds.size(); i++) {
                 if (stds.get(i).isUserTeam()) { rank = i + 1; break; }
             }
@@ -261,13 +261,12 @@ public class CareerService {
 
     @Transactional
     public MatchFixture getNextUserFixture(Long userId) {
-        UserCareer career = getCareerByUserId(userId);
+        UserCareer       career            = getCareerByUserId(userId);
         List<Tournament> activeTournaments = tournamentRepository.findByUserAndSeasonIndex(career.getUser(), career.getCurrentSeason());
         if (activeTournaments == null || activeTournaments.isEmpty()) {
             return null;
         }
 
-        // Strategy: First unplayed user fixture in current week or future weeks
         return fixtureRepository.findByTournamentIn(activeTournaments).stream()
                 .filter(f -> (f.isHomeIsUser() || f.isAwayIsUser()) && !f.isPlayed())
                 .sorted((a, b) -> {
@@ -284,21 +283,18 @@ public class CareerService {
     }
 
     private void processKnockoutAdvancement(Tournament tournament, int currentWeek) {
-        // Defined weeks for rounds: 2 (R16), 12 (Quarter), 22 (Semi), 32 (Final)
         int nextWeek;
-        if (currentWeek == 2) nextWeek = 12;
+        if   (currentWeek == 2) nextWeek     = 12;
         else if (currentWeek == 12) nextWeek = 22;
         else if (currentWeek == 22) nextWeek = 32;
-        else return; // Not a knockout advancement week or already Final
+        else return;
 
         List<MatchFixture> currentFixtures = fixtureRepository.findByTournamentAndMatchWeek(tournament, currentWeek);
         if (currentFixtures.isEmpty()) return;
 
-        // Ensure all matches in the current round are played
         boolean allPlayed = currentFixtures.stream().allMatch(MatchFixture::isPlayed);
         if (!allPlayed) return;
 
-        // Collect winners
         List<Object> winners = new ArrayList<>();
         for (MatchFixture f : currentFixtures) {
             if (f.isUserWinner()) {
@@ -309,7 +305,6 @@ public class CareerService {
             }
         }
 
-        // Shuffle and pair for next round
         java.util.Collections.shuffle(winners);
         for (int i = 0; i < winners.size(); i += 2) {
             if (i + 1 < winners.size()) {
@@ -338,16 +333,15 @@ public class CareerService {
             List<TournamentStanding> standings = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(tournament);
             for (int i = 0; i < standings.size(); i++) {
                 if (standings.get(i).isUserTeam()) {
-                    int rank = i + 1;
-                    if (rank == 1) rewardAmount = 500000;
-                    else if (rank == 2) rewardAmount = 200000;
-                    else if (rank <= 4) rewardAmount = 100000;
+                    int  rank                         = i + 1;
+                    if   (rank == 1) rewardAmount     = 500000;
+                    else if (rank == 2) rewardAmount  = 200000;
+                    else if (rank <= 4) rewardAmount  = 100000;
                     else if (rank <= 10) rewardAmount = 50000;
                     break;
                 }
             }
         } else {
-            // Knockout Reward based on furthest round reached
             List<MatchFixture> userFixtures = fixtureRepository.findByTournament(tournament).stream()
                     .filter(f -> f.isHomeIsUser() || f.isAwayIsUser())
                     .sorted((a,b) -> b.getMatchWeek() - a.getMatchWeek())
@@ -355,9 +349,9 @@ public class CareerService {
 
             if (!userFixtures.isEmpty()) {
                 MatchFixture lastMatch = userFixtures.get(0);
-                boolean wonLast = lastMatch.isUserWinner();
+                boolean      wonLast   = lastMatch.isUserWinner();
                 
-                if (lastMatch.getMatchWeek() == 32) { // Final
+                if (lastMatch.getMatchWeek() == 32) {
                     if (wonLast) {
                         rewardAmount = tournament.getType().equals("CONTINENTAL") ? 1000000 : 300000;
                     } else {
@@ -378,7 +372,7 @@ public class CareerService {
 
     private void handleLeaguePromotionAndRelegation(Tournament league, UserCareer career) {
         List<TournamentStanding> standings = standingRepository.findByTournamentOrderByPointsDescGoalsForDesc(league);
-        int userRank = -1;
+        int                      userRank  = -1;
         for (int i = 0; i < standings.size(); i++) {
             if (standings.get(i).isUserTeam()) {
                 userRank = i + 1;
@@ -388,9 +382,9 @@ public class CareerService {
 
         if (userRank != -1) {
             if (userRank <= 3 && career.getCurrentTier() > 1) {
-                career.setCurrentTier(career.getCurrentTier() - 1); // Promote
+                career.setCurrentTier(career.getCurrentTier() - 1); 
             } else if (userRank >= 18 && career.getCurrentTier() < 3) {
-                career.setCurrentTier(career.getCurrentTier() + 1); // Relegate
+                career.setCurrentTier(career.getCurrentTier() + 1);
             }
         }
     }

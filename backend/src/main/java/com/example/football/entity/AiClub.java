@@ -21,11 +21,11 @@ public class AiClub {
 
     @Column(nullable = false)
     @Builder.Default
-    private Integer leagueTier = 1; // 1: Top Division, 2: Second Division
+    private Integer leagueTier = 1;
 
     @Column(nullable = false)
-    private Integer baseOvr; // Used to simulate matches
+    private Integer baseOvr;
 
     @Column(columnDefinition = "TEXT")
-    private String starPlayers; // Comma-separated names
+    private String starPlayers;
 }

@@ -35,11 +35,10 @@ public class Users implements UserDetails {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private String password;
 
-    // OAuth2 fields
     @Builder.Default
     private String provider = "local"; // "local", "google"
 
-    private String providerId; // Google's unique user ID
+    private String providerId;
 
     @Column(nullable = false)
     @Builder.Default

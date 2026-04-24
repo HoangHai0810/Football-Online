@@ -29,7 +29,7 @@ public class MatchFixture {
     }
 
     @Column(nullable = false)
-    private Integer matchWeek; // e.g. 1, 2, 3... 38
+    private Integer matchWeek;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "home_ai_club_id")

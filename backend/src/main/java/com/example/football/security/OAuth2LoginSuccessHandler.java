@@ -36,10 +36,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        // Extract info from Google
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
-        String googleId = oAuth2User.getAttribute("sub"); // Google's unique user ID
+        String email    = oAuth2User.getAttribute("email");
+        String name     = oAuth2User.getAttribute("name");
+        String googleId = oAuth2User.getAttribute("sub");
 
         if (email == null || googleId == null) {
             log.error("OAuth2 login failed: email or googleId is null");
@@ -47,24 +46,20 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             return;
         }
 
-        // Find or create user
         Users user = userRepository.findByProviderIdAndProvider(googleId, "google")
                 .orElseGet(() -> {
-                    // Also check if a local account with same email exists
                     return userRepository.findByEmail(email)
                             .map(existingUser -> {
-                                // Link OAuth to existing account
                                 existingUser.setProvider("google");
                                 existingUser.setProviderId(googleId);
                                 return userRepository.save(existingUser);
                             })
                             .orElseGet(() -> {
-                                // Create a brand new user
                                 String username = generateUniqueUsername(name, email);
-                                Users newUser = Users.builder()
+                                Users  newUser  = Users.builder()
                                         .email(email)
                                         .username(username)
-                                        .password(UUID.randomUUID().toString()) // dummy password, won't be used
+                                        .password(UUID.randomUUID().toString())
                                         .provider("google")
                                         .providerId(googleId)
                                         .coins(30000L)
@@ -73,33 +68,28 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                                         .build();
                                 
                                 Users savedUser = userRepository.save(newUser);
-                                
-                                // INITIALIZE NEW USER (Starters, Formation, Career)
+
                                 startupService.initializeNewUser(savedUser);
                                 
                                 return savedUser;
                             });
                 });
 
-        // Generate JWT
         String token = jwtUtils.generateToken(user);
         log.info("OAuth2 login success for user: {}", user.getUsername());
 
-        // Redirect to frontend with token
         response.sendRedirect(frontendUrl + "/login-success?token=" + token);
     }
 
     private String generateUniqueUsername(String name, String email) {
-        // Start with name (sanitized) or email prefix
         String base = (name != null && !name.isBlank())
                 ? name.toLowerCase().replaceAll("[^a-z0-9]", "")
-                : email.split("@")[0].toLowerCase().replaceAll("[^a-z0-9]", "");
+                :   email.split("@")[0].toLowerCase().replaceAll("[^a-z0-9]", "");
 
         if (base.isBlank()) base = "player";
 
-        // Ensure uniqueness
         String candidate = base;
-        int attempt = 0;
+        int    attempt   = 0;
         while (userRepository.findByUsername(candidate).isPresent()) {
             attempt++;
             candidate = base + attempt;

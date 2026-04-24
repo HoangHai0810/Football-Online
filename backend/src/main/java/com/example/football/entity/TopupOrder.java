@@ -30,7 +30,7 @@ public class TopupOrder {
     private Integer priceVnd;
 
     @Column(nullable = false)
-    private String status; // PENDING, SUCCESS, FAILED
+    private String status;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

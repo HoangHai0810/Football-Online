@@ -56,7 +56,7 @@ public class PlayerCard {
             case 8 -> 15;
             case 9 -> 18;
             case 10 -> 21;
-            default -> 0; // level 1 and above 10 if customized
+            default -> 0;
         };
     }
 }

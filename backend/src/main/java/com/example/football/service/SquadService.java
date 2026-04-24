@@ -76,12 +76,12 @@ public class SquadService {
     }
 
     private int calculateEffectiveOvr(PlayerCard card, Position slotPos) {
-        int baseOvr = card.getEffectiveOvr();
-        Position natPos = card.getTemplate().getPosition();
+        int      baseOvr = card.getEffectiveOvr();
+        Position natPos  = card.getTemplate().getPosition();
 
         if (natPos == slotPos) return baseOvr;
         
-        String natGroup = getPosGroup(natPos);
+        String natGroup  = getPosGroup(natPos);
         String slotGroup = getPosGroup(slotPos);
 
         if (natGroup.equals(slotGroup)) return Math.max(1, baseOvr - 3);
@@ -91,8 +91,8 @@ public class SquadService {
 
     @Transactional
     public Map<String, Object> optimizeSquad(Users user) {
-        long globalStartTime = System.currentTimeMillis();
-        List<PlayerCard> allCards = playerCardRepository.findByOwnerId(user.getId());
+        long             globalStartTime = System.currentTimeMillis();
+        List<PlayerCard> allCards        = playerCardRepository.findByOwnerId(user.getId());
         if (allCards.size() < 11) {
             throw new RuntimeException("Not enough players to optimize (need at least 11)");
         }
@@ -102,13 +102,13 @@ public class SquadService {
                 .limit(18)
                 .collect(Collectors.toList());
 
-        String bestFormationName = "4-3-3";
-        int bestGlobalTotalOvr = -1;
+        String      bestFormationName       = "4-3-3";
+        int         bestGlobalTotalOvr      = -1;
         Map<Integer, Long> bestGlobalLineup = new HashMap<>();
 
         for (Map.Entry<String, List<SlotInfo>> entry : FORMATIONS.entrySet()) {
-            String formationName = entry.getKey();
-            List<SlotInfo> slots = entry.getValue();
+            String         formationName = entry.getKey();
+            List<SlotInfo> slots         = entry.getValue();
 
             List<SlotInfo> sortedSlots = new ArrayList<>(slots);
             sortedSlots.sort((a, b) -> a.getPos() == Position.GK ? -1 : (b.getPos() == Position.GK ? 1 : 0));
@@ -117,15 +117,14 @@ public class SquadService {
 
             if (result.totalOvr > bestGlobalTotalOvr) {
                 bestGlobalTotalOvr = result.totalOvr;
-                bestFormationName = formationName;
-                bestGlobalLineup = result.lineup;
+                bestFormationName  = formationName;
+                bestGlobalLineup   = result.lineup;
             }
         }
 
         long duration = System.currentTimeMillis() - globalStartTime;
         System.out.println("Squad Optimization (Global) completed in " + duration + "ms.");
 
-        // Save result
         SquadFormation squad = squadRepository.findFirstByUserOrderByIdDesc(user)
                 .orElse(SquadFormation.builder().user(user).build());
         
@@ -144,15 +143,14 @@ public class SquadService {
     }
 
     private static class OptimalResult {
-        int totalOvr = -1;
+        int         totalOvr      = -1;
         Map<Integer, Long> lineup = new HashMap<>();
     }
 
     private OptimalResult findOptimalforFormation(List<SlotInfo> slots, List<PlayerCard> pool) {
-        int numSlots = slots.size();
+        int numSlots   = slots.size();
         int numPlayers = pool.size();
         
-        // 1. Pre-calculate Score Matrix
         int[][] scoreMatrix = new int[numPlayers][numSlots];
         for (int pIdx = 0; pIdx < numPlayers; pIdx++) {
             for (int sIdx = 0; sIdx < numSlots; sIdx++) {
@@ -160,7 +158,6 @@ public class SquadService {
             }
         }
 
-        // 2. Pre-calculate max potentials
         int[] maxPotentials = new int[numSlots];
         for (int sIdx = 0; sIdx < numSlots; sIdx++) {
             int max = 0;
@@ -170,30 +167,29 @@ public class SquadService {
             maxPotentials[sIdx] = max;
         }
 
-        // 3. Pre-sort players for each slot
         Integer[][] sortedIdxPerSlot = new Integer[numSlots][numPlayers];
         for (int sIdx = 0; sIdx < numSlots; sIdx++) {
-            for (int pIdx = 0; pIdx < numPlayers; pIdx++) sortedIdxPerSlot[sIdx][pIdx] = pIdx;
-            final int slot = sIdx;
+            for   (int pIdx = 0; pIdx < numPlayers; pIdx++) sortedIdxPerSlot[sIdx][pIdx] = pIdx;
+            final int slot                                                               = sIdx;
             Arrays.sort(sortedIdxPerSlot[sIdx], (a, b) -> Integer.compare(scoreMatrix[b][slot], scoreMatrix[a][slot]));
         }
 
         OptimalResult best = new OptimalResult();
 
-        int greedySum = 0;
+        int     greedySum    = 0;
         boolean[] greedyUsed = new boolean[numPlayers];
         for (int sIdx = 0; sIdx < numSlots; sIdx++) {
             int bestForSlot = -1;
-            int bestScore = -100;
+            int bestScore   = -100;
             for (int pIdx = 0; pIdx < numPlayers; pIdx++) {
                 if (!greedyUsed[pIdx] && scoreMatrix[pIdx][sIdx] > bestScore) {
-                    bestScore = scoreMatrix[pIdx][sIdx];
+                    bestScore   = scoreMatrix[pIdx][sIdx];
                     bestForSlot = pIdx;
                 }
             }
             if (bestForSlot != -1) {
-                greedyUsed[bestForSlot] = true;
-                greedySum += bestScore;
+                greedyUsed[bestForSlot]  = true;
+                greedySum               += bestScore;
                 best.lineup.put(slots.get(sIdx).getSlot(), pool.get(bestForSlot).getId());
             }
         }
@@ -232,7 +228,7 @@ public class SquadService {
         for (int pIdx : sortedIdxPerSlot[slotIdx]) {
             if (used[pIdx]) continue;
 
-            used[pIdx] = true;
+            used[pIdx]                  = true;
             currentAssignments[slotIdx] = pIdx;
             
             backtrackOptimized(slotIdx + 1, currentSum + scoreMatrix[pIdx][slotIdx], 

@@ -29,7 +29,6 @@ public class PlayerSeeder {
     }
 
     private static final List<RealPlayer> ELITE_PLAYERS = Arrays.asList(
-        // Legends
         new RealPlayer("Pelé", "Brazil", "Santos", Position.CF),
         new RealPlayer("Diego Maradona", "Argentina", "Napoli", Position.CAM),
         new RealPlayer("Johan Cruyff", "Netherlands", "FC Barcelona", Position.CF),
@@ -40,7 +39,6 @@ public class PlayerSeeder {
         new RealPlayer("Thierry Henry", "France", "Arsenal", Position.ST),
         new RealPlayer("Ruud Gullit", "Netherlands", "AC Milan", Position.CM),
 
-        // Modern Superstars
         new RealPlayer("Lionel Messi", "Argentina", "Inter Miami", Position.RW),
         new RealPlayer("Cristiano Ronaldo", "Portugal", "Al Nassr", Position.ST),
         new RealPlayer("Kylian Mbappé", "France", "Real Madrid", Position.ST),
@@ -52,7 +50,6 @@ public class PlayerSeeder {
         new RealPlayer("Virgil van Dijk", "Netherlands", "Liverpool", Position.CB),
         new RealPlayer("Harry Kane", "England", "Bayern Munich", Position.ST),
         
-        // Elite Tier 1
         new RealPlayer("Luka Modrić", "Croatia", "Real Madrid", Position.CM),
         new RealPlayer("Robert Lewandowski", "Poland", "FC Barcelona", Position.ST),
         new RealPlayer("Thibaut Courtois", "Belgium", "Real Madrid", Position.GK),
@@ -72,7 +69,6 @@ public class PlayerSeeder {
         new RealPlayer("Pedri", "Spain", "FC Barcelona", Position.CM),
         new RealPlayer("Gavi", "Spain", "FC Barcelona", Position.CM),
 
-        // Elite Tier 2
         new RealPlayer("Frenkie de Jong", "Netherlands", "FC Barcelona", Position.CM),
         new RealPlayer("Marcus Rashford", "England", "Man Utd", Position.LW),
         new RealPlayer("Manuel Neuer", "Germany", "Bayern Munich", Position.GK),
@@ -96,7 +92,6 @@ public class PlayerSeeder {
         new RealPlayer("Marc-André ter Stegen", "Germany", "FC Barcelona", Position.GK),
         new RealPlayer("Ousmane Dembélé", "France", "PSG", Position.RW),
         
-        // Massive Expansion
         new RealPlayer("Gianluigi Donnarumma", "Italy", "PSG", Position.GK),
         new RealPlayer("Alessandro Bastoni", "Italy", "Inter Milan", Position.CB),
         new RealPlayer("Nicolò Barella", "Italy", "Inter Milan", Position.CM),
@@ -213,7 +208,6 @@ public class PlayerSeeder {
         new RealPlayer("Nuno Mendes", "Portugal", "PSG", Position.LB),
         new RealPlayer("Milan Škriniar", "Slovakia", "PSG", Position.CB),
         
-        // Legends Expansion
         new RealPlayer("David Beckham", "England", "Man Utd", Position.RM),
         new RealPlayer("Wayne Rooney", "England", "Man Utd", Position.CF),
         new RealPlayer("Paul Scholes", "England", "Man Utd", Position.CM),
@@ -254,36 +248,35 @@ public class PlayerSeeder {
     );
 
     private static final String[] GENERIC_FIRST = {"James", "Lucas", "Tom", "Oliver", "Noah", "Liam", "Ethan", "Mason", "Jack", "William", "Ben", "Daniel", "Matthew", "John", "Paul"};
-    private static final String[] GENERIC_LAST = {"Adams", "Clark", "Wright", "Mitchell", "Carter", "Phillips", "Campbell", "Parker", "Turner", "Collins", "Edwards", "Stewart", "Morris", "Rogers", "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox", "Howard", "Ward", "Torres", "Peterson", "Gray", "Ramirez"};
-    private static final String[] COUNTRIES = {"Brazil", "France", "England", "Germany", "Spain", "Italy", "Argentina", "Portugal", "Netherlands", "Belgium", "USA", "Japan", "Vietnam"};
-    private static final String[] CLUBS_LIST = {"Real Madrid", "Man City", "Liverpool", "Barcelona", "Bayern Munich", "PSG", "Arsenal", "Inter Milan", "AC Milan", "Man Utd", "Chelsea", "Dortmund", "Ajax"};
+    private static final String[] GENERIC_LAST  = {"Adams", "Clark", "Wright", "Mitchell", "Carter", "Phillips", "Campbell", "Parker", "Turner", "Collins", "Edwards", "Stewart", "Morris", "Rogers", "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox", "Howard", "Ward", "Torres", "Peterson", "Gray", "Ramirez"};
+    private static final String[] COUNTRIES     = {"Brazil", "France", "England", "Germany", "Spain", "Italy", "Argentina", "Portugal", "Netherlands", "Belgium", "USA", "Japan", "Vietnam"};
+    private static final String[] CLUBS_LIST    = {"Real Madrid", "Man City", "Liverpool", "Barcelona", "Bayern Munich", "PSG", "Arsenal", "Inter Milan", "AC Milan", "Man Utd", "Chelsea", "Dortmund", "Ajax"};
 
     public void seedOneThousandPlayers() {
         if (repository.count() > 300) return; 
 
         List<PlayerTemplate> players = new ArrayList<>();
         
-        // 1. Seed Elite/Icon Players first
         for (RealPlayer rp : ELITE_PLAYERS) {
             int ovr = 85 + random.nextInt(10);
             if (rp.name.equals("Pelé") || rp.name.equals("Maradona") || rp.name.equals("Zidane") || rp.name.equals("Lionel Messi") || rp.name.equals("Ronaldo")) {
-                ovr = 105 + random.nextInt(6); // 105-110
+                ovr = 105 + random.nextInt(6);
             } else if (ovr > 100) {
                 ovr = 100;
             }
             players.add(createPlayer(rp.name, rp.pos, rp.nationality, rp.club, ovr));
         }
 
-        // 2. Fill the rest to reach 1000
         int remaining = 1000 - players.size();
         for (int i = 0; i < remaining; i++) {
             int ovr = generateOvr();
-            if (ovr > 100) ovr = 95 + random.nextInt(5);
+            if  (ovr > 100) 
+                ovr = 95 + random.nextInt(5);
             
-            String name = GENERIC_FIRST[random.nextInt(GENERIC_FIRST.length)] + " " + GENERIC_LAST[random.nextInt(GENERIC_LAST.length)];
-            Position pos = Position.values()[random.nextInt(Position.values().length)];
-            String nat = COUNTRIES[random.nextInt(COUNTRIES.length)];
-            String selectedClub = CLUBS_LIST[random.nextInt(CLUBS_LIST.length)];
+            String   name         = GENERIC_FIRST[random.nextInt(GENERIC_FIRST.length)] + " " + GENERIC_LAST[random.nextInt(GENERIC_LAST.length)];
+            Position pos          = Position.values()[random.nextInt(Position.values().length)];
+            String   nat          = COUNTRIES[random.nextInt(COUNTRIES.length)];
+            String   selectedClub = CLUBS_LIST[random.nextInt(CLUBS_LIST.length)];
             
             players.add(createPlayer(name, pos, nat, selectedClub, ovr));
 
@@ -301,13 +294,13 @@ public class PlayerSeeder {
     private PlayerTemplate createPlayer(String name, Position pos, String nat, String club, int ovr) {
         Season season = determineSeason(ovr);
         
-        // Face stats
+          // Face stats
         int pace = clamp(ovr - 5 + random.nextInt(15));
-        int sho = clamp(ovr - 10 + random.nextInt(20));
-        int pas = clamp(ovr - 5 + random.nextInt(15));
-        int dri = clamp(ovr - 5 + random.nextInt(15));
-        int def = clamp(ovr - 15 + random.nextInt(25));
-        int phy = clamp(ovr - 10 + random.nextInt(20));
+        int sho  = clamp(ovr - 10 + random.nextInt(20));
+        int pas  = clamp(ovr - 5 + random.nextInt(15));
+        int dri  = clamp(ovr - 5 + random.nextInt(15));
+        int def  = clamp(ovr - 15 + random.nextInt(25));
+        int phy  = clamp(ovr - 10 + random.nextInt(20));
 
         PlayerTemplate player = PlayerTemplate.builder()
                 .name(name)
@@ -326,40 +319,34 @@ public class PlayerSeeder {
                 .dribbling(dri)
                 .defending(def)
                 .physical(phy)
-                
-                // PAC Components
+
                 .acceleration(clamp(pace + random.nextInt(10) - 5))
                 .sprintSpeed(clamp(pace + random.nextInt(10) - 5))
-                
-                // SHO Components
+
                 .finishing(clamp(sho + random.nextInt(10) - 5))
                 .shotPower(clamp(sho + random.nextInt(10) - 5))
                 .longShot(clamp(sho + random.nextInt(10) - 5))
                 .positioning(clamp(sho + random.nextInt(10) - 5))
                 .volleys(clamp(sho + random.nextInt(10) - 5))
-                
-                // PAS Components
+
                 .shortPassing(clamp(pas + random.nextInt(10) - 5))
                 .longPassing(clamp(pas + random.nextInt(10) - 5))
                 .vision(clamp(pas + random.nextInt(10) - 5))
                 .crossing(clamp(pas + random.nextInt(10) - 5))
                 .curve(clamp(pas + random.nextInt(10) - 5))
-                
-                // DRI Components
+
                 .dribblingStat(clamp(dri + random.nextInt(10) - 5))
                 .ballControl(clamp(dri + random.nextInt(10) - 5))
                 .agility(clamp(dri + random.nextInt(10) - 5))
                 .balance(clamp(dri + random.nextInt(10) - 5))
                 .reactions(clamp(dri + random.nextInt(10) - 5))
-                
-                // DEF Components
+
                 .interceptions(clamp(def + random.nextInt(10) - 5))
                 .marking(clamp(def + random.nextInt(10) - 5))
                 .standingTackle(clamp(def + random.nextInt(10) - 5))
                 .slidingTackle(clamp(def + random.nextInt(10) - 5))
                 .heading(clamp(def + random.nextInt(20) - 10))
-                
-                // PHY Components
+
                 .strength(clamp(phy + random.nextInt(10) - 5))
                 .aggression(clamp(phy + random.nextInt(10) - 5))
                 .stamina(clamp(phy + random.nextInt(10) - 5))

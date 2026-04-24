@@ -32,7 +32,6 @@ public class MissionService {
 
         List<UserMission> userMissions = userMissionRepository.findByUser(user);
         
-        // Logic to reset/refresh every 3 hours
         if (userMissions.isEmpty() || shouldReset(userMissions)) {
             return refreshMissions(user);
         }
@@ -68,8 +67,6 @@ public class MissionService {
 
         return userMissionRepository.saveAll(newMissions);
     }
-
-
 
     @Transactional
     public void updateProgress(String username, MissionType type, int amount) {
@@ -109,8 +106,8 @@ public class MissionService {
         long totalCoins = um.getMission().getRewardCoins();
         
         if (um.getMission().isRewardLuckyBp()) {
-            long luckyAmount = 10000 + random.nextInt(90001);
-            totalCoins += luckyAmount;
+            long luckyAmount  = 10000 + random.nextInt(90001);
+                 totalCoins  += luckyAmount;
             results.put("luckyBp", luckyAmount);
         }
         

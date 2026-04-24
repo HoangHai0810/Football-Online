@@ -52,7 +52,6 @@ public class PlayerTemplate {
     @Column(nullable = false)
     private Season season;
 
-    // Face Stats
     private Integer pace;
     private Integer shooting;
     private Integer passing;
@@ -60,52 +59,44 @@ public class PlayerTemplate {
     private Integer defending;
     private Integer physical;
 
-    // PAC Components
     private Integer acceleration;
     private Integer sprintSpeed;
 
-    // SHO Components
     private Integer finishing;
     private Integer shotPower;
     private Integer longShot;
     private Integer positioning;
     private Integer volleys;
 
-    // PAS Components
     private Integer shortPassing;
     private Integer longPassing;
     private Integer vision;
     private Integer crossing;
     private Integer curve;
 
-    // DRI Components
     private Integer dribblingStat; 
     private Integer ballControl;
     private Integer agility;
     private Integer balance;
     private Integer reactions;
 
-    // DEF Components
     private Integer interceptions;
     private Integer marking;
     private Integer standingTackle;
     private Integer slidingTackle;
 
-    // PHY Components
     private Integer strength;
     private Integer aggression;
     private Integer stamina;
     private Integer jumping;
     private Integer heading;
 
-    // GK Stats
     private Integer diving;
     private Integer reflexes;
     private Integer handling;
     private Integer gkPositioning;
     private Integer kicking;
 
-    // Metadata
     @Enumerated(EnumType.STRING)
     private WorkRate attackingWorkRate;
 

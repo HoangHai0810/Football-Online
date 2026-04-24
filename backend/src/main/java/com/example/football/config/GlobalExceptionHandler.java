@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import io.sentry.Sentry;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -20,6 +21,7 @@ public class GlobalExceptionHandler {
         body.put("error", ex.getClass().getSimpleName());
         body.put("message", ex.getMessage());
         
+        Sentry.captureException(ex);
         ex.printStackTrace();
 
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);

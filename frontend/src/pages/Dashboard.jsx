@@ -102,6 +102,10 @@ const Dashboard = () => {
   const [userOvr, setUserOvr] = useState(85);
   const [squadCards, setSquadCards] = useState([]);
   const [career, setCareer] = useState(null);
+  
+  // New user flow states
+  const [hasCards, setHasCards] = useState(true);
+  const [hasFullSquad, setHasFullSquad] = useState(true);
 
   // Season End
   const [showSeasonSummary, setShowSeasonSummary] = useState(false);
@@ -133,6 +137,9 @@ const Dashboard = () => {
       }
       const activeCards = Object.values(lineup).map(id => cardsRes.data.find(c => c.id === id)).filter(Boolean);
       setSquadCards(activeCards);
+      
+      setHasCards(cardsRes.data && cardsRes.data.length > 0);
+      setHasFullSquad(activeCards.length === 11);
 
       setLoading(false);
     } catch (err) {
@@ -213,6 +220,23 @@ const Dashboard = () => {
         <title>Dashboard — FC Challenge</title>
         <meta name="description" content={`Welcome back, Manager ${user?.username || ''}. Track your squad OVR, club balance, and prepare for the next fixture in your FC Challenge career.`} />
       </Helmet>
+      
+      <style>
+        {`
+          @keyframes pulseGold {
+            0% { box-shadow: 0 0 0 0 rgba(240, 195, 45, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(240, 195, 45, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(240, 195, 45, 0); }
+          }
+          .pulse-gold {
+            animation: pulseGold 2s infinite;
+          }
+          .stat-value-animated {
+            display: inline-block;
+          }
+        `}
+      </style>
+
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -245,6 +269,59 @@ const Dashboard = () => {
         </p>
       </motion.div>
 
+      {/* FIRST ACTION / EARLY DOPAMINE (New User Flow) */}
+      {!hasCards ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          style={{
+            background: 'linear-gradient(135deg, rgba(240,195,45,0.15) 0%, rgba(240,195,45,0.02) 100%)',
+            border: '1px solid rgba(240,195,45,0.4)', borderRadius: 24, padding: '32px 40px', marginBottom: 32,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24,
+            boxShadow: '0 0 40px rgba(240,195,45,0.1)'
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{ background: 'var(--gold)', color: '#000', padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 900, letterSpacing: 1 }}>WELCOME BONUS</span>
+            </div>
+            <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 40, color: 'var(--gold)', margin: 0, letterSpacing: 1, textShadow: '0 0 20px rgba(240,195,45,0.3)' }}>
+              🎁 CLAIM YOUR FREE STARTER PACK
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 16, margin: '8px 0 0 0', maxWidth: 600 }}>
+              Kickstart your managerial career! Open your very first pack to discover your captain and build your squad foundation.
+            </p>
+          </div>
+          <Link to="/packs" className="btn btn-gold btn-lg pulse-gold" style={{ padding: '16px 40px', fontSize: 18 }}>
+            <Package size={24} /> OPEN NOW
+          </Link>
+        </motion.div>
+      ) : !hasFullSquad ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          style={{
+            background: 'linear-gradient(135deg, rgba(64,196,255,0.15) 0%, rgba(64,196,255,0.02) 100%)',
+            border: '1px solid rgba(64,196,255,0.4)', borderRadius: 24, padding: '32px 40px', marginBottom: 32,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24,
+            boxShadow: '0 0 40px rgba(64,196,255,0.1)'
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{ background: 'var(--info)', color: '#000', padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 900, letterSpacing: 1 }}>ACTION REQUIRED</span>
+            </div>
+            <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 40, color: 'var(--info)', margin: 0, letterSpacing: 1, textShadow: '0 0 20px rgba(64,196,255,0.3)' }}>
+              ⚡ ASSEMBLE YOUR SQUAD
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 16, margin: '8px 0 0 0', maxWidth: 600 }}>
+              You don't have a full starting 11 yet. Assign players to your lineup to start competing in matches!
+            </p>
+          </div>
+          <Link to="/squad" className="btn" style={{ background: 'var(--info)', color: '#000', padding: '16px 40px', borderRadius: 8, fontWeight: 700, fontSize: 18, boxShadow: '0 4px 20px rgba(64,196,255,0.3)' }}>
+            <Users size={24} /> GO TO SQUAD
+          </Link>
+        </motion.div>
+      ) : null}
+
       <div className="dashboard-main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 380px)', gap: 32, marginBottom: 32 }}>
         {/* Left Column: Stats & Balance */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
@@ -268,7 +345,15 @@ const Dashboard = () => {
                 <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>Account Balance</div>
                     <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 42, color: 'var(--gold)' }}>
-                        {statsData?.coins?.toLocaleString() || '0'} <Coins size={20} style={{ opacity: 0.7, verticalAlign: 'text-bottom' }} />
+                        <motion.span 
+                            className="stat-value-animated"
+                            key={statsData?.coins}
+                            initial={{ scale: 1.3, color: '#fff' }} 
+                            animate={{ scale: 1, color: 'var(--gold)' }} 
+                            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                        >
+                            {statsData?.coins?.toLocaleString() || '0'}
+                        </motion.span> <Coins size={20} style={{ opacity: 0.7, verticalAlign: 'text-bottom' }} />
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: 12 }}>
@@ -308,12 +393,20 @@ const Dashboard = () => {
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <button className="btn btn-gold" onClick={() => { setIsQuickSim(false); setShowMatch(true); }} style={{ width: '100%', height: 50 }}>
-                            <Play size={18} fill="currentColor" /> PLAY MATCH
-                        </button>
-                        <button className="btn btn-glass" onClick={() => { setIsQuickSim(true); setShowMatch(true); }} style={{ width: '100%', height: 50 }}>
-                            QUICK SIM
-                        </button>
+                        {!hasFullSquad ? (
+                            <button className="btn" disabled style={{ width: '100%', height: 50, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', cursor: 'not-allowed', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                                BUILD SQUAD BEFORE PLAYING
+                            </button>
+                        ) : (
+                            <>
+                                <button className="btn btn-gold" onClick={() => { setIsQuickSim(false); setShowMatch(true); }} style={{ width: '100%', height: 50 }}>
+                                    <Play size={18} fill="currentColor" /> PLAY MATCH
+                                </button>
+                                <button className="btn btn-glass" onClick={() => { setIsQuickSim(true); setShowMatch(true); }} style={{ width: '100%', height: 50 }}>
+                                    QUICK SIM
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     <Link to={`/tournaments/${nextFixture.tournamentId}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20, fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>

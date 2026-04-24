@@ -35,9 +35,9 @@ public class PaymentController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByUsername(username).map(user -> {
             
-            int amountVnd = 0;
-            int coinsReward = 0;
-            String rewardPackId = null;
+            int     amountVnd     = 0;
+            int     coinsReward   = 0;
+            String  rewardPackId  = null;
             Integer rewardPackQty = 0;
 
             if (packageId == 1) { amountVnd = 10000; coinsReward = 100000; }
@@ -100,13 +100,11 @@ public class PaymentController {
                         order.setStatus("SUCCESS");
                         topupOrderRepository.save(order);
                         
-                        // Add coins
                         userRepository.findById(order.getUserId()).ifPresent(u -> {
                             u.setCoins(u.getCoins() + order.getCoinsAmount());
                             userRepository.save(u);
                             log.info("Successfully added {} coins to user id: {} via verified webhook", order.getCoinsAmount(), u.getId());
-                            
-                            // Add extra rewards (Packs)
+
                             if (order.getRewardPackId() != null && order.getRewardPackQuantity() > 0) {
                                 try {
                                     inventoryService.addPack(u, order.getRewardPackId(), order.getRewardPackQuantity());

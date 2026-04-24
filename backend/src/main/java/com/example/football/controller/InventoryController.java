@@ -37,9 +37,9 @@ public class InventoryController {
             @RequestParam String packId,
             @RequestParam(defaultValue = "1") int quantity) {
         try {
-            Users user = getAuthenticatedUser();
+            Users            user  = getAuthenticatedUser();
             List<PlayerCard> cards = inventoryService.openPacksFromInventory(user, packId, quantity);
-            return ResponseEntity.ok(cards); // Return as List<PlayerCard> to mimic /open-packs-multi
+            return ResponseEntity.ok(cards);  // Return as List<PlayerCard> to mimic /open-packs-multi
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

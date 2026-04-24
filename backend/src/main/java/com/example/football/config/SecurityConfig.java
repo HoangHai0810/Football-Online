@@ -41,16 +41,18 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/api/templates/**").permitAll()
-                .requestMatchers("/api/cards/**").permitAll()
-                .requestMatchers("/api/players/**").permitAll()
-                .requestMatchers("/api/career/**").permitAll()
-                .requestMatchers("/api/payments/payos/webhook").permitAll()
-                .requestMatchers("/error").permitAll()
-                .anyRequest().authenticated()
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/oauth2/**",
+                    "/login/oauth2/**",
+                    "/h2-console/**",
+                    "/api/templates/**",
+                    "/api/cards/**",
+                    "/api/players/**",
+                    "/api/career/**",
+                    "/api/payments/payos/webhook",
+                    "/error"
+                ).permitAll().anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)

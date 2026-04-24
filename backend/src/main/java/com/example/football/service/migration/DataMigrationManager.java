@@ -30,10 +30,9 @@ public class DataMigrationManager implements CommandLineRunner {
         
         log.info("DataMigrationManager: Current data version is {}", currentVersion);
 
-        // Run migrations in order
         migrations.stream()
                 .filter(m -> m.getVersion() > currentVersion)
-                .sorted((a, b) -> Integer.compare(a.getVersion(), b.getVersion())) // sorted by version
+                .sorted((a, b) -> Integer.compare(a.getVersion(), b.getVersion()))
                 .forEach(this::runMigration);
     }
 

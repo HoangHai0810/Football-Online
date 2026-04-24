@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            jwt = authHeader.substring(7);
+            jwt       = authHeader.substring(7);
             userEmail = jwtUtils.extractUsername(jwt);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -51,7 +51,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             log.error("JWT Authentication failed: {}", e.getMessage());
-            // Token is invalid, expired, or user was deleted (H2 database wiped).
         }
         
         filterChain.doFilter(request, response);

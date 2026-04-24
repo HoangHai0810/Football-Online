@@ -35,7 +35,7 @@ public class AiController {
     @GetMapping("/context")
     public Map<String, Object> getAiContext() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Users user = userRepository.findByUsername(username)
+        Users  user     = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Long userId = user.getId();
 
@@ -51,7 +51,7 @@ public class AiController {
         ));
 
         List<PlayerCard> cards = playerCardService.getCardsByUserId(userId);
-        List<Map<String, Object>> cardList = cards.stream().map(c -> {
+        List<Map<String  ,      Object>> cardList = cards.stream().map(c -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id", c.getId());
             m.put("name", c.getTemplate().getName());
@@ -70,7 +70,7 @@ public class AiController {
             context.put("currentFormation", squad.getFormation());
             try {
                 Map<String, Long> lineup = objectMapper.readValue(squad.getLineupJson(), new TypeReference<Map<String, Long>>() {});
-                Set<Long> starterIds = new HashSet<>(lineup.values());
+                Set<Long>  starterIds    = new HashSet<>(lineup.values());
                 
                 context.put("starters", cardList.stream().filter(c -> starterIds.contains(c.get("id"))).collect(Collectors.toList()));
                 context.put("substitutes", cardList.stream().filter(c -> !starterIds.contains(c.get("id"))).collect(Collectors.toList()));
@@ -81,13 +81,13 @@ public class AiController {
 
         context.put("marketSuggestions", playerTemplateRepository.findAll().stream()
                 .map(t -> {
-                    int price = (int) (Math.pow(t.getOvr() - 70, 2) * 50 + 1000);
+                    int        price      = (int) (Math.pow(t.getOvr() - 70, 2) * 50 + 1000);
                     Map<String, Object> m = new HashMap<>();
                     m.put("template", t);
                     m.put("price", price);
                     return m;
                 })
-                .filter(m -> (int)m.get("price") <= user.getCoins()) // Filter by user's actual coins
+                .filter(m -> (int)m.get("price") <= user.getCoins())  // Filter by user's actual coins
                 .sorted((a, b) -> ((PlayerTemplate)b.get("template")).getOvr() - ((PlayerTemplate)a.get("template")).getOvr())
                 .limit(10)
                 .map(m -> {
@@ -109,7 +109,7 @@ public class AiController {
                     "standings", standings.stream()
                             .filter(s -> s.isUserTeam() || standings.indexOf(s) < 3)
                             .map(s -> Map.of(
-                                    "team", s.isUserTeam() ? username : (s.getAiClub() != null ? s.getAiClub().getName() : "Unknown"),
+                                    "team", s.isUserTeam() ? username: (s.getAiClub() != null ? s.getAiClub().getName() : "Unknown"),
                                     "rank", standings.indexOf(s) + 1,
                                     "points", s.getPoints(),
                                     "isUser", s.isUserTeam()
@@ -132,7 +132,7 @@ public class AiController {
     @PostMapping("/optimize")
     public Map<String, Object> optimizeSquad() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Users user = userRepository.findByUsername(username)
+        Users  user     = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         return squadService.optimizeSquad(user);

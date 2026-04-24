@@ -27,10 +27,8 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // Initial seeds for totally empty database
         if (repository.count() == 0) {
             System.out.println("DataInitializer: Player templates will be seeded by Migrations.");
-            // We no longer call seedPlayers() here to avoid duplicates and high OVRs
         }
         
         if (aiClubRepository.count() == 0) {

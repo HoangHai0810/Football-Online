@@ -20,8 +20,6 @@ public class SquadFormation {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private Users user;
 
-    // JSON string storing the lineup mapping: slotIndex (0-10) -> playerCardId
-    // e.g., {"0": 101, "1": 205, "2": 30}
     @Column(columnDefinition = "TEXT")
     private String lineupJson;
 

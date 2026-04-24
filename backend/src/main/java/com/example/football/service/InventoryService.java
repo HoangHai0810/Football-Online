@@ -52,7 +52,6 @@ public class InventoryService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough packs in inventory.");
         }
 
-        // Deduct packs
         pack.setQuantity(pack.getQuantity() - quantity);
         if (pack.getQuantity() <= 0) {
             inventoryPackRepository.delete(pack);
@@ -60,7 +59,6 @@ public class InventoryService {
             inventoryPackRepository.save(pack);
         }
 
-        // Generate cards
         List<PlayerCard> results = new ArrayList<>();
         for (int i = 0; i < quantity; i++) {
             results.add(playerCardService.openPackById(user, packId));

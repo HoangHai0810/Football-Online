@@ -20,7 +20,6 @@ public class StartupService {
 
     @Transactional
     public void initializeNewUser(Users user) {
-        // 1. Give 11 starter players (OVR 60-75)
         List<PlayerTemplate> templates = playerTemplateRepository.findAll();
         List<PlayerTemplate> starters = templates.stream()
                 .filter(p -> p.getOvr() >= 60 && p.getOvr() <= 80)
@@ -38,7 +37,6 @@ public class StartupService {
                     .build()));
         }
 
-        // 2. Setup initial formation and lineup
         Map<String, Long> lineup = new HashMap<>();
 
         for (int i = 0; i < cards.size(); i++) {
@@ -57,10 +55,9 @@ public class StartupService {
                     .lineupJson(lineupJson)
                     .build());
         } catch (Exception e) {
-            // Log error
+
         }
 
-        // 3. Initialize Career in Tier 3
         seasonGeneratorService.createNewSeason(user);
     }
 }

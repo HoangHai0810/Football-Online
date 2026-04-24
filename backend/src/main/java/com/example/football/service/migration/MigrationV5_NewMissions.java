@@ -49,8 +49,7 @@ public class MigrationV5_NewMissions implements DataMigration {
         List<Mission> missions = new ArrayList<>();
 
         missions.add(Mission.builder().description("Daily Login Bonus").type(MissionType.LOGIN_DAILY).targetAmount(1).rewardCoins(5000L).build());
-         
-        // Match Winning
+
         missions.add(Mission.builder().description("Warmup: Win 1 Match").type(MissionType.WIN_MATCH).targetAmount(1).rewardCoins(3000L).build());
         missions.add(Mission.builder().description("Consistency: Win 2 Matches").type(MissionType.WIN_MATCH).targetAmount(2).rewardCoins(6500L).build());
         missions.add(Mission.builder().description("Striker: Win 3 Matches").type(MissionType.WIN_MATCH).targetAmount(3).rewardCoins(10000L).rewardLuckyBp(true).build());
@@ -58,8 +57,7 @@ public class MigrationV5_NewMissions implements DataMigration {
         missions.add(Mission.builder().description("Dominator: Win 5 Matches").type(MissionType.WIN_MATCH).targetAmount(5).rewardCoins(16000L).rewardPackId("veteran").build());
         missions.add(Mission.builder().description("Invincible: Win 7 Matches").type(MissionType.WIN_MATCH).targetAmount(7).rewardCoins(22000L).rewardPackId("premium").rewardLuckyBp(true).build());
         missions.add(Mission.builder().description("Champion's Will: Win 10 Matches").type(MissionType.WIN_MATCH).targetAmount(10).rewardCoins(35000L).rewardPackId("all_star").build());
-        
-        // Pack Opening
+
         missions.add(Mission.builder().description("Scout: Open 1 Pack").type(MissionType.OPEN_PACK).targetAmount(1).rewardCoins(2000L).build());
         missions.add(Mission.builder().description("Explorer: Open 2 Packs").type(MissionType.OPEN_PACK).targetAmount(2).rewardCoins(5000L).build());
         missions.add(Mission.builder().description("Recruiter: Open 3 Packs").type(MissionType.OPEN_PACK).targetAmount(3).rewardCoins(8500L).rewardLuckyBp(true).build());
@@ -68,7 +66,6 @@ public class MigrationV5_NewMissions implements DataMigration {
         missions.add(Mission.builder().description("Whale: Open 8 Packs").type(MissionType.OPEN_PACK).targetAmount(8).rewardCoins(20000L).rewardPackId("all_star").rewardLuckyBp(true).build());
         missions.add(Mission.builder().description("Addicted: Open 10 Packs").type(MissionType.OPEN_PACK).targetAmount(10).rewardCoins(30000L).rewardPackId("icon").build());
 
-        // Player Upgrading
         missions.add(Mission.builder().description("Trainer: Upgrade 1 Player").type(MissionType.UPGRADE_PLAYER).targetAmount(1).rewardCoins(4000L).build());
         missions.add(Mission.builder().description("Instructor: Upgrade 2 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(2).rewardCoins(8500L).build());
         missions.add(Mission.builder().description("Coach: Upgrade 3 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(3).rewardCoins(12500L).rewardLuckyBp(true).build());
@@ -77,7 +74,6 @@ public class MigrationV5_NewMissions implements DataMigration {
         missions.add(Mission.builder().description("Masterclass: Upgrade 7 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(7).rewardCoins(28000L).rewardPackId("toty_upgrade").rewardLuckyBp(true).build());
         missions.add(Mission.builder().description("Visionary: Upgrade 10 Players").type(MissionType.UPGRADE_PLAYER).targetAmount(10).rewardCoins(45000L).rewardPackId("golden_ticket").build());
 
-        // Player Collecting
         missions.add(Mission.builder().description("Collector: Obtain 2 Players").type(MissionType.COLLECT_PLAYER).targetAmount(2).rewardCoins(3000L).build());
         missions.add(Mission.builder().description("Gatherer: Obtain 3 Players").type(MissionType.COLLECT_PLAYER).targetAmount(3).rewardCoins(5500L).build());
         missions.add(Mission.builder().description("Hoarder: Obtain 5 Players").type(MissionType.COLLECT_PLAYER).targetAmount(5).rewardCoins(9000L).build());
@@ -86,16 +82,13 @@ public class MigrationV5_NewMissions implements DataMigration {
         missions.add(Mission.builder().description("Director: Obtain 15 Players").type(MissionType.COLLECT_PLAYER).targetAmount(15).rewardCoins(26000L).rewardPackId("veteran").rewardLuckyBp(true).build());
         missions.add(Mission.builder().description("Mass Recruiter: Obtain 20 Players").type(MissionType.COLLECT_PLAYER).targetAmount(20).rewardCoins(38000L).rewardPackId("premium").build());
 
-        // Playing Matches
         missions.add(Mission.builder().description("Participant: Play 2 Matches").type(MissionType.PLAY_MATCH).targetAmount(2).rewardCoins(4000L).build());
         missions.add(Mission.builder().description("Active Player: Play 5 Matches").type(MissionType.PLAY_MATCH).targetAmount(5).rewardCoins(8500L).rewardLuckyBp(true).build());
         missions.add(Mission.builder().description("Grinder: Play 10 Matches").type(MissionType.PLAY_MATCH).targetAmount(10).rewardCoins(20000L).rewardPackId("starter").build());
 
-        // Star Signings (OVR >= 90)
         missions.add(Mission.builder().description("Star Signing: Obtain 1 Player (90+ OVR)").type(MissionType.COLLECT_STAR_PLAYER).targetAmount(1).rewardCoins(10000L).rewardLuckyBp(true).build());
         missions.add(Mission.builder().description("Galacticos: Obtain 3 Players (90+ OVR)").type(MissionType.COLLECT_STAR_PLAYER).targetAmount(3).rewardCoins(30000L).rewardPackId("icon").build());
 
-        // Seasons
         missions.add(Mission.builder().description("Endurance: Finish 1 Season").type(MissionType.FINISH_SEASON).targetAmount(1).rewardCoins(50000L).rewardPackId("all_star").build());
 
         for (Mission m : missions) {

@@ -37,24 +37,23 @@ public class MatchService {
 
     public MatchResult simulateMatch(String homeName, int homeOvr, String awayName, int awayOvr) {
         List<MatchEvent> commentary = new ArrayList<>();
-        int homeScore = 0;
-        int awayScore = 0;
-        int homeShots = 0;
-        int awayShots = 0;
+        int              homeScore  = 0;
+        int              awayScore  = 0;
+        int              homeShots  = 0;
+        int              awayShots  = 0;
 
-        // Calculate base probabilities based on OVR difference
         double ovrDiff = homeOvr - awayOvr;
         
         for (int min = 1; min <= 90; min++) {
             double chance = random.nextDouble();
-            if (chance < 0.08) { // An event happened
+            if (chance < 0.08) {
                 boolean isHomeEvent = random.nextDouble() < (0.5 + (ovrDiff / 200.0));
-                String team = isHomeEvent ? homeName : awayName;
+                String  team        = isHomeEvent ? homeName : awayName;
                 
                 if (isHomeEvent) homeShots++; else awayShots++;
 
                 double goalChance = random.nextDouble();
-                if (goalChance < 0.25) { // It's a goal!
+                if (goalChance < 0.25) {
                     if (isHomeEvent) homeScore++; else awayScore++;
                     commentary.add(MatchEvent.builder()
                             .minute(min)
@@ -81,7 +80,7 @@ public class MatchService {
         }
 
         int homePossession = 50 + (int)(ovrDiff / 2.0) + (random.nextInt(10) - 5);
-        homePossession = Math.max(30, Math.min(70, homePossession));
+            homePossession = Math.max(30, Math.min(70, homePossession));
 
         return MatchResult.builder()
                 .homeTeam(homeName)

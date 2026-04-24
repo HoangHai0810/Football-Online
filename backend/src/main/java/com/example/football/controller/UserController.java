@@ -51,7 +51,7 @@ public class UserController {
             user = (Users) principal;
         } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
             String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
-            user = userRepository.findByUsername(username).orElse(null);
+                   user     = userRepository.findByUsername(username).orElse(null);
         }
 
         if (user == null) {
@@ -72,7 +72,7 @@ public class UserController {
     @PatchMapping("/club")
     public ResponseEntity<?> updateClubName(@RequestBody Map<String, String> body) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        String newName = body.get("clubName");
+        String newName  = body.get("clubName");
         if (newName == null || newName.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Club name cannot be empty"));
         }
@@ -104,17 +104,17 @@ public class UserController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByUsername(username)
                 .map(user -> {
-                    List<PlayerCard> cards = playerCardRepository.findByOwner(user);
-                    int teamOvr = 0;
+                    List<PlayerCard> cards   = playerCardRepository.findByOwner(user);
+                    int              teamOvr = 0;
                     
                     Optional<SquadFormation> squadOpt = squadFormationRepository.findFirstByUserOrderByIdDesc(user);
                     if (squadOpt.isPresent()) {
                         SquadFormation squad = squadOpt.get();
                         if (squad.getLineupJson() != null && !squad.getLineupJson().isBlank()) {
                             try {
-                                Map<String, Long> lineup = objectMapper.readValue(squad.getLineupJson(), new TypeReference<Map<String, Long>>() {});
-                                String formation = squad.getFormation() != null ? squad.getFormation() : "4-3-3";
-                                String[] slotPositions = getPositionsForFormation(formation);
+                                Map<String, Long> lineup        = objectMapper.readValue(squad.getLineupJson(), new TypeReference<Map<String, Long>>() {});
+                                String            formation     = squad.getFormation() != null ? squad.getFormation() : "4-3-3";
+                                String[]          slotPositions = getPositionsForFormation(formation);
                                 
                                 double totalEffOvr = 0;
                                 for (Map.Entry<String, Long> entry : lineup.entrySet()) {
@@ -122,9 +122,9 @@ public class UserController {
                                     if (slotIdx >= 0 && slotIdx < 11) {
                                         Optional<PlayerCard> cardOpt = playerCardRepository.findById(entry.getValue());
                                         if (cardOpt.isPresent()) {
-                                            PlayerCard card = cardOpt.get();
-                                            String slotPos = slotPositions[slotIdx];
-                                            totalEffOvr += calculateEffectiveOvr(card, slotPos);
+                                            PlayerCard card         = cardOpt.get();
+                                            String     slotPos      = slotPositions[slotIdx];
+                                                       totalEffOvr += calculateEffectiveOvr(card, slotPos);
                                         }
                                     }
                                 }
@@ -139,7 +139,7 @@ public class UserController {
                     try {
                         List<Tournament> tournaments = careerService.getTournamentsByUserId(user.getId());
                         if (!tournaments.isEmpty()) {
-                            Tournament league = tournaments.stream().filter(t -> "LEAGUE".equals(t.getType())).findFirst().orElse(tournaments.get(0));
+                            Tournament               league    = tournaments.stream().filter(t -> "LEAGUE".equals(t.getType())).findFirst().orElse(tournaments.get(0));
                             List<TournamentStanding> standings = careerService.getStandings(league.getId());
                             for (int i = 0; i < standings.size(); i++) {
                                 if (standings.get(i).isUserTeam()) {
@@ -162,26 +162,26 @@ public class UserController {
 
     private String[] getPositionsForFormation(String formation) {
         switch (formation) {
-            case "4-4-2": return new String[]{"GK", "LB", "CB", "CB", "RB", "LM", "CM", "CM", "RM", "ST", "ST"};
-            case "4-2-3-1": return new String[]{"GK", "LB", "CB", "CB", "RB", "CDM", "CDM", "CAM", "LM", "RM", "ST"};
-            case "3-5-2": return new String[]{"GK", "CB", "CB", "CB", "LWB", "CDM", "CDM", "RWB", "CAM", "ST", "ST"};
+            case "4-4-2"    : return new String[]{"GK", "LB", "CB", "CB", "RB", "LM", "CM", "CM", "RM", "ST", "ST"};
+            case "4-2-3-1"  : return new String[]{"GK", "LB", "CB", "CB", "RB", "CDM", "CDM", "CAM", "LM", "RM", "ST"};
+            case "3-5-2"    : return new String[]{"GK", "CB", "CB", "CB", "LWB", "CDM", "CDM", "RWB", "CAM", "ST", "ST"};
             case "4-1-2-1-2": return new String[]{"GK", "LB", "CB", "CB", "RB", "CDM", "LM", "RM", "CAM", "ST", "ST"};
-            case "4-3-2-1": return new String[]{"GK", "LB", "CB", "CB", "RB", "CM", "CM", "CM", "CAM", "CAM", "ST"};
-            case "5-3-2": return new String[]{"GK", "LWB", "CB", "CB", "CB", "RWB", "CM", "CDM", "CM", "ST", "ST"};
-            case "3-4-3": return new String[]{"GK", "CB", "CB", "CB", "LM", "CM", "CM", "RM", "LW", "ST", "RW"};
-            case "4-5-1": return new String[]{"GK", "LB", "CB", "CB", "RB", "LM", "CM", "CM", "CM", "RM", "ST"};
-            case "4-3-3":
-            default: return new String[]{"GK", "LB", "CB", "CB", "RB", "CM", "CDM", "CM", "LW", "ST", "RW"};
+            case "4-3-2-1"  : return new String[]{"GK", "LB", "CB", "CB", "RB", "CM", "CM", "CM", "CAM", "CAM", "ST"};
+            case "5-3-2"    : return new String[]{"GK", "LWB", "CB", "CB", "CB", "RWB", "CM", "CDM", "CM", "ST", "ST"};
+            case "3-4-3"    : return new String[]{"GK", "CB", "CB", "CB", "LM", "CM", "CM", "RM", "LW", "ST", "RW"};
+            case "4-5-1"    : return new String[]{"GK", "LB", "CB", "CB", "RB", "LM", "CM", "CM", "CM", "RM", "ST"};
+            case "4-3-3"    : 
+                 default    : return new String[]{"GK", "LB", "CB", "CB", "RB", "CM", "CDM", "CM", "LW", "ST", "RW"};
         }
     }
 
     private int calculateEffectiveOvr(PlayerCard card, String slotPos) {
-        int baseOvr = card.getEffectiveOvr();
-        String natPos = card.getTemplate().getPosition().name();
+        int    baseOvr = card.getEffectiveOvr();
+        String natPos  = card.getTemplate().getPosition().name();
         
         if (natPos.equals(slotPos)) return baseOvr;
         
-        String natGroup = getPosGroup(natPos);
+        String natGroup  = getPosGroup(natPos);
         String slotGroup = getPosGroup(slotPos);
         
         if (natGroup.equals(slotGroup)) return Math.max(1, baseOvr - 3);

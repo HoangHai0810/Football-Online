@@ -103,8 +103,8 @@ public class MigrationV3_ElitePlayers implements DataMigration {
     private void upsertPlayer(String name, int ovr, String posStr, String seasonStr, String nat, 
                              int pace, int sho, int pas, int dri, int def, int phy) {
         
-        Season seasonEnum = Season.valueOf(seasonStr);
-        PlayerTemplate template = playerTemplateRepository.findFirstByNameAndSeason(name, seasonEnum)
+        Season         seasonEnum = Season.valueOf(seasonStr);
+        PlayerTemplate template   = playerTemplateRepository.findFirstByNameAndSeason(name, seasonEnum)
                 .orElse(new PlayerTemplate());
         
         template.setName(name);
@@ -119,7 +119,6 @@ public class MigrationV3_ElitePlayers implements DataMigration {
         template.setDefending(def);
         template.setPhysical(phy);
         
-        // Basic profile defaults if new
         if (template.getId() == null) {
             template.setAge(25);
             template.setHeight(180);
