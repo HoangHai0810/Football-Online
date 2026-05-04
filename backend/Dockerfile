@@ -11,4 +11,10 @@ RUN wget -O sentry-opentelemetry-agent.jar "https://repo1.maven.org/maven2/io/se
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-javaagent:sentry-opentelemetry-agent.jar", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+  "-javaagent:sentry-opentelemetry-agent.jar", \
+  "-Dotel.metrics.exporter=none", \
+  "-Dotel.traces.exporter=sentry", \
+  "-Dotel.logs.exporter=none", \
+  "-Dspring.profiles.active=prod", \
+  "-jar", "app.jar"]
